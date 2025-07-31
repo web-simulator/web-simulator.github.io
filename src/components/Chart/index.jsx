@@ -17,8 +17,9 @@ const Chart = ({ data }) => {
         <YAxis />
         <Tooltip />
         <Legend />
-        <Line type="monotone" dataKey="v" stroke="#8884d8" activeDot={{ r: 8 }} />
-        <Line type="monotone" dataKey="h" stroke="#82ca9d" />
+        {/* Desativar a animação para melhorar a performance */}
+        <Line type="monotone" dataKey="v" stroke="#8884d8" dot={false} isAnimationActive={false} />
+        <Line type="monotone" dataKey="h" stroke="#82ca9d" dot={false} isAnimationActive={false} />
       </LineChart>
     </ResponsiveContainer>
   );

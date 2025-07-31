@@ -11,3 +11,8 @@
   cursor: pointer;
   border-radius: 8px;
 }
+
+.custom-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
