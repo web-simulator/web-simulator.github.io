@@ -1,21 +1,36 @@
+// Função para aplicar estímulos
+function aplicarEstimulo(tempo_atual, amplitude, duracao, inicio, BCL, num_estimulos) {
+  for (let i = 0; i < num_estimulos; i++) {
+    const inicio_pulso = inicio + i * BCL; // Calcula o início do pulso i
+    if (tempo_atual >= inicio_pulso && tempo_atual < inicio_pulso + duracao) {
+      return amplitude; // Aplica o estímulo durante sua duração
+    }
+  }
+  return 0.0; // Fora do intervalo de estímulo
+}
+
 // Parâmetros da simulação para o worker
 self.onmessage = (e) => {
   const params = e.data;
   const {
-    despolarização,       // Ativação do potencial
-    repolarização,        // Tepolarização
-    recuperação,          // Tempo de recuperação 
-    inativação,           // Tempo de inativação 
-    gate,                 // Limite para ativar ou inativar
-    dt,                   // Passo de tempo da simulação
-    tempo_total,          // Duração total
-    v_inicial,            // Condição inicial para v 
-    h_inicial,            // Condição inicial para h 
-    inicio,               // Tempo de início do estímulo
-    duração,              // Duração do estímulo
-    amplitude,            // Amplitude do estímulo
-    downsamplingFactor,   // Fator para reduzir a quantidade de pontos enviados ao gráfico
+    despolarização,
+    repolarização,
+    recuperação,
+    inativação,
+    gate,
+    dt,
+    v_inicial,
+    h_inicial,
+    inicio,
+    duração,
+    amplitude,
+    BCL,
+    num_estimulos,
+    downsamplingFactor,
   } = params;
+
+  // Tempo total da simulação
+  const tempo_total = inicio + num_estimulos * BCL + 50;
 
   // Número total de passos
   const passos = parseInt(tempo_total / dt, 10);
@@ -31,14 +46,11 @@ self.onmessage = (e) => {
 
   // Euler explicito
   for (let i = 1; i < passos; i++) {
-    tempo[i] = i * dt; // Tempo atual
+    tempo[i] = i * dt;
     const t = tempo[i];
 
     // Determina se há estímulo aplicado neste instante
-    let estimulo = 0;
-    if (t >= inicio && t < inicio + duração) {
-      estimulo = amplitude;
-    }
+    const estimulo = aplicarEstimulo(t, amplitude, duração, inicio, BCL, num_estimulos);
 
     // Despolarização e repolarização
     const J_entrada = (h[i - 1] * v[i - 1] ** 2 * (1 - v[i - 1])) / despolarização;
@@ -55,21 +67,17 @@ self.onmessage = (e) => {
       dh = -h[i - 1] / inativação;        // Inativação rápida
     }
 
-    // Atualiza v e h 
-    v[i] = v[i - 1] + dt * dv;
-    h[i] = h[i - 1] + dt * dh;
-
-    // Mantém valores dentro do intervalo 0,1
-    v[i] = Math.max(0.0, Math.min(1.0, v[i]));
-    h[i] = Math.max(0.0, Math.min(1.0, h[i]));
+    // Atualiza as variáveis e mantém no intervalo 0,1
+    v[i] = Math.max(0.0, Math.min(1.0, v[i - 1] + dt * dv));
+    h[i] = Math.max(0.0, Math.min(1.0, h[i - 1] + dt * dh));
   }
 
   // Reduz a quantidade de pontos para otimização
   const sampledData = [];
   for (let i = 0; i < passos; i += downsamplingFactor) {
-    sampledData.push({ tempo: tempo[i].toFixed(2), v: v[i], h: h[i] });
+    sampledData.push({ tempo: tempo[i]?.toFixed(2), v: v[i], h: h[i] });
   }
 
   // Envia os dados para a página principal
-  self.postMessage(sampledData);
+  self.postMessage({ bcl: BCL, data: sampledData });
 };
