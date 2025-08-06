@@ -1,6 +1,6 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-// A biblioteca Recharts é usada para criar gráficos em React
-// Componente Chart que recebe os dados como propriedade
+
+
 const Chart = ({ data }) => {
   return (
     // Container responsivo para ajustar o gráfico ao tamanho do elemento pai
@@ -15,17 +15,25 @@ const Chart = ({ data }) => {
           bottom: 5,
         }}
       >
+        
         {/* Traços no gráfico */}
         <CartesianGrid strokeDasharray="3 3" />
         
         {/* Eixo X */}
-        <XAxis dataKey="tempo" />
+        <XAxis dataKey="tempo" minTickGap={80} />
         
         {/* Eixo Y */}
         <YAxis />
         
         {/* Exibir valores ao passar o mouse*/}
-        <Tooltip />
+        <Tooltip 
+          formatter={(value, name) => {
+            if (typeof value === 'number') {
+              return [`${value.toFixed(3)}`, name];
+            }
+            return [value, name];
+          }}
+        />
         
         {/* Legenda do gráfico */}
         <Legend />
@@ -37,6 +45,7 @@ const Chart = ({ data }) => {
           stroke="#8884d8"      // Cor da linha
           dot={false}           // Remove os pontos visíveis nos dados
           isAnimationActive={false} // Desativa animação ao renderizar
+          strokeWidth={2.2}
         />
         
         {/* Curva do Gate */}
@@ -46,6 +55,7 @@ const Chart = ({ data }) => {
           stroke="#82ca9d" 
           dot={false} 
           isAnimationActive={false} 
+          strokeWidth={2.2}
         />
       </LineChart>
     </ResponsiveContainer>

@@ -1,14 +1,14 @@
+// src/App.jsx
 
 import { useState } from 'react';
 import HomePage from './containers/HomePage';
 import SingleStimulusPage from './containers/SingleStimulusPage';
 import MultipleStimuliPage from './containers/MultipleStimuliPage';
-import BCLSeriesPage from './containers/BCLSeriesPage';
-
+import S1S2Page from './containers/S1S2Page'; // Importe a nova página
 import './index.css';
 
 function App() {
-  const [page, setPage] = useState('home'); // Controla qual página está sendo exibida
+  const [page, setPage] = useState('home');
 
   // Função para mudar de página
   const navigateTo = (pageName) => {
@@ -19,21 +19,21 @@ function App() {
     switch (page) {
       case 'single_stimulus':
         // Renderiza a página de estímulo único
-        return <SingleStimulusPage onBack={() => navigateTo('home')} />; // função de retorno a página inicial
+        return <SingleStimulusPage onBack={() => navigateTo('home')} />;
       case 'multiple_stimuli':
         // Múltiplos estímulos
         return <MultipleStimuliPage onBack={() => navigateTo('home')} />;
-      case 'bcl_series':
-        // BCL decrescente
-        return <BCLSeriesPage onBack={() => navigateTo('home')} />;
+      case 's1_s2':
+        // Padrão S1-S2
+        return <S1S2Page onBack={() => navigateTo('home')} />;
       default:
-        return <HomePage onNavigate={navigateTo} />; // Renderiza a página inicial
+        return <HomePage onNavigate={navigateTo} />;
     }
   };
   // estrutura da página
-  return ( 
-    <div> 
-      {renderPage()} 
+  return (
+    <div>
+      {renderPage()}
     </div>
   );
 }

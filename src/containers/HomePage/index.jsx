@@ -1,3 +1,5 @@
+// src/containers/HomePage/index.jsx
+
 import Button from '../../components/Button';
 import './styles.css';
 
@@ -21,10 +23,9 @@ const HomePage = ({ onNavigate }) => {
         <Button onClick={() => onNavigate('multiple_stimuli')}>
           Modelo Mitchell-Schaeffer (8 Estímulos - BCL Fixo)
         </Button>
-
-        {/* Série de simulações com BCL decrescente */}
-        <Button onClick={() => onNavigate('bcl_series')}>
-          Série de Simulações com BCL Decrescente
+        {/* Protocolo S1-S2 */}
+        <Button onClick={() => onNavigate('s1_s2')}>
+          Protocolo S1-S2
         </Button>
       </div>
     </div>
