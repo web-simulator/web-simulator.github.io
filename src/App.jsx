@@ -1,10 +1,9 @@
-// src/App.jsx
-
 import { useState } from 'react';
 import HomePage from './containers/HomePage';
 import SingleStimulusPage from './containers/SingleStimulusPage';
 import MultipleStimuliPage from './containers/MultipleStimuliPage';
-import S1S2Page from './containers/S1S2Page'; // Importe a nova página
+import S1S2Page from './containers/S1S2Page';
+import RestitutionCurvePage from './containers/RestitutionCurvePage';
 import './index.css';
 
 function App() {
@@ -26,6 +25,9 @@ function App() {
       case 's1_s2':
         // Padrão S1-S2
         return <S1S2Page onBack={() => navigateTo('home')} />;
+      case 'restitution_curve':
+        // Curva de Restituição
+        return <RestitutionCurvePage onBack={() => navigateTo('home')} />;
       default:
         return <HomePage onNavigate={navigateTo} />;
     }

@@ -13,7 +13,7 @@ const HomePage = ({ onNavigate }) => {
 
       {/* Botões de opções de simulação */}
       <div className="options-container">
-        
+
         {/*Simulação com um único estímulo */}
         <Button onClick={() => onNavigate('single_stimulus')}>
           Modelo Mitchell-Schaeffer (1 Estímulo)
@@ -26,6 +26,10 @@ const HomePage = ({ onNavigate }) => {
         {/* Protocolo S1-S2 */}
         <Button onClick={() => onNavigate('s1_s2')}>
           Protocolo S1-S2
+        </Button>
+        {/* Curva de Restituição */}
+        <Button onClick={() => onNavigate('restitution_curve')}>
+          Curva de Restituição
         </Button>
       </div>
     </div>
