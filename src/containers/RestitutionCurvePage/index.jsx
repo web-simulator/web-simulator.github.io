@@ -36,11 +36,11 @@ const RestitutionCurvePage = ({ onBack }) => {
 
   // Parâmetros fixos
   const [fixedParams] = useState({
-    dt: 0.02,
+    dt: 0.1,
     v_inicial: 0.0,
     h_inicial: 1.0,
     num_estimulos_s1: 8,
-    downsamplingFactor: 200,
+    downsamplingFactor: 30,
   });
 
   useEffect(() => {

@@ -30,11 +30,11 @@ const S1S2Page = ({ onBack }) => {
 
   // Parâmetros fixos
   const [fixedParams] = useState({
-    dt: 0.01,               // Passo de tempo
-    v_inicial: 0.0,         // Condição inicial da voltagem
-    h_inicial: 1.0,         // Condição inicial da variável de gate h
-    num_estimulos_s1: 8,    // Número de estímulos S1
-    downsamplingFactor: 50, // Fator para reduzir o número de pontos no gráfico otimização
+    dt: 0.01,                // Passo de tempo
+    v_inicial: 0.0,          // Condição inicial da voltagem
+    h_inicial: 1.0,          // Condição inicial da variável de gate h
+    num_estimulos_s1: 8,     // Número de estímulos S1
+    downsamplingFactor: 200, // Fator para reduzir o número de pontos no gráfico otimização
   });
 
   useEffect(() => {

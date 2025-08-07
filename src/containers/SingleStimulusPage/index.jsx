@@ -33,7 +33,7 @@ const SingleStimulusPage = ({ onBack }) => {
     tempo_total: 500.0,
     v_inicial: 0.0,
     h_inicial: 1.0,
-    downsamplingFactor: 50, // Renderiza 1 ponto a cada 50 calculados para otimização
+    downsamplingFactor: 100, // Renderiza 1 ponto a cada 50 calculados para otimização
   });
 
   // Define o que acontece quando o worker envia os resultados
