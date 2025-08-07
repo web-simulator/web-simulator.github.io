@@ -6,16 +6,17 @@ import SimulationWorker from '../../simulation_s1_s2.worker.js?worker';
 import './styles.css';
 
 const S1S2Page = ({ onBack }) => {
-  const [data, setData] = useState([]);
-  const [worker, setWorker] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState([]); // Armazena os dados retornados pelo worker
+  const [worker, setWorker] = useState(null); 
+  const [loading, setLoading] = useState(false); // Simulação em andamento?
 
-  // Parâmetros para o protocolo S1-S2
+  // Parâmetros que o usuário pode ajustar
   const [s1s2Params, setS1s2Params] = useState({
-    BCL_S1: 250,
-    intervalo_S2: 180,
+    BCL_S1: 250, // BCL do S1
+    intervalo_S2: 180, // Intervalo do S2
   });
 
+  // Parâmetros do modelo que o usuário pode modificar
   const [modelParams, setModelParams] = useState({
     despolarização: 0.3,
     repolarização: 6.0,
@@ -27,12 +28,13 @@ const S1S2Page = ({ onBack }) => {
     amplitude: 1.0,
   });
 
+  // Parâmetros fixos
   const [fixedParams] = useState({
-    dt: 0.01,
-    v_inicial: 0.0,
-    h_inicial: 1.0,
-    num_estimulos_s1: 8,
-    downsamplingFactor: 50,
+    dt: 0.01,               // Passo de tempo
+    v_inicial: 0.0,         // Condição inicial da voltagem
+    h_inicial: 1.0,         // Condição inicial da variável de gate h
+    num_estimulos_s1: 8,    // Número de estímulos S1
+    downsamplingFactor: 50, // Fator para reduzir o número de pontos no gráfico otimização
   });
 
   useEffect(() => {
@@ -40,15 +42,16 @@ const S1S2Page = ({ onBack }) => {
     setWorker(simulationWorker);
 
     simulationWorker.onmessage = (e) => {
-      setData(e.data);
-      setLoading(false);
+      setData(e.data); // Resultados da simulação.
+      setLoading(false); // Desativa "carregando".
     };
 
     return () => {
-      simulationWorker.terminate();
+      simulationWorker.terminate(); // Encerra o worker para liberar recursos.
     };
-  }, []);
+  }, []); // Garante que o efeito rode apenas uma vez
 
+  // Função para lidar com mudanças nos inputs
   const handleChange = useCallback((e, name, type) => {
     const value = parseFloat(e.target.value);
     if (type === 's1s2') {
@@ -58,19 +61,24 @@ const S1S2Page = ({ onBack }) => {
     }
   }, []);
 
+  // Função para iniciar a simulação
   const handleSimularClick = useCallback(() => {
     if (worker) {
-      setLoading(true);
+      setLoading(true); // Ativa o indicador de carregamento
+      // Junta todos os objetos de parâmetros em um só
       const allParams = { ...s1s2Params, ...modelParams, ...fixedParams };
+      // Envia os parâmetros para o worker iniciar os cálculos
       worker.postMessage(allParams);
     }
   }, [worker, s1s2Params, modelParams, fixedParams]);
 
+  // Organização da página
   return (
     <div className="page-container">
       <Button onClick={onBack}>Voltar para Home</Button>
       <h1>Modelo Mitchell-Schaeffer - Protocolo S1-S2</h1>
 
+      {/* Seção de inputs para os parâmetros do protocolo S1-S2 */}
       <h2>Parâmetros do Protocolo S1-S2</h2>
       <div className="params-container">
         {Object.keys(s1s2Params).map((key) => (
@@ -83,6 +91,7 @@ const S1S2Page = ({ onBack }) => {
         ))}
       </div>
 
+      {/* Seção de inputs para os parâmetros do modelo celular */}
       <h2>Parâmetros do Modelo</h2>
       <div className="params-container">
         {Object.keys(modelParams).map((key) => (
@@ -95,10 +104,12 @@ const S1S2Page = ({ onBack }) => {
         ))}
       </div>
 
+      {/* Botão de simulação, desabilitado durante o carregamento */}
       <Button onClick={handleSimularClick} disabled={loading}>
         {loading ? 'Simulando...' : 'Simular S1-S2'}
       </Button>
 
+      {/* Componente de gráfico para exibir os dados da simulação */}
       <Chart data={data} />
     </div>
   );

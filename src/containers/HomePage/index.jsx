@@ -31,6 +31,10 @@ const HomePage = ({ onNavigate }) => {
         <Button onClick={() => onNavigate('restitution_curve')}>
           Curva de Restituição
         </Button>
+        {/* Curva de Restituição (MMS) */}
+        <Button onClick={() => onNavigate('mms_restitution_curve')}>
+          Curva de Restituição (MMS)
+        </Button>
       </div>
     </div>
   );

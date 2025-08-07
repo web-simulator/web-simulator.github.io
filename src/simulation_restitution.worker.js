@@ -13,7 +13,7 @@ function calculateAPD90(v, dt) {
     return 0;
   }
 
-  // Potencial de repolarização alvo 10% do pico ou 90% da queda
+  // Potencial de repolarização
   const v_repol_90 = v_max - amplitude * 0.9;
 
   let despolarizacaoIdx = -1;
@@ -31,7 +31,7 @@ function calculateAPD90(v, dt) {
     return 0; // Pico não encontrado
   }
 
-  // A partir do pico, encontra o índice onde a repolarização atinge 90%
+  // Encontra o índice onde a repolarização atinge 90%
   for (let i = despolarizacaoIdx; i < v.length; i++) {
     if (v[i] <= v_repol_90) {
       repolarizacaoIdx = i;
@@ -47,7 +47,7 @@ function calculateAPD90(v, dt) {
 }
 
 
-// Função para executar um ciclo de simulação
+// Executa um ciclo de simulação
 function runSingleCycle(params) {
   const {
     despolarização, repolarização, recuperação, inativação, gate, dt,
@@ -63,50 +63,75 @@ function runSingleCycle(params) {
   const h = new Array(passos).fill(h_inicial);
   const tempo = new Array(passos);
 
-  // Euler explícito
+  // Loop principal
   for (let i = 1; i < passos; i++) {
-    tempo[i] = i * dt;
-    const t = tempo[i];
+  tempo[i] = i * dt;
+  const t = tempo[i];
 
-    let estimulo = 0;
-    // Pulsos S1
-    for (let j = 0; j < num_estimulos_s1; j++) {
-      const inicio_pulso = inicio + j * BCL_S1;
-      if (t >= inicio_pulso && t < inicio_pulso + duração) {
-        estimulo = amplitude;
-        break;
-      }
-    }
-    // Pulso S2
-    const inicio_s2 = inicio + (num_estimulos_s1 - 1) * BCL_S1 + intervalo_S2;
-    if (t >= inicio_s2 && t < inicio_s2 + duração) {
+  let estimulo = 0;
+  // Pulsos S1
+  for (let j = 0; j < num_estimulos_s1; j++) {
+    const inicio_pulso = inicio + j * BCL_S1;
+    if (t >= inicio_pulso && t < inicio_pulso + duração) {
       estimulo = amplitude;
+      break;
     }
-
-    // Despolarização e repolarização
-    const J_entrada = (h[i - 1] * v[i - 1] ** 2 * (1 - v[i - 1])) / despolarização;
-    const J_saida = -v[i - 1] / repolarização;
-
-    // Variação do potencial
-    const dv = J_entrada + J_saida + estimulo;
-
-    let dh;
-    if (v[i - 1] < gate) {
-      dh = (1 - h[i - 1]) / recuperação; // Recuperação lenta
-    } else {
-      dh = -h[i - 1] / inativação; // Inativação rápida
-    }
-
-    // Atualiza v e h e garente que fiquem entre 0 e 1
-    v[i] = Math.max(0.0, Math.min(1.0, v[i - 1] + dt * dv));
-    h[i] = Math.max(0.0, Math.min(1.0, h[i - 1] + dt * dh));
+  }
+  // Pulso S2
+  const inicio_s2 = inicio + (num_estimulos_s1 - 1) * BCL_S1 + intervalo_S2;
+  if (t >= inicio_s2 && t < inicio_s2 + duração) {
+    estimulo = amplitude;
   }
 
-  // Potencial de ação do último S1 para calcular seu APD
+  const v_prev = v[i - 1];
+  const h_prev = h[i - 1];
+
+  // Funções de derivada
+  function f_v(vv, hh, t) {
+    const J_entrada = (hh * vv ** 2 * (1 - vv)) / despolarização;
+    const J_saida = -vv / repolarização;
+    return J_entrada + J_saida + estimulo;
+  }
+
+  function f_h(vv, hh) {
+    if (vv < gate) {
+      return (1 - hh) / recuperação;
+    } else {
+      return -hh / inativação;
+    }
+  }
+
+  // RK4
+  //k1
+  const k1_v = dt * f_v(v_prev, h_prev, t);
+  const k1_h = dt * f_h(v_prev, h_prev);
+
+  //k2
+  const k2_v = dt * f_v(v_prev + 0.5 * k1_v, h_prev + 0.5 * k1_h, t + 0.5 * dt);
+  const k2_h = dt * f_h(v_prev + 0.5 * k1_v, h_prev + 0.5 * k1_h);
+
+  //k3
+  const k3_v = dt * f_v(v_prev + 0.5 * k2_v, h_prev + 0.5 * k2_h, t + 0.5 * dt);
+  const k3_h = dt * f_h(v_prev + 0.5 * k2_v, h_prev + 0.5 * k2_h);
+
+  //k4
+  const k4_v = dt * f_v(v_prev + k3_v, h_prev + k3_h, t + dt);
+  const k4_h = dt * f_h(v_prev + k3_v, h_prev + k3_h);
+
+  // Atualiza valores
+  const v_next = v_prev + (1.0 / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v);
+  const h_next = h_prev + (1.0 / 6.0) * (k1_h + 2 * k2_h + 2 * k3_h + k4_h);
+
+  // Garante que v e h estejam no intervalo 0, 1
+  v[i] = Math.max(0.0, Math.min(1.0, v_next));
+  h[i] = Math.max(0.0, Math.min(1.0, h_next));
+}
+
+  // Potencial de ação do último S1 para calcular APD
   const inicio_ultimo_s1_idx = Math.round((inicio + (num_estimulos_s1 - 1) * BCL_S1) / dt);
   const v_s1 = v.slice(inicio_ultimo_s1_idx, inicio_ultimo_s1_idx + Math.round(BCL_S1 / dt));
   
-  // Potencial de ação do S2 para calcular seu APD
+  // Potencial de ação do S2 para calcular APD
   const inicio_s2_idx = Math.round((inicio + (num_estimulos_s1 - 1) * BCL_S1 + intervalo_S2) / dt);
   const v_s2 = v.slice(inicio_s2_idx, inicio_s2_idx + Math.round(BCL_S1 / dt));
   
@@ -137,7 +162,6 @@ self.onmessage = (e) => {
     const apd_s2 = calculateAPD90(v_s2, params.dt);
 
     if (apd_s1 > 0 && apd_s2 > 0) {
-      // DI: S1-S2 coupling interval - APD do último S1
       const di = intervalo_S2 - apd_s1;
       if (di > 0) {
           restitutionData.push({ di, apd: apd_s2 });

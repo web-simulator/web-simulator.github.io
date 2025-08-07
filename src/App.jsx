@@ -4,6 +4,7 @@ import SingleStimulusPage from './containers/SingleStimulusPage';
 import MultipleStimuliPage from './containers/MultipleStimuliPage';
 import S1S2Page from './containers/S1S2Page';
 import RestitutionCurvePage from './containers/RestitutionCurvePage';
+import MMSCurvePage from './containers/MMSCurvePage';
 import './index.css';
 
 function App() {
@@ -28,6 +29,9 @@ function App() {
       case 'restitution_curve':
         // Curva de Restituição
         return <RestitutionCurvePage onBack={() => navigateTo('home')} />;
+      case 'mms_restitution_curve':
+        // Curva de Restituição (MMS)
+        return <MMSCurvePage onBack={() => navigateTo('home')} />;
       default:
         return <HomePage onNavigate={navigateTo} />;
     }

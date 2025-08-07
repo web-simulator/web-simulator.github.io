@@ -34,7 +34,7 @@ const MultipleStimuliPage = ({ onBack }) => {
     v_inicial: 0.0,
     h_inicial: 1.0,
     num_estimulos: 8,
-    downsamplingFactor: 50,
+    downsamplingFactor: 200,
   });
 
   // Efeito para criar o worker assim que a página é carregada
