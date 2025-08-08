@@ -16,7 +16,7 @@ const MMSCurvePage = ({ onBack }) => {
 
   // Parâmetros da simulação que o usuário pode alterar
   const [simParams, setSimParams] = useState({
-    num_ciclos: 1000,
+    num_ciclos: 200,
     BCL_S1: 250,
     intervalo_S2_inicial: 200,
     decremento_S2: 1,
@@ -40,7 +40,7 @@ const MMSCurvePage = ({ onBack }) => {
     v_inicial: 0.0,
     h_inicial: 1.0,
     num_estimulos_s1: 8,
-    downsamplingFactor: 5000,
+    downsamplingFactor: 3000,
   });
 
   useEffect(() => {

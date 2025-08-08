@@ -40,7 +40,7 @@ const RestitutionCurvePage = ({ onBack }) => {
     v_inicial: 0.0,
     h_inicial: 1.0,
     num_estimulos_s1: 8,
-    downsamplingFactor: 30,
+    downsamplingFactor: 20,
   });
 
   useEffect(() => {
