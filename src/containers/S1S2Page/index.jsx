@@ -34,7 +34,6 @@ const S1S2Page = ({ onBack }) => {
     v_inicial: 0.0,          // Condição inicial da voltagem
     h_inicial: 1.0,          // Condição inicial da variável de gate h
     num_estimulos_s1: 8,     // Número de estímulos S1
-    downsamplingFactor: 200, // Fator para reduzir o número de pontos no gráfico otimização
   });
 
   useEffect(() => {
@@ -64,10 +63,15 @@ const S1S2Page = ({ onBack }) => {
   // Função para iniciar a simulação
   const handleSimularClick = useCallback(() => {
     if (worker) {
-      setLoading(true); // Ativa o indicador de carregamento
-      // Junta todos os objetos de parâmetros em um só
-      const allParams = { ...s1s2Params, ...modelParams, ...fixedParams };
-      // Envia os parâmetros para o worker iniciar os cálculos
+      setLoading(true);
+
+      // Calcular o fator de dowsampling para otimizar o gráfico
+      const total_duration = modelParams.inicio + (fixedParams.num_estimulos_s1 - 1) * s1s2Params.BCL_S1 + s1s2Params.intervalo_S2 + 2 * s1s2Params.BCL_S1; // Duração da simulação
+      const total_steps = total_duration / fixedParams.dt; // Passos da simulação
+      const target_points = 2500; // Alvo de pontos para o gráfico
+      const dynamicDownsamplingFactor = Math.max(1, Math.ceil(total_steps / target_points)); // Fator
+
+      const allParams = { ...s1s2Params, ...modelParams, ...fixedParams, downsamplingFactor: dynamicDownsamplingFactor };
       worker.postMessage(allParams);
     }
   }, [worker, s1s2Params, modelParams, fixedParams]);

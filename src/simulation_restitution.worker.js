@@ -142,17 +142,21 @@ function runSingleCycle(params) {
 self.onmessage = (e) => {
   const params = e.data;
   const {
-    num_ciclos, intervalo_S2_inicial, decremento_S2, downsamplingFactor
+    BCL_S2_inicial, BCL_S2_final, delta_CL, downsamplingFactor
   } = params;
-  
+
+  // Calcula o número de ciclos
+  const num_ciclos = Math.floor((BCL_S2_inicial - BCL_S2_final) / delta_CL) + 1;
+
   const restitutionData = [];
   const allTimeSeriesData = [];
   let tempo_offset = 0;
 
   // Construir a curva de restituição
   for (let ciclo = 0; ciclo < num_ciclos; ciclo++) {
-    const intervalo_S2 = intervalo_S2_inicial - (ciclo * decremento_S2);
-    if (intervalo_S2 <= 20) continue; // Evita intervalos muito curtos
+    // Calcula o intervalo S2 para o ciclo atual
+    const intervalo_S2 = BCL_S2_inicial - (ciclo * delta_CL);
+    if (intervalo_S2 < BCL_S2_final) continue; // Garante que não ultrapasse o limite final
 
     const cycleParams = { ...params, intervalo_S2 };
     const { v_s1, v_s2, full_v, full_h, full_tempo } = runSingleCycle(cycleParams);
@@ -162,13 +166,11 @@ self.onmessage = (e) => {
     const apd_s2 = calculateAPD90(v_s2, params.dt);
 
     if (apd_s1 > 0 && apd_s2 > 0) {
-      const di = intervalo_S2 - apd_s1;
-      if (di > 0) {
-          restitutionData.push({ di, apd: apd_s2 });
-      }
+      const bcl = intervalo_S2;
+      restitutionData.push({ bcl, apd: apd_s2 });
     }
-    
-    // Pontos Gráfico principal
+
+    // Otimização do gráfico
     for (let i = 0; i < full_v.length; i += downsamplingFactor) {
         if(full_tempo[i] !== undefined) {
             allTimeSeriesData.push({ 
@@ -183,8 +185,8 @@ self.onmessage = (e) => {
     }
   }
 
-  // Ordena os dados da curva pelo DI
-  restitutionData.sort((a, b) => a.di - b.di);
+  // Ordena os dados da curva pelo BCL
+  restitutionData.sort((a, b) => a.bcl - b.bcl);
 
   self.postMessage({ timeSeriesData: allTimeSeriesData, restitutionData });
 };

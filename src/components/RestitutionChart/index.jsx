@@ -15,10 +15,10 @@ const RestitutionChart = ({ data }) => {
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis 
           type="number" 
-          dataKey="di" 
-          name="DI" 
+          dataKey="bcl" 
+          name="BCL" 
           unit="ms"
-          label={{ value: 'Intervalo Diastólico', position: 'insideBottom', offset: -10 }}
+          label={{ value: 'BCL(ms)', position: 'insideBottom', offset: -10 }}
           domain={['dataMin', 'dataMax']}
         />
         <YAxis 

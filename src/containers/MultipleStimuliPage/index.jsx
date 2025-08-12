@@ -26,6 +26,7 @@ const MultipleStimuliPage = ({ onBack }) => {
     duração: 1.0,
     amplitude: 1.0,
     BCL: 250,
+    num_estimulos: 8,
   });
 
   // Parâmetros fixos da simulação
@@ -33,8 +34,6 @@ const MultipleStimuliPage = ({ onBack }) => {
     dt: 0.01,
     v_inicial: 0.0,
     h_inicial: 1.0,
-    num_estimulos: 8,
-    downsamplingFactor: 200,
   });
 
   // Efeito para criar o worker assim que a página é carregada
@@ -66,7 +65,14 @@ const MultipleStimuliPage = ({ onBack }) => {
   const handleSimularClick = useCallback(() => {
     if (worker) {
       setLoading(true); // Inicia o carregamento
-      const allParams = { ...editableParams, ...fixedParams }; // Junta todos os parâmetros
+
+      // Calcular o fator de dowsampling para otimizar o gráfico
+      const total_duration = editableParams.inicio + fixedParams.num_estimulos * editableParams.BCL + 50; // Duração da simulação
+      const total_steps = total_duration / fixedParams.dt; // Passos da simulação
+      const target_points = 2000; // Alvo de pontos para o gráfico
+      const dynamicDownsamplingFactor = Math.max(1, Math.ceil(total_steps / target_points)); // Fator
+
+      const allParams = { ...editableParams, ...fixedParams, downsamplingFactor: dynamicDownsamplingFactor };
       worker.postMessage(allParams); // Envia os parâmetros para iniciar a simulação
     }
   }, [worker, editableParams, fixedParams]);

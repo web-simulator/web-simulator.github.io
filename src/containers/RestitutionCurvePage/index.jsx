@@ -16,10 +16,10 @@ const RestitutionCurvePage = ({ onBack }) => {
 
   // Parâmetros da simulação que o usuário pode alterar
   const [simParams, setSimParams] = useState({
-    num_ciclos: 10,
     BCL_S1: 250,
-    intervalo_S2_inicial: 200,
-    decremento_S2: 10,
+    BCL_S2_inicial: 200,
+    BCL_S2_final: 100, 
+    delta_CL: 10,     
   });
 
   // Parâmetros do modelo que o usuário pode alterar
@@ -40,7 +40,6 @@ const RestitutionCurvePage = ({ onBack }) => {
     v_inicial: 0.0,
     h_inicial: 1.0,
     num_estimulos_s1: 8,
-    downsamplingFactor: 20,
   });
 
   useEffect(() => {
@@ -77,13 +76,23 @@ const RestitutionCurvePage = ({ onBack }) => {
   // Função chamada ao clicar no botão Simular
   const handleSimularClick = useCallback(() => {
     if (worker) {
-      setLoading(true); // Inicia o carregamento
-      setData([]); // Limpa os dados antigos
-      setRestitutionData([]); // Limpa os dados antigos
-      const allParams = { ...simParams, ...modelParams, ...fixedParams }; // Junta todos os parâmetros
-      worker.postMessage(allParams); // Envia os parâmetros para o worker iniciar a simulação
+      setLoading(true);
+      setData([]);
+      setRestitutionData([]);
+
+      // Calcular o fator de dowsampling para otimizar o gráfico
+      const num_ciclos = Math.floor((simParams.BCL_S2_inicial - simParams.BCL_S2_final) / simParams.delta_CL) + 1; // Número de ciclos S2
+      const avg_BCL_S2 = (simParams.BCL_S2_inicial + simParams.BCL_S2_final) / 2; // BCL médio dos estímulos S2
+      const duration_per_cycle = modelParams.inicio + (fixedParams.num_estimulos_s1 - 1) * simParams.BCL_S1 + avg_BCL_S2 + 1.5 * simParams.BCL_S1; // Duração aproximada de cada ciclo completo
+      const total_duration = num_ciclos * duration_per_cycle; // Duração total da simulação
+      const total_steps = total_duration / fixedParams.dt; // Número total de passos na simulação
+      const target_points = 5000; // Número alvo de pontos para o gráfico
+      const dynamicDownsamplingFactor = Math.max(1, Math.ceil(total_steps / target_points)); // Definição do fator
+
+      const allParams = { ...simParams, ...modelParams, ...fixedParams, downsamplingFactor: dynamicDownsamplingFactor };
+      worker.postMessage(allParams);
     }
-  }, [worker, simParams, modelParams, fixedParams]);
+}, [worker, simParams, modelParams, fixedParams]);
 
   return (
     <div className="page-container">
@@ -123,7 +132,7 @@ const RestitutionCurvePage = ({ onBack }) => {
           {loading ? 'Simulando...' : 'Simular'}
         </Button>
         <Button onClick={() => setIsModalOpen(true)} disabled={restitutionData.length === 0}>
-          Características da Simulação
+          Curva de Restituição
         </Button>
       </div>
 

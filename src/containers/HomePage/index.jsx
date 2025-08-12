@@ -19,7 +19,7 @@ const HomePage = ({ onNavigate }) => {
           Modelo Mitchell-Schaeffer (1 Estímulo)
         </Button>
 
-        {/* Simulação com 8 estímulos e BCL fixo */}
+        {/* Simulação com n estímulos e BCL fixo */}
         <Button onClick={() => onNavigate('multiple_stimuli')}>
           Modelo Mitchell-Schaeffer (8 Estímulos - BCL Fixo)
         </Button>
@@ -31,9 +31,13 @@ const HomePage = ({ onNavigate }) => {
         <Button onClick={() => onNavigate('restitution_curve')}>
           Curva de Restituição
         </Button>
-        {/* Curva de Restituição (MMS) */}
+        {/* Curva de Restituição MMS */}
         <Button onClick={() => onNavigate('mms_restitution_curve')}>
           Curva de Restituição (MMS)
+        </Button>
+        {/* Curva de Restituição sem gráfico de estimulos */}
+        <Button onClick={() => onNavigate('mms_alternative_restitution_curve')}>
+          Curva de Restituição (MMS - Gráfico Direto)
         </Button>
       </div>
     </div>
