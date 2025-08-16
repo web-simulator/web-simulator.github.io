@@ -6,6 +6,7 @@ import S1S2Page from './containers/S1S2Page';
 import RestitutionCurvePage from './containers/RestitutionCurvePage';
 import MMSCurvePage from './containers/MMSCurvePage';
 import MMSAlternativeCurvePage from './containers/MMSAlternativeCurvePage';
+import DynamicProtocolPage from './containers/DynamicProtocolPage';
 import './index.css';
 
 function App() {
@@ -36,6 +37,9 @@ function App() {
       case 'mms_alternative_restitution_curve':
         // Curva de Restituição Alternativa (MMS)
         return <MMSAlternativeCurvePage onBack={() => navigateTo('home')} />;
+      case 'dynamic_protocol':
+        // Protocolo Dinâmico
+        return <DynamicProtocolPage onBack={() => navigateTo('home')} />;
       default:
         return <HomePage onNavigate={navigateTo} />;
     }

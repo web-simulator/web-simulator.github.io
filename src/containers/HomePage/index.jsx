@@ -1,5 +1,3 @@
-// src/containers/HomePage/index.jsx
-
 import Button from '../../components/Button';
 import './styles.css';
 
@@ -38,6 +36,10 @@ const HomePage = ({ onNavigate }) => {
         {/* Curva de Restituição sem gráfico de estimulos */}
         <Button onClick={() => onNavigate('mms_alternative_restitution_curve')}>
           Curva de Restituição (MMS - Gráfico Direto)
+        </Button>
+        {/* Protocolo Dinâmico */}
+        <Button onClick={() => onNavigate('dynamic_protocol')}>
+          Protocolo Dinâmico
         </Button>
       </div>
     </div>
