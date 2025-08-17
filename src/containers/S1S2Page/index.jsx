@@ -68,7 +68,7 @@ const S1S2Page = ({ onBack }) => {
       // Calcular o fator de dowsampling para otimizar o gráfico
       const total_duration = modelParams.inicio + (fixedParams.num_estimulos_s1 - 1) * s1s2Params.BCL_S1 + s1s2Params.intervalo_S2 + 2 * s1s2Params.BCL_S1; // Duração da simulação
       const total_steps = total_duration / fixedParams.dt; // Passos da simulação
-      const target_points = 2500; // Alvo de pontos para o gráfico
+      const target_points = 10000; // Alvo de pontos para o gráfico
       const dynamicDownsamplingFactor = Math.max(1, Math.ceil(total_steps / target_points)); // Fator
 
       const allParams = { ...s1s2Params, ...modelParams, ...fixedParams, downsamplingFactor: dynamicDownsamplingFactor };

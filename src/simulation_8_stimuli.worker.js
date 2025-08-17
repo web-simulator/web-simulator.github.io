@@ -1,83 +1,95 @@
-// Função para gerar estímulos
+
 function estimulo_periodico(tempo_atual, amplitude, duracao, inicio, BCL, num_estimulos) {
   for (let i = 0; i < num_estimulos; i++) {
-    const inicio_pulso = inicio + i * BCL; // Calcula o início do pulso i
+    const inicio_pulso = inicio + i * BCL; // Calcula o início de cada pulso
+    // Se o tempo atual estiver dentro da janela de um pulso, retorna a amplitude
     if (tempo_atual >= inicio_pulso && tempo_atual < inicio_pulso + duracao) {
-      return amplitude; // Aplica o estímulo durante sua duração
+      return amplitude;
     }
   }
-  return 0.0; // Fora do intervalo de esímulo
+  return 0.0; // Retorna 0 se não houver estímulo no tempo atual
 }
 
-// Parâmetros da simulação para o worker
+// Handler principal que executa a simulação
 self.onmessage = (e) => {
   const params = e.data;
   const {
-    despolarização,
-    repolarização,
-    recuperação,
-    inativação,
-    gate,
-    dt,
-    v_inicial,
-    h_inicial,
-    inicio,
-    duração,
-    amplitude,
-    BCL,
-    num_estimulos,
-    downsamplingFactor,
+    despolarização, repolarização, recuperação, inativação, gate, dt,
+    v_inicial, h_inicial, inicio, duração, amplitude, BCL,
+    num_estimulos, downsamplingFactor,
   } = params;
 
-  // Tempo total da simulação
+  // Calcula o tempo total e o número de passos da simulação
   const tempo_total = inicio + num_estimulos * BCL + 50;
-
-  // Número total de passos
   const passos = parseInt(tempo_total / dt, 10);
 
-  const tempo = new Array(passos); // tempo
-  const v = new Array(passos); // voltagem
-  const h = new Array(passos); //gate
+  // Inicializa os arrays de resultados
+  const tempo = new Array(passos);
+  const v = new Array(passos);
+  const h = new Array(passos);
 
-  // Condições iniciais
+  // Define as condições iniciais
   v[0] = v_inicial;
   h[0] = h_inicial;
   tempo[0] = 0;
 
-  // Euler explicito
+  // Loop principal da simulação
   for (let i = 1; i < passos; i++) {
-    tempo[i] = i * dt;  // Tempo atual
+    tempo[i] = i * dt;
     const t = tempo[i];
 
-    // Determina se há estímulo aplicado neste instante
+    // Verifica se há estímulo a ser aplicado neste passo de tempo
     const estimulo = estimulo_periodico(t, amplitude, duração, inicio, BCL, num_estimulos);
+    
+    // Pega os valores do passo anterior.
+    const v_prev = v[i - 1];
+    const h_prev = h[i - 1];
+    
+    const f_v = (vv, hh) => { // Derivada da voltagem
+      const J_entrada = (hh * vv ** 2 * (1 - vv)) / despolarização;
+      const J_saida = -vv / repolarização;
+      return J_entrada + J_saida + estimulo;
+    };
+    const f_h = (vv, hh) => { // Derivada da variável de gate
+      if (vv < gate) {
+        return (1 - hh) / recuperação;
+      } else {
+        return -hh / inativação;
+      }
+    };
+    // K1
+    const k1_v = dt * f_v(v_prev, h_prev);
+    const k1_h = dt * f_h(v_prev, h_prev);
 
-    // Despolarização e repolarização
-    const J_entrada = (h[i - 1] * v[i - 1] ** 2 * (1 - v[i - 1])) / despolarização;
-    const J_saida = -v[i - 1] / repolarização;
+    // K2
+    const k2_v = dt * f_v(v_prev + 0.5 * k1_v, h_prev + 0.5 * k1_h);
+    const k2_h = dt * f_h(v_prev + 0.5 * k1_v, h_prev + 0.5 * k1_h);
 
-    // Variação do potencial
-    const dv = J_entrada + J_saida + estimulo;
+    // K3
+    const k3_v = dt * f_v(v_prev + 0.5 * k2_v, h_prev + 0.5 * k2_h);
+    const k3_h = dt * f_h(v_prev + 0.5 * k2_v, h_prev + 0.5 * k2_h);
 
-    // Variação da variável gate
-    let dh;
-    if (v[i - 1] < gate) {
-      dh = (1 - h[i - 1]) / recuperação;  // Recuperação lenta
-    } else {
-      dh = -h[i - 1] / inativação;        // Inativação rápida
-    }
+    // K4
+    const k4_v = dt * f_v(v_prev + k3_v, h_prev + k3_h);
+    const k4_h = dt * f_h(v_prev + k3_v, h_prev + k3_h);
+    
+    // Cálculo do próximo passo
+    const v_next = v_prev + (1.0 / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v);
+    const h_next = h_prev + (1.0 / 6.0) * (k1_h + 2 * k2_h + 2 * k3_h + k4_h);
 
-    // Atualiza as variáveis e mantém no intervalo 0,1
-    v[i] = Math.max(0.0, Math.min(1.0, v[i - 1] + dt * dv));
-    h[i] = Math.max(0.0, Math.min(1.0, h[i - 1] + dt * dh));
+    // Atualiza os arrays de resultado, garantindo que os valores fiquem entre 0 e 1
+    v[i] = Math.max(0.0, Math.min(1.0, v_next));
+    h[i] = Math.max(0.0, Math.min(1.0, h_next));
   }
 
-  // Reduz a quantidade de pontos para otimização
+  // Reduz a quantidade de pontos para otimizar a renderização do gráfico
   const sampledData = [];
   for (let i = 0; i < passos; i += downsamplingFactor) {
-    sampledData.push({ tempo: tempo[i].toFixed(2), v: v[i], h: h[i] });
+    if (tempo[i] !== undefined) {
+      sampledData.push({ tempo: tempo[i].toFixed(2), v: v[i], h: h[i] });
+    }
   }
 
-  // Envia os dados para a página principal
+  // Envia os dados processados de volta para a página principal
   self.postMessage(sampledData);
 };

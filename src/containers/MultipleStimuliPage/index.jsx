@@ -66,8 +66,7 @@ const MultipleStimuliPage = ({ onBack }) => {
     if (worker) {
       setLoading(true); // Inicia o carregamento
 
-      // Calcular o fator de dowsampling para otimizar o gráfico
-      const total_duration = editableParams.inicio + fixedParams.num_estimulos * editableParams.BCL + 50; // Duração da simulação
+      const total_duration = editableParams.inicio + editableParams.num_estimulos * editableParams.BCL + 50; // Duração da simulação
       const total_steps = total_duration / fixedParams.dt; // Passos da simulação
       const target_points = 2000; // Alvo de pontos para o gráfico
       const dynamicDownsamplingFactor = Math.max(1, Math.ceil(total_steps / target_points)); // Fator

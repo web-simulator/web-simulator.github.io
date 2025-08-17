@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect, useCallback } from 'react';
 import Chart from '../../components/Chart';
 import Input from '../../components/Input';
@@ -41,7 +39,7 @@ const DynamicProtocolPage = ({ onBack }) => {
     dt: 0.1,
     v_inicial: 0.0,
     h_inicial: 1.0,
-    downsamplingFactor: 100,
+    downsamplingFactor: 50,
   });
 
   useEffect(() => {
@@ -57,7 +55,7 @@ const DynamicProtocolPage = ({ onBack }) => {
       setLoading(false); // Finaliza o estado de "carregando"
     };
 
-    // Encerra o worker quando o componente é desmontado.
+    // Encerra o worker
     return () => {
       simulationWorker.terminate();
     };
