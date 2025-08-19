@@ -16,7 +16,7 @@ const SingleStimulusPage = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
 
   // Parâmetros que podem ser editados pelo usuário
-  const [editableParams, setEditableParams] = useState({
+  /*const [editableParams, setEditableParams] = useState({
     despolarização: 0.3,
     repolarização: 6.0,
     recuperação: 120.0,
@@ -34,6 +34,23 @@ const SingleStimulusPage = ({ onBack }) => {
     v_inicial: 0.0,
     h_inicial: 1.0,
     downsamplingFactor: 100, // Renderiza 1 ponto a cada 50 calculados para otimização
+  });*/
+
+  // Todos os parametros podem ser editados
+  const [editableParams, setEditableParams] = useState({
+  despolarização: 0.3,
+  repolarização: 6.0,
+  recuperação: 120.0,
+  inativação: 80.0,
+  gate: 0.13,
+  inicio: 5.0,
+  duração: 1.0,
+  amplitude: 1.0,
+  dt: 0.01,
+  tempo_total: 500.0,
+  v_inicial: 0.0,
+  h_inicial: 1.0,
+  downsamplingFactor: 100,
   });
 
   // Define o que acontece quando o worker envia os resultados
@@ -61,14 +78,22 @@ const SingleStimulusPage = ({ onBack }) => {
     }));
   }, []);
 
-  // Inicia a simulação ao clicar no botão
+  /*// Inicia a simulação ao clicar no botão
   const handleSimularClick = useCallback(() => {
     if (worker) {
       setLoading(true); // Inicia o carregamento
       const allParams = { ...editableParams, ...fixedParams }; // Junta todos os parâmetros
       worker.postMessage(allParams); // Envia os parâmetros para iniciar a simulação
     }
-  }, [worker, editableParams, fixedParams]);
+  }, [worker, editableParams, fixedParams]);*/
+
+  // Para funcionar com todos os parametros editaveis
+  const handleSimularClick = useCallback(() => {
+  if (worker) {
+    setLoading(true);
+    worker.postMessage(editableParams); // Envia diretamente o estado editável
+  }
+}, [worker, editableParams]);
 
   return (
     <div className="page-container">

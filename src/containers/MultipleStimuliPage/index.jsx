@@ -14,7 +14,7 @@ const MultipleStimuliPage = ({ onBack }) => {
   
   // Indica se a simulação está em execução
   const [loading, setLoading] = useState(false);
-
+/*
   // Parâmetros que podem ser alterados pelo usuário
   const [editableParams, setEditableParams] = useState({
     despolarização: 0.3,
@@ -34,7 +34,27 @@ const MultipleStimuliPage = ({ onBack }) => {
     dt: 0.01,
     v_inicial: 0.0,
     h_inicial: 1.0,
+    downsamplingFactor: 50
   });
+*/
+
+const [editableParams, setEditableParams] = useState({
+  despolarização: 0.3,
+  repolarização: 6.0,
+  recuperação: 120.0,
+  inativação: 80.0,
+  gate: 0.13,
+  inicio: 5.0,
+  duração: 1.0,
+  amplitude: 1.0,
+  BCL: 250,
+  num_estimulos: 8,
+  dt: 0.01,
+  v_inicial: 0.0,
+  h_inicial: 1.0,
+  downsamplingFactor: 100, // Adicione este se quiser controle
+});
+
 
   // Efeito para criar o worker assim que a página é carregada
   useEffect(() => {
@@ -60,22 +80,22 @@ const MultipleStimuliPage = ({ onBack }) => {
       [name]: parseFloat(e.target.value) 
     }));
   }, []);
-
+/*
   // Inicia a simulação ao clicar no botão
   const handleSimularClick = useCallback(() => {
     if (worker) {
       setLoading(true); // Inicia o carregamento
-
-      const total_duration = editableParams.inicio + editableParams.num_estimulos * editableParams.BCL + 50; // Duração da simulação
-      const total_steps = total_duration / fixedParams.dt; // Passos da simulação
-      const target_points = 2000; // Alvo de pontos para o gráfico
-      const dynamicDownsamplingFactor = Math.max(1, Math.ceil(total_steps / target_points)); // Fator
-
-      const allParams = { ...editableParams, ...fixedParams, downsamplingFactor: dynamicDownsamplingFactor };
+      const allParams = { ...editableParams, ...fixedParams }; // Junta todos os parâmetros
       worker.postMessage(allParams); // Envia os parâmetros para iniciar a simulação
     }
   }, [worker, editableParams, fixedParams]);
-
+*/
+const handleSimularClick = useCallback(() => {
+  if (worker) {
+    setLoading(true);
+    worker.postMessage(editableParams);
+  }
+}, [worker, editableParams]);
   return (
     <div className="page-container">
       {/* Botão para voltar a página inicial */}

@@ -6,17 +6,18 @@ import SimulationWorker from '../../simulation_s1_s2.worker.js?worker';
 import './styles.css';
 
 const S1S2Page = ({ onBack }) => {
-  const [data, setData] = useState([]); // Armazena os dados retornados pelo worker
-  const [worker, setWorker] = useState(null); 
-  const [loading, setLoading] = useState(false); // Simulação em andamento?
+  const [data, setData] = useState([]);
+  const [worker, setWorker] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // Parâmetros que o usuário pode ajustar
+  /*
+  // Parâmetros que o usuário pode ajustar (VERSÃO ANTIGA)
   const [s1s2Params, setS1s2Params] = useState({
     BCL_S1: 250, // BCL do S1
     intervalo_S2: 180, // Intervalo do S2
   });
 
-  // Parâmetros do modelo que o usuário pode modificar
+  // Parâmetros do modelo que o usuário pode modificar (VERSÃO ANTIGA)
   const [modelParams, setModelParams] = useState({
     despolarização: 0.3,
     repolarização: 6.0,
@@ -28,29 +29,52 @@ const S1S2Page = ({ onBack }) => {
     amplitude: 1.0,
   });
 
-  // Parâmetros fixos
+  // Parâmetros fixos (VERSÃO ANTIGA)
   const [fixedParams] = useState({
     dt: 0.01,                // Passo de tempo
     v_inicial: 0.0,          // Condição inicial da voltagem
     h_inicial: 1.0,          // Condição inicial da variável de gate h
     num_estimulos_s1: 8,     // Número de estímulos S1
+    downsamplingFactor: 100
   });
+  */
+
+  // Estado unificado com todos os parâmetros editáveis
+  const [editableParams, setEditableParams] = useState({
+    BCL_S1: 250,
+    intervalo_S2: 180,
+    despolarização: 0.3,
+    repolarização: 6.0,
+    recuperação: 120.0,
+    inativação: 80.0,
+    gate: 0.13,
+    inicio: 5.0,
+    duração: 1.0,
+    amplitude: 1.0,
+    dt: 0.01,
+    v_inicial: 0.0,
+    h_inicial: 1.0,
+    num_estimulos_s1: 8,
+    downsamplingFactor: 100,
+  });
+
 
   useEffect(() => {
     const simulationWorker = new SimulationWorker();
     setWorker(simulationWorker);
 
     simulationWorker.onmessage = (e) => {
-      setData(e.data); // Resultados da simulação.
-      setLoading(false); // Desativa "carregando".
+      setData(e.data);
+      setLoading(false);
     };
 
     return () => {
-      simulationWorker.terminate(); // Encerra o worker para liberar recursos.
+      simulationWorker.terminate();
     };
-  }, []); // Garante que o efeito rode apenas uma vez
+  }, []);
 
-  // Função para lidar com mudanças nos inputs
+  /*
+  // Função para lidar com mudanças nos inputs (VERSÃO ANTIGA)
   const handleChange = useCallback((e, name, type) => {
     const value = parseFloat(e.target.value);
     if (type === 's1s2') {
@@ -59,61 +83,57 @@ const S1S2Page = ({ onBack }) => {
       setModelParams((prev) => ({ ...prev, [name]: value }));
     }
   }, []);
+  */
 
-  // Função para iniciar a simulação
+  // Função única para atualizar qualquer parâmetro (VERSÃO ATUAL)
+  const handleChange = useCallback((e, name) => {
+    setEditableParams((prevParams) => ({
+      ...prevParams,
+      [name]: parseFloat(e.target.value)
+    }));
+  }, []);
+
+  /*
+  // Função para iniciar a simulação (VERSÃO ANTIGA)
   const handleSimularClick = useCallback(() => {
     if (worker) {
       setLoading(true);
-
-      // Calcular o fator de dowsampling para otimizar o gráfico
-      const total_duration = modelParams.inicio + (fixedParams.num_estimulos_s1 - 1) * s1s2Params.BCL_S1 + s1s2Params.intervalo_S2 + 2 * s1s2Params.BCL_S1; // Duração da simulação
-      const total_steps = total_duration / fixedParams.dt; // Passos da simulação
-      const target_points = 10000; // Alvo de pontos para o gráfico
-      const dynamicDownsamplingFactor = Math.max(1, Math.ceil(total_steps / target_points)); // Fator
-
-      const allParams = { ...s1s2Params, ...modelParams, ...fixedParams, downsamplingFactor: dynamicDownsamplingFactor };
+      const allParams = { ...s1s2Params, ...modelParams, ...fixedParams };
       worker.postMessage(allParams);
     }
   }, [worker, s1s2Params, modelParams, fixedParams]);
+  */
 
-  // Organização da página
+  // Envia o estado unificado para o worker
+  const handleSimularClick = useCallback(() => {
+    if (worker) {
+      setLoading(true);
+      worker.postMessage(editableParams);
+    }
+  }, [worker, editableParams]);
+
   return (
     <div className="page-container">
       <Button onClick={onBack}>Voltar para Home</Button>
       <h1>Modelo Mitchell-Schaeffer - Protocolo S1-S2</h1>
-
-      {/* Seção de inputs para os parâmetros do protocolo S1-S2 */}
-      <h2>Parâmetros do Protocolo S1-S2</h2>
+      
+      {/* Inputs */}
+      <h2>Parâmetros da Simulação</h2>
       <div className="params-container">
-        {Object.keys(s1s2Params).map((key) => (
+        {Object.keys(editableParams).map((key) => (
           <Input
             key={key}
             label={key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')}
-            value={s1s2Params[key]}
-            onChange={(e) => handleChange(e, key, 's1s2')}
+            value={editableParams[key]}
+            onChange={(e) => handleChange(e, key)}
           />
         ))}
       </div>
 
-      {/* Seção de inputs para os parâmetros do modelo celular */}
-      <h2>Parâmetros do Modelo</h2>
-      <div className="params-container">
-        {Object.keys(modelParams).map((key) => (
-          <Input
-            key={key}
-            label={key.charAt(0).toUpperCase() + key.slice(1)}
-            value={modelParams[key]}
-            onChange={(e) => handleChange(e, key, 'model')}
-          />
-        ))}
-      </div>
-
-      {/* Botão de simulação, desabilitado durante o carregamento */}
       <Button onClick={handleSimularClick} disabled={loading}>
         {loading ? 'Simulando...' : 'Simular S1-S2'}
       </Button>
 
-      {/* Componente de gráfico para exibir os dados da simulação */}
       <Chart data={data} />
     </div>
   );
