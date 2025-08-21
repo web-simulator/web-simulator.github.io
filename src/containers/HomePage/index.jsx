@@ -41,6 +41,14 @@ const HomePage = ({ onNavigate }) => {
         <Button onClick={() => onNavigate('dynamic_protocol')}>
           Protocolo Dinâmico
         </Button>
+        {/* Protocolo Bistable */}
+        <Button onClick={() => onNavigate('bistable')}>
+          Bistable
+        </Button>
+        {/* Modelo FitzHugh-Nagumo */}
+        <Button onClick={() => onNavigate('fhn')}>
+          Modelo FitzHugh-Nagumo 1D
+        </Button>
       </div>
     </div>
   );

@@ -7,6 +7,8 @@ import RestitutionCurvePage from './containers/RestitutionCurvePage';
 import MMSCurvePage from './containers/MMSCurvePage';
 import MMSAlternativeCurvePage from './containers/MMSAlternativeCurvePage';
 import DynamicProtocolPage from './containers/DynamicProtocolPage';
+import BistablePage from './containers/BistablePage';
+import FitzHughNagumoPage from './containers/FitzHughNagumoPage';
 import './index.css';
 
 function App() {
@@ -40,6 +42,12 @@ function App() {
       case 'dynamic_protocol':
         // Protocolo Dinâmico
         return <DynamicProtocolPage onBack={() => navigateTo('home')} />;
+      case 'bistable': 
+        // Protocolo Bistable
+        return <BistablePage onBack={() => navigateTo('home')} />;
+      case 'fhn': 
+        // FitzHughNagumo
+        return <FitzHughNagumoPage onBack={() => navigateTo('home')} />;
       default:
         return <HomePage onNavigate={navigateTo} />;
     }

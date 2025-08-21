@@ -25,7 +25,7 @@ const RestitutionChart = ({ data, analyticalData }) => {
           unit="ms" // Unidade
           // Título para o eixo
           label={{ value: 'DI', position: 'insideBottom', offset: -10 }}
-          domain={['dataMin', 'dataMax']} // Eixo se ajusta a amplitude dos dados
+          domain={[0, 'dataMax']} // Eixo se ajusta a amplitude dos dados
           tickFormatter={(value) => `${value.toFixed(2)}`} // Duas casas decimais
         />
         {/* Eixo vertical*/}
