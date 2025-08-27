@@ -1,4 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Brush } from 'recharts';
 
 // Define o componente
 const RestitutionChart = ({ data, analyticalData }) => {
@@ -43,6 +43,14 @@ const RestitutionChart = ({ data, analyticalData }) => {
         />
         {/* Legenda para cada curva*/}
         <Legend verticalAlign="top" />
+
+        {/* Barra de navegação para zoom e seleção */}
+        <Brush
+          dataKey="bcl"
+          height={30}
+          stroke="#8884d8"
+          travellerWidth={10}
+        />
 
         {/* Curva da simulação */}
         <Line

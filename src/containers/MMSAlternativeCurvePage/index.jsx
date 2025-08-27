@@ -44,14 +44,14 @@ const MMSAlternativeCurvePage = ({ onBack }) => {
 
   // Todos os parâmetros agora são editáveis (VERSÃO ATUAL)
   const [editableParams, setEditableParams] = useState({
-    BCL_S1: 250,
-    BCL_S2_inicial: 200,
-    BCL_S2_final: 100,
-    delta_CL: 1,
-    tau_in: 0.1,
-    tau_out: 9.0,
-    tau_open: 100.0,
-    tau_close: 120.0,
+    BCL_S1: 1000,
+    BCL_S2_inicial: 900,
+    BCL_S2_final: 200,
+    delta_CL: 20,
+    tau_in: 0.3,
+    tau_out: 6.0,
+    tau_open: 120.0,
+    tau_close: 150.0,
     v_gate: 0.13,
     inicio: 5.0,
     duracao: 1.0,
@@ -60,10 +60,10 @@ const MMSAlternativeCurvePage = ({ onBack }) => {
     v_inicial: 0.0,
     h_inicial: 1.0,
     num_estimulos_s1: 8,
-    downsamplingFactor: 3000,
+    downsamplingFactor: 1000,
   });
 
-  // CORREÇÃO: A função agora usa 'editableParams'
+  //Função para calcular a curva analitica
   const calculateAnalyticalCurve = useCallback((simulatedData) => {
     if (!simulatedData || simulatedData.length === 0) {
       setAnalyticalData([]);
@@ -84,7 +84,7 @@ const MMSAlternativeCurvePage = ({ onBack }) => {
     }).filter(Boolean);
 
     setAnalyticalData(analyticalPoints);
-  }, [editableParams]); // CORREÇÃO: A dependência agora é 'editableParams'
+  }, [editableParams]); // Usa os novos parâmetros
 
   useEffect(() => {
     const simulationWorker = new SimulationWorker();

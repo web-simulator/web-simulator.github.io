@@ -1,4 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,Brush } from 'recharts';
 
 
 const Chart = ({ data }) => {
@@ -37,6 +37,14 @@ const Chart = ({ data }) => {
         
         {/* Legenda do gráfico */}
         <Legend />
+
+        {/* Barra de navegação para zoom e seleção */}
+        <Brush
+          dataKey="bcl"
+          height={30}
+          stroke="#8884d8"
+          travellerWidth={10}
+        />
         
         {/* Curva da voltagem */}
         <Line 
