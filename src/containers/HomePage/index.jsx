@@ -43,11 +43,15 @@ const HomePage = ({ onNavigate }) => {
         </Button>
         {/* Protocolo Bistable */}
         <Button onClick={() => onNavigate('bistable')}>
-          Bistable
+          Bistable 1D
         </Button>
         {/* Modelo FitzHugh-Nagumo */}
         <Button onClick={() => onNavigate('fhn')}>
           Modelo FitzHugh-Nagumo 1D
+        </Button>
+        {/* Mitchell-Schaeffer 1D */}
+        <Button onClick={() => onNavigate('ms_1d')}>
+          Modelo Mitchell-Schaeffer 1D
         </Button>
       </div>
     </div>

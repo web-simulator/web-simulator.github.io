@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -9,7 +10,6 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { memo } from 'react';
 
 ChartJS.register(
   CategoryScale,
@@ -21,7 +21,7 @@ ChartJS.register(
   Legend
 );
 
-const FHNChart = ({ data }) => {
+const MS1DChart = ({ data }) => {
   if (!data || data.length === 0) {
     return <p>Aguardando simulação...</p>;
   }
@@ -38,8 +38,8 @@ const FHNChart = ({ data }) => {
         tension: 0.1,
       },
       {
-        label: 'Variável w',
-        data: data.map(d => d.w),
+        label: 'Variável h',
+        data: data.map(d => d.h),
         borderColor: 'rgb(130, 202, 157)',
         backgroundColor: 'rgba(130, 202, 157, 0.5)',
         pointRadius: 0,
@@ -57,7 +57,7 @@ const FHNChart = ({ data }) => {
       },
       title: {
         display: true,
-        text: 'Modelo FitzHugh-Nagumo 1D',
+        text: 'Modelo Mitchell-Schaeffer 1D',
       },
     },
     scales: {
@@ -77,7 +77,7 @@ const FHNChart = ({ data }) => {
           display: true,
           text: 'Valor',
         },
-        min: -0.8,
+        min: -0.9,
         max: 1.2,
       },
     },
@@ -86,4 +86,4 @@ const FHNChart = ({ data }) => {
   return <Line options={options} data={chartData} />;
 };
 
-export default memo(FHNChart);
+export default memo(MS1DChart);

@@ -9,6 +9,7 @@ import MMSAlternativeCurvePage from './containers/MMSAlternativeCurvePage';
 import DynamicProtocolPage from './containers/DynamicProtocolPage';
 import BistablePage from './containers/BistablePage';
 import FitzHughNagumoPage from './containers/FitzHughNagumoPage';
+import MitchellSchaeffer1DPage from './containers/MitchellSchaeffer1DPage';
 import './index.css';
 
 function App() {
@@ -48,7 +49,10 @@ function App() {
       case 'fhn': 
         // FitzHughNagumo
         return <FitzHughNagumoPage onBack={() => navigateTo('home')} />;
-      default:
+      case 'ms_1d':
+        // Mitchell-Schaeffer 1D
+        return <MitchellSchaeffer1DPage onBack={() => navigateTo('home')} />;
+        default:
         return <HomePage onNavigate={navigateTo} />;
     }
   };

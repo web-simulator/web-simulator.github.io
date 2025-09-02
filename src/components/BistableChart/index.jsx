@@ -1,68 +1,80 @@
-import { memo } from 'react'; 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const BistableChart = ({ data }) => {
-  // Caso não haja dados, exibe mensagem
   if (!data || data.length === 0) {
     return <p>Aguardando simulação...</p>;
   }
 
-  return (
-    <ResponsiveContainer width="100%" height={400}>
-      <LineChart
-        margin={{
-          top: 5,
-          right: 30,
-          left: 20,
-          bottom: 20,
-        }}
-      >
-        {/* Grade de fundo */}
-        <CartesianGrid strokeDasharray="3 3" />
+  const chartData = {
+    labels: data.map(d => d.x.toFixed(2)),
+    datasets: [
+      {
+        label: 'Potencial v',
+        data: data.map(d => d.v),
+        borderColor: 'rgb(136, 132, 216)',
+        backgroundColor: 'rgba(136, 132, 216, 0.5)',
+        pointRadius: 0,
+        tension: 0.1,
+      },
+    ],
+  };
 
-        {/* Eixo X */}
-        <XAxis
-          type="number"
-          dataKey="x"
-          name="Posição (x)"
-          label={{ value: 'Posição (x)', position: 'insideBottom', offset: -10 }}
-          domain={[0, 'dataMax']}
-        />
+  const options = {
+    responsive: true,
+    animation: false,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: true,
+        text: 'Modelo Bistable 1D',
+      },
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Posição (x)',
+        },
+        type: 'category',
+        ticks: {
+          autoSkip: true,
+          maxTicksLimit: 10,
+        },
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'v',
+        },
+        min: -0.2,
+        max: 1.2,
+      },
+    },
+  };
 
-        {/* Eixo Y */}
-        <YAxis 
-          label={{ value: 'v', angle: -90, position: 'insideLeft' }}
-          domain={[-0.2, 1.2]} 
-        />
-
-        {/* Tooltip ao passar o mouse */}
-        <Tooltip 
-          formatter={(value, name) => {
-            if (typeof value === 'number') {
-              return [`${value.toFixed(3)}`, name];
-            }
-            return [value, name];
-          }}
-        />
-
-        {/* Legenda no topo */}
-        <Legend verticalAlign="top" />
-
-        {/* Linha do potencial v */}
-        <Line
-          type="monotone"
-          data={data}
-          dataKey="v"
-          stroke="#8884d8"
-          strokeWidth={2}
-          dot={false}
-          isAnimationActive={false}
-          name="Potencial v"
-        />
-      </LineChart>
-    </ResponsiveContainer>
-  );
+  return <Line options={options} data={chartData} />;
 };
 
-// Evita renderizações desnecessárias
-export default memo(BistableChart);
+export default BistableChart;

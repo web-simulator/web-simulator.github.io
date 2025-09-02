@@ -1,31 +1,36 @@
 import { useState, useEffect, useCallback } from 'react';
-import FHNChart from '../../components/FHNChart';
+import MS1DChart from '../../components/MS1DChart';
 import SpatiotemporalChart from '../../components/SpatiotemporalChart';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
-import SimulationWorker from '../../simulation_fhn.worker.js?worker';
+import SimulationWorker from '../../simulation_ms_1d.worker.js?worker';
 import './styles.css';
 
-const FitzHughNagumoPage = ({ onBack }) => {
+const MitchellSchaeffer1DPage = ({ onBack }) => {
   const [simulationData, setSimulationData] = useState([]);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [initialCondition, setInitialCondition] = useState('left_pulse');
+  const [windowSize, setWindowSize] = useState(50);
+  const [scrollPosition, setScrollPosition] = useState(0);
   const [viewMode, setViewMode] = useState('line');
 
   const [editableParams, setEditableParams] = useState({
     k: 2.0,
-    A: 1.0,
-    alpha: 0.1,
-    epsilon: 0.005,
-    gamma: 2.0,
+    Tau_in: 0.3,
+    Tau_out: 6.0,
+    Tau_open: 120.0,
+    Tau_close: 80.0,
+    gate: 0.13,
     L: 100,
     dx: 1,
-    dt: 0.1,
-    totalTime: 400,
+    dt: 0.05,
+    totalTime: 500,
     downsamplingFactor: 10,
+    inicio: 5.0,
+    duracao: 1.0,
+    amplitude: 1.0,
   });
 
   useEffect(() => {
@@ -71,13 +76,21 @@ const FitzHughNagumoPage = ({ onBack }) => {
       setLoading(true);
       setSimulationData([]);
       setIsPlaying(false);
-      worker.postMessage({ ...editableParams, initialCondition });
+      worker.postMessage(editableParams);
     }
-  }, [worker, editableParams, initialCondition]);
+  }, [worker, editableParams]);
 
   const handleSliderChange = (e) => {
     setIsPlaying(false);
     setCurrentFrame(parseInt(e.target.value, 10));
+  };
+  
+  const handleScrollChange = (e) => {
+    setScrollPosition(parseInt(e.target.value, 10));
+  };
+
+  const handleZoomChange = (e) => {
+    setWindowSize(parseFloat(e.target.value));
   };
 
   const currentChartData = simulationData[currentFrame]?.data || [];
@@ -85,21 +98,9 @@ const FitzHughNagumoPage = ({ onBack }) => {
   return (
     <div className="page-container">
       <Button onClick={onBack}>Voltar para Home</Button>
-      <h1>Modelo FitzHugh-Nagumo 1D</h1>
+      <h1>Modelo Mitchell-Schaeffer 1D</h1>
 
       <div className="params-container">
-        <div className="input-container">
-          <label>Condição Inicial</label>
-          <select 
-            value={initialCondition} 
-            onChange={(e) => setInitialCondition(e.target.value)} 
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-          >
-            <option value="left_pulse">Pulso na Borda</option>
-            <option value="reentry">Simulação de Reentrada</option>
-          </select>
-        </div>
-        
         {Object.keys(editableParams).map((key) => (
           <Input
             key={key}
@@ -109,7 +110,7 @@ const FitzHughNagumoPage = ({ onBack }) => {
           />
         ))}
       </div>
-
+      
       <div className="button-container">
         <Button onClick={handleSimularClick} disabled={loading}>
           {loading ? 'Simulando...' : 'Simular'}
@@ -121,9 +122,41 @@ const FitzHughNagumoPage = ({ onBack }) => {
           {viewMode === 'line' ? 'Gráfico de Cores' : 'Gráfico de Linhas'}
         </Button>
       </div>
+      
+      {viewMode === 'line' && (
+        <div className="controls-container">
+          <div className="zoom-control">
+            <label>Zoom (Largura da Janela)</label>
+            <input
+              type="number"
+              value={windowSize}
+              onChange={handleZoomChange}
+              min={10}
+              max={editableParams.L}
+            />
+          </div>
+          {simulationData.length > 0 && (
+            <div className="scroll-control">
+              <label>Navegar no Gráfico</label>
+              <input
+                type="range"
+                min="0"
+                max={editableParams.L - windowSize}
+                value={scrollPosition}
+                onChange={handleScrollChange}
+                className="scroll-slider"
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {viewMode === 'line' ? (
-        <FHNChart data={currentChartData} />
+        <MS1DChart 
+          data={currentChartData} 
+          windowSize={windowSize} 
+          scrollPosition={scrollPosition} 
+        />
       ) : (
         <SpatiotemporalChart simulationData={simulationData} currentFrame={currentFrame} />
       )}
@@ -145,4 +178,4 @@ const FitzHughNagumoPage = ({ onBack }) => {
   );
 };
 
-export default FitzHughNagumoPage;
+export default MitchellSchaeffer1DPage;
