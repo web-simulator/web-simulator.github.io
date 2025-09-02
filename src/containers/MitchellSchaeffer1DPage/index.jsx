@@ -122,34 +122,6 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
           {viewMode === 'line' ? 'Gráfico de Cores' : 'Gráfico de Linhas'}
         </Button>
       </div>
-      
-      {viewMode === 'line' && (
-        <div className="controls-container">
-          <div className="zoom-control">
-            <label>Zoom (Largura da Janela)</label>
-            <input
-              type="number"
-              value={windowSize}
-              onChange={handleZoomChange}
-              min={10}
-              max={editableParams.L}
-            />
-          </div>
-          {simulationData.length > 0 && (
-            <div className="scroll-control">
-              <label>Navegar no Gráfico</label>
-              <input
-                type="range"
-                min="0"
-                max={editableParams.L - windowSize}
-                value={scrollPosition}
-                onChange={handleScrollChange}
-                className="scroll-slider"
-              />
-            </div>
-          )}
-        </div>
-      )}
 
       {viewMode === 'line' ? (
         <MS1DChart 
