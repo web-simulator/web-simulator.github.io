@@ -1,8 +1,7 @@
-
 self.onmessage = (e) => {
   // parâmetros inseridos
   const params = e.data;
-  const {
+  let {
     // Parâmetros do modelo
     k,
     A,
@@ -21,6 +20,12 @@ self.onmessage = (e) => {
     initialCondition // pulso na borda ou reentrada
   } = params;
 
+  // Verifica e ajusta a condição de CFL
+  const cfl_limit = (dx * dx) / (2 * k);
+  if (dt > cfl_limit) {
+    dt = cfl_limit * 0.9;
+  }
+  
   const N = Math.floor(L / dx); // Calcula o número de pontos
 
   let v = new Array(N).fill(0); // Vetor de ativação

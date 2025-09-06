@@ -1,6 +1,6 @@
 self.onmessage = (e) => {
   const params = e.data;
-  const {
+  let {
     // Parâmetros do modelo
     k,
     A,
@@ -13,36 +13,43 @@ self.onmessage = (e) => {
     downsamplingFactor
   } = params;
 
-  // Calcula o número de pontos na grade
+  // Verifica e ajusta a condição de CFL
+  const cfl_limit = (dx * dx) / (2 * k);
+  if (dt > cfl_limit) {
+    dt = cfl_limit * 0.9; // Ajusta dt para um valor seguro
+  }
+
+  // Calcula o número de celulas na grade
   const N = Math.floor(L / dx);
 
-  let v = new Array(N).fill(0); // Array para a variável de ativação
-  const v_prev_sim = new Array(N).fill(0); // Array temporário para RK4
-
+  // Inicializa o array para a variável v
+  let v = new Array(N).fill(0);
+  
   // Condição inicial
   const initial_width = Math.floor(N / 10);
   for(let i = 0; i < initial_width; i++) {
-    v[i] = 1.05;
+    v[i] = 1.05; // Ativa os primeiros 10% dos pontos com um valor acima do limiar
   }
 
-  // Calcula o total de passos
+  // Calcula o número total de passos de tempo 
   const steps = Math.floor(totalTime / dt);
-  // Resultados
+  // Array para armazenar os resultados em intervalos específicos
   const outputData = [];
 
-  // Funções de derivada para o método RK4
   function f_v(vv, i) { // Derivada de V
+    // Calcula a difusão do potencial para os vizinhos
     const diffusion = k * (vv[i + 1] - 2 * vv[i] + vv[i - 1]) / (dx * dx);
+    // Calcula a reação 
     const reaction = A * vv[i] * (1 - vv[i]) * (vv[i] - alpha);
     return diffusion + reaction;
   }
 
-  // Loop principal da simulação
+  // Loop principal 
   for (let t = 0; t < steps; t++) {
-    // valores de v do passo anterior
+    // Cria uma cópia dos valores do passo anterior
     const v_prev = [...v];
 
-    // Calcula os K's para RK4 para cada ponto do espaço
+    // Ks do runge-kutta 4
     const k1 = new Array(N).fill(0);
     const k2 = new Array(N).fill(0);
     const k3 = new Array(N).fill(0);
@@ -52,6 +59,7 @@ self.onmessage = (e) => {
     for (let i = 1; i < N - 1; i++) {
       k1[i] = dt * f_v(v_prev, i);
     }
+    // Aplica as condições de contorno de Neumann
     v_prev[0] = v_prev[1];
     v_prev[N - 1] = v_prev[N - 2];
 
@@ -88,15 +96,16 @@ self.onmessage = (e) => {
       k4[i] = dt * f_v(v_k4, i);
     }
 
-    // Atualiza v usando a média ponderada dos K's
+    // Calcula o próximo valor de v
     for (let i = 1; i < N - 1; i++) {
       v[i] = v_prev[i] + (1.0 / 6.0) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]);
     }
 
-    // Condições de contorno de Neumann
+    // Aplica as condições de contorno de Neumann no final do passo de tempo
     v[0] = v[1];
     v[N - 1] = v[N - 2];
 
+    // Salva os dados em intervalos definidos pelo downsamplingFactor
     if (t % downsamplingFactor === 0) {
       const snapshot = v.map((value, index) => ({
         x: index * dx,
@@ -110,6 +119,6 @@ self.onmessage = (e) => {
     }
   }
 
-  // Retorna os dados da simulação
+  // Envia os dados ara a thread principal
   self.postMessage(outputData);
 };

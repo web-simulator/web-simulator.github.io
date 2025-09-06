@@ -3,17 +3,23 @@ import BistableChart from '../../components/BistableChart';
 import SpatiotemporalChart from '../../components/SpatiotemporalChart';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
+import Modal from '../../components/Modal';
+import Chart from '../../components/Chart';
 import SimulationWorker from '../../simulation_bistable.worker.js?worker';
 import './styles.css';
 
 const BistablePage = ({ onBack }) => {
+  // Estados para gerenciar a simulação
   const [simulationData, setSimulationData] = useState([]);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [viewMode, setViewMode] = useState('line');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedX, setSelectedX] = useState(null);
 
+  // Parâmetros da simulação que o usuário pode alterar
   const [editableParams, setEditableParams] = useState({
     k: 2.0,
     A: 1.0,
@@ -25,10 +31,12 @@ const BistablePage = ({ onBack }) => {
     downsamplingFactor: 10,
   });
 
+  // Configura Worker quando o componente é montado
   useEffect(() => {
     const simulationWorker = new SimulationWorker();
     setWorker(simulationWorker);
 
+    // Receber os dados da simulação
     simulationWorker.onmessage = (e) => {
       setSimulationData(e.data);
       setCurrentFrame(0);
@@ -36,11 +44,13 @@ const BistablePage = ({ onBack }) => {
       setIsPlaying(true);
     };
 
+    // Função de limpeza
     return () => {
       simulationWorker.terminate();
     };
   }, []);
 
+  // Reproduzir a simulação em um loop
   useEffect(() => {
     let interval;
     if (isPlaying && simulationData.length > 0) {
@@ -55,35 +65,56 @@ const BistablePage = ({ onBack }) => {
         });
       }, 50);
     }
-    return () => clearInterval(interval);
+    return () => clearInterval(interval); // Limpa o intervalo
   }, [isPlaying, simulationData]);
 
+  // Atualiza os parâmetros quando o usuário muda os valores nos inputs
   const handleChange = useCallback((e, name) => {
     const value = parseFloat(e.target.value);
     setEditableParams((prev) => ({ ...prev, [name]: value }));
   }, []);
 
+  // Inicia a simulação
   const handleSimularClick = useCallback(() => {
     if (worker) {
       setLoading(true);
       setSimulationData([]);
       setIsPlaying(false);
+      // Envia os parâmetros para o worker
       worker.postMessage(editableParams);
     }
   }, [worker, editableParams]);
 
+  // Mudança no controle deslizante
   const handleSliderChange = (e) => {
     setIsPlaying(false);
     setCurrentFrame(parseInt(e.target.value, 10));
   };
   
+  // Modal para exibir o gráfico ao clicar em um ponto
+  const handlePointClick = useCallback((xIndex) => {
+    setSelectedX(xIndex);
+    setIsModalOpen(true);
+  }, []);
+
+  // Filtra a série com base no 'selectedX'
+  const getTimeseriesForPoint = () => {
+    if (selectedX === null || simulationData.length === 0) return [];
+    return simulationData.map(frame => ({
+      tempo: parseFloat(frame.time),
+      v: frame.data[selectedX].v,
+    }));
+  };
+
   const currentChartData = simulationData[currentFrame]?.data;
+  const timeseriesData = getTimeseriesForPoint();
 
   return (
     <div className="page-container">
       <Button onClick={onBack}>Voltar para Home</Button>
       <h1>Modelo Bistable 1D</h1>
 
+      {/* Inputs para os parâmetros da simulação */}
       <div className="params-container">
         {Object.keys(editableParams).map((key) => (
           <Input
@@ -95,6 +126,7 @@ const BistablePage = ({ onBack }) => {
         ))}
       </div>
 
+      {/* Controles da simulação */}
       <div className="button-container">
         <Button onClick={handleSimularClick} disabled={loading}>
           {loading ? 'Simulando...' : 'Simular'}
@@ -107,12 +139,14 @@ const BistablePage = ({ onBack }) => {
         </Button>
       </div>
 
+      {/* Renderiza o gráfico de linha ou de cores */}
       {viewMode === 'line' ? (
         <BistableChart data={currentChartData} />
       ) : (
-        <SpatiotemporalChart simulationData={simulationData} currentFrame={currentFrame} />
+        <SpatiotemporalChart simulationData={simulationData} currentFrame={currentFrame} onPointClick={handlePointClick} />
       )}
       
+      {/* Renderiza o controle deslizante de tempo */}
       {simulationData.length > 0 && (
         <div className="slider-container">
             <label>Tempo: {simulationData[currentFrame]?.time || 0} ms</label>
@@ -126,6 +160,12 @@ const BistablePage = ({ onBack }) => {
             />
         </div>
       )}
+
+      {/* Modal para exibir o gráfico de um ponto clicado. */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <h2>Potencial em X = {selectedX !== null ? (selectedX * editableParams.dx).toFixed(2) : ''}</h2>
+        <Chart data={timeseriesData} />
+      </Modal>
     </div>
   );
 };

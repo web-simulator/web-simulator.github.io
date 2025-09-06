@@ -1,11 +1,12 @@
 self.onmessage = (e) => {
   const params = e.data;
-  const {
+  // Parametros
+  let {
     k,
-    Tau_in, // Parâmetro renomeado
-    Tau_out, // Parâmetro renomeado
-    Tau_open, // Parâmetro renomeado
-    Tau_close, // Parâmetro renomeado
+    Tau_in,
+    Tau_out,
+    Tau_open,
+    Tau_close,
     gate,
     L,
     dx,
@@ -17,30 +18,38 @@ self.onmessage = (e) => {
     amplitude,
   } = params;
 
-  const N = Math.floor(L / dx);
+  // Verifica e ajusta a condição de estabilidade de CFL
+  const cfl_limit = (dx * dx) / (2 * k);
+  if (dt > cfl_limit) {
+    dt = cfl_limit * 0.9; // Ajusta dt para um valor seguro
+  }
 
+  const N = Math.floor(L / dx); // Calcula o número de pontos na grade 
+
+  // Inicializa os arrays de v e h
   let v = new Array(N).fill(0);
   let h = new Array(N).fill(1);
   
-  // Condição inicial: estímulo na borda esquerda
+  // Condição inicial
   const initial_width = Math.floor(N / 10);
   for (let i = 0; i < initial_width; i++) {
-    v[i] = 1.05;
+    v[i] = 1.05; // Ativa os primeiros 10% dos pontos com um valor acima do limiar.
   }
   
-  const steps = Math.floor(totalTime / dt);
-  const outputData = [];
+  const steps = Math.floor(totalTime / dt); // Calcula o número total de passos na simulação
+  const outputData = []; // Array para armazenar os resultados.
 
-  // Funções de derivada para o método RK4
   function f_v(vv, hh, i) {
+    // Calcula a difusão do potencial
     const diffusion = k * (vv[i + 1] - 2 * vv[i] + vv[i - 1]) / (dx * dx);
-    // Usando os novos parâmetros
+    // Calcula a reação
     const J_entrada = (hh[i] * vv[i] ** 2 * (1 - vv[i])) / Tau_in;
     const J_saida = -vv[i] / Tau_out;
     return diffusion + J_entrada + J_saida;
   }
 
   function f_h(vv, hh, i) {
+    // A taxa de mudança de 'h' depende do valor de 'v' em relação ao limiar
     if (vv[i] < gate) {
       return (1 - hh[i]) / Tau_open;
     } else {
@@ -48,10 +57,13 @@ self.onmessage = (e) => {
     }
   }
 
+  // Loop principal 
   for (let t = 0; t < steps; t++) {
+    // Cria uma cópia dos valores do passo de tempo anterior
     const v_prev = [...v];
     const h_prev = [...h];
     
+    // Ks do Runge-Kutta 4
     const k1_v = new Array(N).fill(0);
     const k1_h = new Array(N).fill(0);
     const k2_v = new Array(N).fill(0);
@@ -74,6 +86,7 @@ self.onmessage = (e) => {
       v_k2[i] = v_prev[i] + 0.5 * k1_v[i];
       h_k2[i] = h_prev[i] + 0.5 * k1_h[i];
     }
+    // Aplica as condições de contorno de Neumann para o cálculo de K2
     v_k2[0] = v_k2[1];
     v_k2[N - 1] = v_k2[N - 2];
     h_k2[0] = h_k2[1];
@@ -90,6 +103,7 @@ self.onmessage = (e) => {
       v_k3[i] = v_prev[i] + 0.5 * k2_v[i];
       h_k3[i] = h_prev[i] + 0.5 * k2_h[i];
     }
+    // Aplica as condições de contorno para o cálculo de K3
     v_k3[0] = v_k3[1];
     v_k3[N - 1] = v_k3[N - 2];
     h_k3[0] = h_k3[1];
@@ -106,6 +120,7 @@ self.onmessage = (e) => {
       v_k4[i] = v_prev[i] + k3_v[i];
       h_k4[i] = h_prev[i] + k3_h[i];
     }
+    // Aplica as condições de contorno para o cálculo de K4
     v_k4[0] = v_k4[1];
     v_k4[N - 1] = v_k4[N - 2];
     h_k4[0] = h_k4[1];
@@ -115,18 +130,22 @@ self.onmessage = (e) => {
       k4_h[i] = dt * f_h(v_k4, h_k4, i);
     }
 
+    // Atualiza os valores de v e h 
     for (let i = 1; i < N - 1; i++) {
       v[i] = v_prev[i] + (1.0 / 6.0) * (k1_v[i] + 2 * k2_v[i] + 2 * k3_v[i] + k4_v[i]);
       h[i] = h_prev[i] + (1.0 / 6.0) * (k1_h[i] + 2 * k2_h[i] + 2 * k3_h[i] + k4_h[i]);
+      // Garante que os valores fiquem entre 0 e 1
       v[i] = Math.max(0.0, Math.min(1.0, v[i]));
       h[i] = Math.max(0.0, Math.min(1.0, h[i]));
     }
     
+    // Aplica as condições de contorno de Neumann nas bordas do array final
     v[0] = v[1];
     v[N - 1] = v[N - 2];
     h[0] = h[1];
     h[N - 1] = h[N - 2];
 
+    // Salva os dados em intervalos definidos pelo downsamplingFactor
     if (t % downsamplingFactor === 0) {
       const snapshot = v.map((v_val, index) => ({
         x: index * dx,
@@ -141,5 +160,6 @@ self.onmessage = (e) => {
     }
   }
 
+  // Envia os dados para a thread principal.
   self.postMessage(outputData);
 };

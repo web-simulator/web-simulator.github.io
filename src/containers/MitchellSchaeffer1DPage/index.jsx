@@ -3,10 +3,13 @@ import MS1DChart from '../../components/MS1DChart';
 import SpatiotemporalChart from '../../components/SpatiotemporalChart';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
+import Modal from '../../components/Modal';
+import Chart from '../../components/Chart';
 import SimulationWorker from '../../simulation_ms_1d.worker.js?worker';
 import './styles.css';
 
 const MitchellSchaeffer1DPage = ({ onBack }) => {
+  // Estados para gerenciar a simulação 
   const [simulationData, setSimulationData] = useState([]);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [worker, setWorker] = useState(null);
@@ -15,7 +18,10 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
   const [windowSize, setWindowSize] = useState(50);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [viewMode, setViewMode] = useState('line');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedX, setSelectedX] = useState(null);
 
+  // Parâmetros da simulação que o usuário pode alterar
   const [editableParams, setEditableParams] = useState({
     k: 2.0,
     Tau_in: 0.3,
@@ -33,10 +39,12 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
     amplitude: 1.0,
   });
 
+  // Configura o Worker 
   useEffect(() => {
     const simulationWorker = new SimulationWorker();
     setWorker(simulationWorker);
 
+    // Recebe os dados da simulação
     simulationWorker.onmessage = (e) => {
       setSimulationData(e.data);
       setCurrentFrame(0);
@@ -44,11 +52,13 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
       setIsPlaying(true);
     };
 
+    // Função de limpeza
     return () => {
       simulationWorker.terminate();
     };
   }, []);
 
+  // Simulação em um loop
   useEffect(() => {
     let interval;
     if (isPlaying && simulationData.length > 0) {
@@ -63,43 +73,58 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
         });
       }, 10);
     }
-    return () => clearInterval(interval);
+    return () => clearInterval(interval); // Limpa o intervalo
   }, [isPlaying, simulationData]);
 
+  // Atualiza os parâmetros quando o usuário muda os valores nos inputs
   const handleChange = useCallback((e, name) => {
     const value = parseFloat(e.target.value);
     setEditableParams((prev) => ({ ...prev, [name]: value }));
   }, []);
 
+  // Inicia a simulaçã
   const handleSimularClick = useCallback(() => {
     if (worker) {
       setLoading(true);
       setSimulationData([]);
       setIsPlaying(false);
+      // Envia os parâmetros para o worker
       worker.postMessage(editableParams);
     }
   }, [worker, editableParams]);
 
+  // Mudança no controle deslizante de tempo
   const handleSliderChange = (e) => {
     setIsPlaying(false);
     setCurrentFrame(parseInt(e.target.value, 10));
   };
   
-  const handleScrollChange = (e) => {
-    setScrollPosition(parseInt(e.target.value, 10));
-  };
 
-  const handleZoomChange = (e) => {
-    setWindowSize(parseFloat(e.target.value));
+  // Clique no gráfico de cores para mostrar o modal
+  const handlePointClick = useCallback((xIndex) => {
+    setSelectedX(xIndex);
+    setIsModalOpen(true);
+  }, []);
+
+  // Filtra com base no 'selectedX'
+  const getTimeseriesForPoint = () => {
+    if (selectedX === null || simulationData.length === 0) return [];
+    return simulationData.map(frame => ({
+      tempo: parseFloat(frame.time),
+      v: frame.data[selectedX].v,
+      h: frame.data[selectedX].h,
+    }));
   };
 
   const currentChartData = simulationData[currentFrame]?.data || [];
+  const timeseriesData = getTimeseriesForPoint();
 
   return (
     <div className="page-container">
       <Button onClick={onBack}>Voltar para Home</Button>
       <h1>Modelo Mitchell-Schaeffer 1D</h1>
 
+      {/* Inputs para os parâmetros da simulação */}
       <div className="params-container">
         {Object.keys(editableParams).map((key) => (
           <Input
@@ -111,6 +136,7 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
         ))}
       </div>
       
+      {/* Controles da simulação */}
       <div className="button-container">
         <Button onClick={handleSimularClick} disabled={loading}>
           {loading ? 'Simulando...' : 'Simular'}
@@ -123,6 +149,7 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
         </Button>
       </div>
 
+      {/* Renderiza o gráfico de linha ou de cores */}
       {viewMode === 'line' ? (
         <MS1DChart 
           data={currentChartData} 
@@ -130,9 +157,10 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
           scrollPosition={scrollPosition} 
         />
       ) : (
-        <SpatiotemporalChart simulationData={simulationData} currentFrame={currentFrame} />
+        <SpatiotemporalChart simulationData={simulationData} currentFrame={currentFrame} onPointClick={handlePointClick} />
       )}
 
+      {/* Renderiza o controle deslizante de tempo */}
       {simulationData.length > 0 && (
         <div className="slider-container">
           <label>Tempo: {simulationData[currentFrame]?.time || 0} ms</label>
@@ -146,8 +174,13 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
           />
         </div>
       )}
+
+      {/* Modal para exibir o gráfico de um ponto clicado. */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <h2>Potencial em X = {selectedX !== null ? (selectedX * editableParams.dx).toFixed(2) : ''}</h2>
+        <Chart data={timeseriesData} />
+      </Modal>
     </div>
   );
 };
-
 export default MitchellSchaeffer1DPage;
