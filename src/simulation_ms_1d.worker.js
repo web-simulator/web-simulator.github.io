@@ -16,6 +16,7 @@ self.onmessage = (e) => {
     inicio,
     duracao,
     amplitude,
+    posição_do_estímulo,
   } = params;
 
   // Verifica e ajusta a condição de estabilidade de CFL
@@ -30,15 +31,16 @@ self.onmessage = (e) => {
   let v = new Array(N).fill(0);
   let h = new Array(N).fill(1);
   
-  // Condição inicial
-  const initial_width = Math.floor(N / 10);
-  for (let i = 0; i < initial_width; i++) {
-    v[i] = 1.05; // Ativa os primeiros 10% dos pontos com um valor acima do limiar.
+  // Condição inicial: todos os pontos começam em 0, exceto o do estímulo
+  const stimulusIndex = Math.floor(posição_do_estímulo / dx);
+  if (stimulusIndex >= 0 && stimulusIndex < N) {
+    v[stimulusIndex] = 1.05;
   }
   
   const steps = Math.floor(totalTime / dt); // Calcula o número total de passos na simulação
   const outputData = []; // Array para armazenar os resultados.
 
+  // Funções de derivada para o método RK4
   function f_v(vv, hh, i) {
     // Calcula a difusão do potencial
     const diffusion = k * (vv[i + 1] - 2 * vv[i] + vv[i - 1]) / (dx * dx);

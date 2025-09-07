@@ -15,8 +15,6 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
   const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [windowSize, setWindowSize] = useState(50);
-  const [scrollPosition, setScrollPosition] = useState(0);
   const [viewMode, setViewMode] = useState('line');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedX, setSelectedX] = useState(null);
@@ -37,6 +35,7 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
     inicio: 5.0,
     duracao: 1.0,
     amplitude: 1.0,
+    posição_do_estímulo: 10, 
   });
 
   // Configura o Worker 
@@ -82,7 +81,7 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
     setEditableParams((prev) => ({ ...prev, [name]: value }));
   }, []);
 
-  // Inicia a simulaçã
+  // Inicia a simulação
   const handleSimularClick = useCallback(() => {
     if (worker) {
       setLoading(true);
@@ -99,7 +98,6 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
     setCurrentFrame(parseInt(e.target.value, 10));
   };
   
-
   // Clique no gráfico de cores para mostrar o modal
   const handlePointClick = useCallback((xIndex) => {
     setSelectedX(xIndex);
@@ -153,8 +151,8 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
       {viewMode === 'line' ? (
         <MS1DChart 
           data={currentChartData} 
-          windowSize={windowSize} 
-          scrollPosition={scrollPosition} 
+          windowSize={editableParams.L} 
+          scrollPosition={0} 
         />
       ) : (
         <SpatiotemporalChart simulationData={simulationData} currentFrame={currentFrame} onPointClick={handlePointClick} />
