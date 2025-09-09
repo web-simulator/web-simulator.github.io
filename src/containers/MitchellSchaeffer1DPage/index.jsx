@@ -35,7 +35,9 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
     inicio: 5.0,
     duracao: 1.0,
     amplitude: 1.0,
-    posição_do_estímulo: 10, 
+    posição_do_estímulo: 10,
+    num_estimulos: 8,
+    BCL: 250
   });
 
   // Configura o Worker 

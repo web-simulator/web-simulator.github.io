@@ -17,6 +17,8 @@ self.onmessage = (e) => {
     duracao,
     amplitude,
     posição_do_estímulo,
+    num_estimulos,
+    BCL
   } = params;
 
   // Verifica e ajusta a condição de estabilidade de CFL
@@ -31,23 +33,35 @@ self.onmessage = (e) => {
   let v = new Array(N).fill(0);
   let h = new Array(N).fill(1);
   
-  // Condição inicial: todos os pontos começam em 0, exceto o do estímulo
-  const stimulusIndex = Math.floor(posição_do_estímulo / dx);
-  if (stimulusIndex >= 0 && stimulusIndex < N) {
-    v[stimulusIndex] = 1.05;
+  // Função para aplicar estímulos periódicos
+  function aplicarEstimuloPeriodico(tempo_atual, amplitude, duracao, inicio, BCL, num_estimulos) {
+      for (let i = 0; i < num_estimulos; i++) {
+          const inicio_pulso = inicio + i * BCL;
+          if (tempo_atual >= inicio_pulso && tempo_atual < inicio_pulso + duracao) {
+              return amplitude;
+          }
+      }
+      return 0.0;
   }
   
   const steps = Math.floor(totalTime / dt); // Calcula o número total de passos na simulação
   const outputData = []; // Array para armazenar os resultados.
 
   // Funções de derivada para o método RK4
-  function f_v(vv, hh, i) {
+  function f_v(vv, hh, i, current_stimulus) {
     // Calcula a difusão do potencial
     const diffusion = k * (vv[i + 1] - 2 * vv[i] + vv[i - 1]) / (dx * dx);
     // Calcula a reação
     const J_entrada = (hh[i] * vv[i] ** 2 * (1 - vv[i])) / Tau_in;
     const J_saida = -vv[i] / Tau_out;
-    return diffusion + J_entrada + J_saida;
+    const reaction = J_entrada + J_saida;
+
+    // Aplica o estímulo apenas na posição definida
+    if (i === Math.floor(posição_do_estímulo / dx)) {
+        return diffusion + reaction + current_stimulus;
+    }
+
+    return diffusion + reaction;
   }
 
   function f_h(vv, hh, i) {
@@ -61,6 +75,9 @@ self.onmessage = (e) => {
 
   // Loop principal 
   for (let t = 0; t < steps; t++) {
+    // Aplica o estímulo no tempo atual
+    const current_stimulus = aplicarEstimuloPeriodico(t * dt, amplitude, duracao, inicio, BCL, num_estimulos);
+
     // Cria uma cópia dos valores do passo de tempo anterior
     const v_prev = [...v];
     const h_prev = [...h];
@@ -77,7 +94,7 @@ self.onmessage = (e) => {
 
     // K1
     for (let i = 1; i < N - 1; i++) {
-      k1_v[i] = dt * f_v(v_prev, h_prev, i);
+      k1_v[i] = dt * f_v(v_prev, h_prev, i, current_stimulus);
       k1_h[i] = dt * f_h(v_prev, h_prev, i);
     }
 
@@ -94,7 +111,7 @@ self.onmessage = (e) => {
     h_k2[0] = h_k2[1];
     h_k2[N - 1] = h_k2[N - 2];
     for (let i = 1; i < N - 1; i++) {
-      k2_v[i] = dt * f_v(v_k2, h_k2, i);
+      k2_v[i] = dt * f_v(v_k2, h_k2, i, current_stimulus);
       k2_h[i] = dt * f_h(v_k2, h_k2, i);
     }
 
@@ -111,7 +128,7 @@ self.onmessage = (e) => {
     h_k3[0] = h_k3[1];
     h_k3[N - 1] = h_k3[N - 2];
     for (let i = 1; i < N - 1; i++) {
-      k3_v[i] = dt * f_v(v_k3, h_k3, i);
+      k3_v[i] = dt * f_v(v_k3, h_k3, i, current_stimulus);
       k3_h[i] = dt * f_h(v_k3, h_k3, i);
     }
 
@@ -128,7 +145,7 @@ self.onmessage = (e) => {
     h_k4[0] = h_k4[1];
     h_k4[N - 1] = h_k4[N - 2];
     for (let i = 1; i < N - 1; i++) {
-      k4_v[i] = dt * f_v(v_k4, h_k4, i);
+      k4_v[i] = dt * f_v(v_k4, h_k4, i, current_stimulus);
       k4_h[i] = dt * f_h(v_k4, h_k4, i);
     }
 
