@@ -4,7 +4,6 @@ import SingleStimulusPage from './containers/SingleStimulusPage';
 import MultipleStimuliPage from './containers/MultipleStimuliPage';
 import S1S2Page from './containers/S1S2Page';
 import RestitutionCurvePage from './containers/RestitutionCurvePage';
-import MMSCurvePage from './containers/MMSCurvePage';
 import MMSAlternativeCurvePage from './containers/MMSAlternativeCurvePage';
 import DynamicProtocolPage from './containers/DynamicProtocolPage';
 import BistablePage from './containers/BistablePage';
@@ -35,10 +34,7 @@ function App() {
         // Curva de Restituição
         return <RestitutionCurvePage onBack={() => navigateTo('home')} />;
       case 'mms_restitution_curve':
-        // Curva de Restituição (MMS)
-        return <MMSCurvePage onBack={() => navigateTo('home')} />;
-      case 'mms_alternative_restitution_curve':
-        // Curva de Restituição Alternativa (MMS)
+        // Curva de Restituição (MMS) - Página unificada
         return <MMSAlternativeCurvePage onBack={() => navigateTo('home')} />;
       case 'dynamic_protocol':
         // Protocolo Dinâmico

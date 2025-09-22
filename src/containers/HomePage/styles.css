@@ -1,16 +1,69 @@
-/*// src/containers/HomePage/styles.css*/
+/* src/containers/HomePage/styles.css */
 .homepage-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
+  padding: 40px;
   text-align: center;
 }
 
-.options-container {
+.homepage-header {
+  margin-bottom: 40px;
+}
+
+.homepage-header h1 {
+  font-size: 2.5em;
+  margin-bottom: 10px;
+}
+
+.homepage-header p {
+  font-size: 1.2em;
+  color: #666;
+}
+
+.models-sections {
   display: flex;
   flex-direction: column;
+  gap: 40px;
+}
+
+.models-section h2 {
+  font-size: 2em;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+}
+
+.models-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
-  margin-top: 40px;
+}
+
+.model-card {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s;
+}
+
+.model-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.model-card h3 {
+  font-size: 1.5em;
+  margin-bottom: 10px;
+}
+
+.model-card p {
+  color: #555;
+  margin-bottom: 20px;
+  flex-grow: 1;
+}
+
+.launch-button {
+  align-self: flex-end;
 }
