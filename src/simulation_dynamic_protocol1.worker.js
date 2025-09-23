@@ -46,8 +46,8 @@ self.onmessage = (e) => {
   // Extrai todos os parâmetros
   const params = e.data;
   const {
-    despolarização, repolarização, recuperação, inativação, gate, dt,
-    v_inicial, h_inicial, inicio, duração, amplitude,
+    tau_in, tau_out, tau_open, tau_close, v_gate, dt,
+    v_inicial, h_inicial, inicio, duracao, amplitude,
     CI1, CI0, CIinc, nbeats, downsamplingFactor
   } = params;
 
@@ -71,7 +71,7 @@ self.onmessage = (e) => {
     for (let beat = 0; beat < nbeats; beat++) {
       // Define as variáveis de tempo para o batimento atual
       const inicio_pulso = tempo_atual_estimulo;
-      const fim_pulso = inicio_pulso + duração;
+      const fim_pulso = inicio_pulso + duracao;
       const fim_ciclo = inicio_pulso + CI;
       const passo_inicio_pulso = Math.round(inicio_pulso / dt);
 
@@ -89,15 +89,15 @@ self.onmessage = (e) => {
 
         // Define as funções que representam as equações diferenciais do modelo
         const f_v = (vv, hh) => { // Derivada da voltagem 
-          const J_entrada = (hh * vv ** 2 * (1 - vv)) / despolarização;
-          const J_saida = -vv / repolarização;
+          const J_entrada = (hh * vv ** 2 * (1 - vv)) / tau_in;
+          const J_saida = -vv / tau_out;
           return J_entrada + J_saida + estimulo;
         };
         const f_h = (vv, hh) => { // Derivada da variável de gate 
-          if (vv < gate) {
-            return (1 - hh) / recuperação;
+          if (vv < v_gate) {
+            return (1 - hh) / tau_open;
           } else {
-            return -hh / inativação;
+            return -hh / tau_close;
           }
         };
 

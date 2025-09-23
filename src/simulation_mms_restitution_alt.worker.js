@@ -149,6 +149,8 @@ self.onmessage = (e) => {
   // Calcula quantos ciclos S1-S2 serão executados
   const num_ciclos = Math.floor((BCL_S2_inicial - BCL_S2_final) / delta_CL) + 1;
   const restitutionData = []; // Armazena os pontos (DI, APD)
+  const allTimeSeriesData = []; // Armazena a série temporal completa
+  let tempo_offset = 0;
 
   // Percorre cada ciclo S1-S2
   for (let ciclo = 0; ciclo < num_ciclos; ciclo++) {
@@ -170,12 +172,26 @@ self.onmessage = (e) => {
         restitutionData.push({ bcl: di, apd: apd_s2 }); // 'bcl' é usado para o eixo X do gráfico 
       }
     }
-
+    
+    // Otimização do gráfico
+    for (let i = 0; i < full_v.length; i += downsamplingFactor) {
+      if (full_tempo[i] !== undefined) {
+        allTimeSeriesData.push({
+          tempo: (tempo_offset + full_tempo[i]).toFixed(2),
+          v: full_v[i],
+          h: full_h[i]
+        });
+      }
+    }
+    // Atualiza o Tempo para o próximo ciclo
+    if (full_tempo.length > 0) {
+      tempo_offset += full_tempo[full_tempo.length - 1];
+    }
   }
 
   // Ordena os dados da curva pelo DI
   restitutionData.sort((a, b) => a.bcl - b.bcl);
   
   // Envia os dados da curva de restituição de volta para a página principal
-  self.postMessage({ restitutionData });
+  self.postMessage({ timeSeriesData: allTimeSeriesData, restitutionData });
 };

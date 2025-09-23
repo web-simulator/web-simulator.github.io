@@ -50,8 +50,8 @@ function calculateAPD90(v, dt) {
 // Executa um ciclo de simulação
 function runSingleCycle(params) {
   const {
-    despolarização, repolarização, recuperação, inativação, gate, dt,
-    v_inicial, h_inicial, inicio, duração, amplitude, BCL_S1, intervalo_S2,
+    tau_in, tau_out, tau_open, tau_close, v_gate, dt,
+    v_inicial, h_inicial, inicio, duracao, amplitude, BCL_S1, intervalo_S2,
     num_estimulos_s1
   } = params;
 
@@ -72,14 +72,14 @@ function runSingleCycle(params) {
   // Pulsos S1
   for (let j = 0; j < num_estimulos_s1; j++) {
     const inicio_pulso = inicio + j * BCL_S1;
-    if (t >= inicio_pulso && t < inicio_pulso + duração) {
+    if (t >= inicio_pulso && t < inicio_pulso + duracao) {
       estimulo = amplitude;
       break;
     }
   }
   // Pulso S2
   const inicio_s2 = inicio + (num_estimulos_s1 - 1) * BCL_S1 + intervalo_S2;
-  if (t >= inicio_s2 && t < inicio_s2 + duração) {
+  if (t >= inicio_s2 && t < inicio_s2 + duracao) {
     estimulo = amplitude;
   }
 
@@ -88,16 +88,16 @@ function runSingleCycle(params) {
 
   // Funções de derivada
   function f_v(vv, hh, t) {
-    const J_entrada = (hh * vv ** 2 * (1 - vv)) / despolarização;
-    const J_saida = -vv / repolarização;
+    const J_entrada = (hh * vv ** 2 * (1 - vv)) / tau_in;
+    const J_saida = -vv / tau_out;
     return J_entrada + J_saida + estimulo;
   }
 
   function f_h(vv, hh) {
-    if (vv < gate) {
-      return (1 - hh) / recuperação;
+    if (vv < v_gate) {
+      return (1 - hh) / tau_open;
     } else {
-      return -hh / inativação;
+      return -hh / tau_close;
     }
   }
 

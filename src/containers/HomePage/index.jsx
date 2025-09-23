@@ -4,62 +4,51 @@ import './styles.css';
 // Componente principal da página inicial
 const HomePage = ({ onNavigate }) => {
   const models = [
-    { 
+    { // Mitchell-Schaeffer 1 estímulo
       id: 'single_stimulus', 
       title: 'Mitchell-Schaeffer (1 Estímulo)', 
       description: 'Simula a resposta de um único estímulo elétrico em uma célula cardíaca.',
       category: 'Modelos 0D' 
     },
-    { 
+    { // Mitchell-Schaeffer 8 estímulos
       id: 'multiple_stimuli', 
       title: 'Mitchell-Schaeffer (8 Estímulos)', 
       description: 'Observa a resposta celular a uma série de estímulos com intervalo fixo.',
       category: 'Modelos 0D' 
     },
-    { 
+    { // Protocolo S1-S2
       id: 's1_s2', 
       title: 'Protocolo S1-S2', 
       description: 'Protocolo padrão para investigar a refratariedade e a vulnerabilidade do tecido cardíaco.',
       category: 'Modelos 0D' 
     },
-    { 
+    { // Curvas de Restituição
       id: 'restitution_curve', 
       title: 'Curva de Restituição', 
-      description: 'Analisa a relação entre o intervalo de acoplamento e a duração do potencial de ação.',
+      description: 'Analisa a relação entre o intervalo de acoplamento e a duração do potencial de ação, utilizando diferentes protocolos.',
       category: 'Modelos 0D' 
     },
-    { 
-      id: 'mms_restitution_curve', 
-      title: 'Curva de Restituição (MMS)', 
-      description: 'Gera a curva de restituição usando o modelo de Mitchell-Schaeffer modificado.',
-      category: 'Modelos 0D' 
-    },
-    { 
-      id: 'dynamic_protocol', 
-      title: 'Protocolo Dinâmico', 
-      description: 'Um protocolo de estimulação que se adapta dinamicamente para mapear a restituição.',
-      category: 'Modelos 0D' 
-    },
-    { 
+    { // Bistable 1D
       id: 'bistable', 
-      title: 'Bistable 1D', 
-      description: 'Um modelo unidimensional que exibe comportamento biestável.',
+      title: 'Bistable', 
+      description: 'Modelo unidimensional que exibe comportamento biestável.',
       category: 'Modelos 1D' 
     },
-    { 
+    { // FitzHugh-Nagumo 1D
       id: 'fhn', 
-      title: 'Modelo FitzHugh-Nagumo 1D', 
-      description: 'Um modelo simplificado da excitabilidade neuronal e cardíaca em uma dimensão.',
+      title: 'FitzHugh-Nagumo', 
+      description: 'Modelo simplificado da excitabilidade cardíaca em uma dimensão.',
       category: 'Modelos 1D' 
     },
-    { 
+    { // Mitchell-Schaeffer 1D
       id: 'ms_1d', 
-      title: 'Modelo Mitchell-Schaeffer 1D', 
-      description: 'O modelo de Mitchell-Schaeffer estendido para uma dimensão espacial.',
+      title: 'Mitchell-Schaeffer', 
+      description: 'Mitchell-Schaeffer estendido para uma dimensão espacial.',
       category: 'Modelos 1D' 
     }
   ];
 
+  // Agrupa os modelos por categoria
   const modelsByCategory = models.reduce((acc, model) => {
     if (!acc[model.category]) {
       acc[model.category] = [];
@@ -68,6 +57,7 @@ const HomePage = ({ onNavigate }) => {
     return acc;
   }, {});
 
+  // Renderiza a página inicial com seções para cada categoria de modelo
   return (
     <div className="homepage-container">
       <header className="homepage-header">
