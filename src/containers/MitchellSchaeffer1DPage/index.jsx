@@ -18,6 +18,7 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
   const [viewMode, setViewMode] = useState('line');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedX, setSelectedX] = useState(null);
+  const [simulationSpeed, setSimulationSpeed] = useState(50);
 
   // Parâmetros da simulação que o usuário pode alterar
   const [editableParams, setEditableParams] = useState({
@@ -36,6 +37,7 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
     duracao: 1.0,
     amplitude: 1.0,
     posição_do_estímulo: 10,
+    tamanho_do_estímulo: 5,
     num_estimulos: 8,
     BCL: 250
   });
@@ -59,10 +61,11 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
     };
   }, []);
 
-  // Simulação em um loop
+  // Simulação em um loop com velocidade ajustável
   useEffect(() => {
     let interval;
     if (isPlaying && simulationData.length > 0) {
+      const delay = 101 - simulationSpeed; // Ajusta o delay com base na velocidade
       interval = setInterval(() => {
         setCurrentFrame((prevFrame) => {
           const nextFrame = prevFrame + 1;
@@ -72,10 +75,10 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
           }
           return nextFrame;
         });
-      }, 10);
+      }, delay);
     }
     return () => clearInterval(interval); // Limpa o intervalo
-  }, [isPlaying, simulationData]);
+  }, [isPlaying, simulationData, simulationSpeed]);
 
   // Atualiza os parâmetros quando o usuário muda os valores nos inputs
   const handleChange = useCallback((e, name) => {
@@ -160,19 +163,33 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
         <SpatiotemporalChart simulationData={simulationData} currentFrame={currentFrame} onPointClick={handlePointClick} />
       )}
 
-      {/* Renderiza o controle deslizante de tempo */}
+      {/* Renderiza os controles deslizantes */}
       {simulationData.length > 0 && (
-        <div className="slider-container">
-          <label>Tempo: {simulationData[currentFrame]?.time || 0} ms</label>
-          <input
-            type="range"
-            min="0"
-            max={simulationData.length - 1}
-            value={currentFrame}
-            onChange={handleSliderChange}
-            className="slider"
-          />
-        </div>
+        <>
+          <div className="slider-container">
+            <label>Tempo: {simulationData[currentFrame]?.time || 0} ms</label>
+            <input
+              type="range"
+              min="0"
+              max={simulationData.length - 1}
+              value={currentFrame}
+              onChange={handleSliderChange}
+              className="slider"
+            />
+          </div>
+          {/* Controle de Velocidade */}
+          <div className="slider-container">
+            <label>Velocidade da Animação</label>
+            <input
+              type="range"
+              min="1"
+              max="100"
+              value={simulationSpeed}
+              onChange={(e) => setSimulationSpeed(parseInt(e.target.value, 10))}
+              className="slider"
+            />
+          </div>
+        </>
       )}
 
       {/* Modal para exibir o gráfico de um ponto clicado. */}

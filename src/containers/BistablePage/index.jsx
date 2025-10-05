@@ -18,6 +18,7 @@ const BistablePage = ({ onBack }) => {
   const [viewMode, setViewMode] = useState('line');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedX, setSelectedX] = useState(null);
+  const [simulationSpeed, setSimulationSpeed] = useState(50);
 
   // Parâmetros da simulação que o usuário pode alterar
   const [editableParams, setEditableParams] = useState({
@@ -50,10 +51,11 @@ const BistablePage = ({ onBack }) => {
     };
   }, []);
 
-  // Reproduzir a simulação em um loop
+  // Reproduzir a simulação em um loop com velocidade ajustável
   useEffect(() => {
     let interval;
     if (isPlaying && simulationData.length > 0) {
+      const delay = 101 - simulationSpeed; // Ajusta o delay com base na velocidade
       interval = setInterval(() => {
         setCurrentFrame((prevFrame) => {
           const nextFrame = prevFrame + 1;
@@ -63,10 +65,10 @@ const BistablePage = ({ onBack }) => {
           }
           return nextFrame;
         });
-      }, 50);
+      }, delay);
     }
-    return () => clearInterval(interval); // Limpa o intervalo
-  }, [isPlaying, simulationData]);
+    return () => clearInterval(interval);
+  }, [isPlaying, simulationData, simulationSpeed]); // Adicionado simulationSpeed 
 
   // Atualiza os parâmetros quando o usuário muda os valores nos inputs
   const handleChange = useCallback((e, name) => {
@@ -148,7 +150,8 @@ const BistablePage = ({ onBack }) => {
       
       {/* Renderiza o controle deslizante de tempo */}
       {simulationData.length > 0 && (
-        <div className="slider-container">
+        <>
+          <div className="slider-container">
             <label>Tempo: {simulationData[currentFrame]?.time || 0} ms</label>
             <input
                 type="range"
@@ -158,10 +161,22 @@ const BistablePage = ({ onBack }) => {
                 onChange={handleSliderChange}
                 className="slider"
             />
-        </div>
+          </div>
+          {/* Controle de Velocidade */}
+          <div className="slider-container">
+            <label>Velocidade da Animação</label>
+            <input
+              type="range"
+              min="1"
+              max="100"
+              value={simulationSpeed}
+              onChange={(e) => setSimulationSpeed(parseInt(e.target.value, 10))}
+              className="slider"
+            />
+          </div>
+        </>
       )}
 
-      {/* Modal para exibir o gráfico de um ponto clicado. */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <h2>Potencial em X = {selectedX !== null ? (selectedX * editableParams.dx).toFixed(2) : ''}</h2>
         <Chart data={timeseriesData} />

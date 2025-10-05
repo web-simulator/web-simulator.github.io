@@ -1,7 +1,6 @@
 import Button from '../../components/Button';
 import './styles.css';
 
-// Componente principal da página inicial
 const HomePage = ({ onNavigate }) => {
   const models = [
     { // Mitchell-Schaeffer 1 estímulo
@@ -45,10 +44,15 @@ const HomePage = ({ onNavigate }) => {
       title: 'Mitchell-Schaeffer', 
       description: 'Mitchell-Schaeffer estendido para uma dimensão espacial.',
       category: 'Modelos 1D' 
+    },
+    { // Modelo 2D
+      id: 'model_2d',
+      title: 'Modelo de Difusão 2D',
+      description: 'Um modelo simples de difusão bidimensional.',
+      category: 'Modelos 2D'
     }
   ];
 
-  // Agrupa os modelos por categoria
   const modelsByCategory = models.reduce((acc, model) => {
     if (!acc[model.category]) {
       acc[model.category] = [];

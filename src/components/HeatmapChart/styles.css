@@ -1,0 +1,23 @@
+.heatmap-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  position: relative; 
+}
+
+.heatmap-container canvas {
+  border: 1px solid #ccc;
+}
+
+.heatmap-tooltip {
+  position: fixed; 
+  background-color: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  pointer-events: none;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}

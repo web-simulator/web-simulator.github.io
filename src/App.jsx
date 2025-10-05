@@ -7,6 +7,7 @@ import RestitutionCurvePage from './containers/RestitutionCurvePage';
 import BistablePage from './containers/BistablePage';
 import FitzHughNagumoPage from './containers/FitzHughNagumoPage';
 import MitchellSchaeffer1DPage from './containers/MitchellSchaeffer1DPage';
+import Model2DPage from './containers/Model2DPage';
 import './index.css';
 
 function App() {
@@ -40,7 +41,10 @@ function App() {
       case 'ms_1d':
         // Mitchell-Schaeffer 1D
         return <MitchellSchaeffer1DPage onBack={() => navigateTo('home')} />;
-        default:
+      case 'model_2d':
+        // Modelo 2D
+        return <Model2DPage onBack={() => navigateTo('home')} />;
+      default:
         return <HomePage onNavigate={navigateTo} />;
     }
   };

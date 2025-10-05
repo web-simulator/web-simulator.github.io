@@ -17,6 +17,7 @@ self.onmessage = (e) => {
     duracao,
     amplitude,
     posição_do_estímulo,
+    tamanho_do_estímulo, 
     num_estimulos,
     BCL
   } = params;
@@ -56,8 +57,12 @@ self.onmessage = (e) => {
     const J_saida = -vv[i] / Tau_out;
     const reaction = J_entrada + J_saida;
 
-    // Aplica o estímulo apenas na posição definida
-    if (i === Math.floor(posição_do_estímulo / dx)) {
+    // Converte a posição e o tamanho do estímulo para índices da malha
+    const stimulus_center_index = Math.floor(posição_do_estímulo / dx);
+    const stimulus_half_size_index = Math.floor(tamanho_do_estímulo / (2 * dx));
+
+    // Aplica o estímulo em uma região
+    if (i >= stimulus_center_index - stimulus_half_size_index && i <= stimulus_center_index + stimulus_half_size_index) {
         return diffusion + reaction + current_stimulus;
     }
 
@@ -99,57 +104,33 @@ self.onmessage = (e) => {
     }
 
     // K2
-    const v_k2 = [...v_prev];
-    const h_k2 = [...h_prev];
-    for (let i = 1; i < N - 1; i++) {
-      v_k2[i] = v_prev[i] + 0.5 * k1_v[i];
-      h_k2[i] = h_prev[i] + 0.5 * k1_h[i];
-    }
-    // Aplica as condições de contorno de Neumann para o cálculo de K2
-    v_k2[0] = v_k2[1];
-    v_k2[N - 1] = v_k2[N - 2];
-    h_k2[0] = h_k2[1];
-    h_k2[N - 1] = h_k2[N - 2];
+    const v_k2 = v_prev.map((val, i) => val + 0.5 * k1_v[i]);
+    const h_k2 = h_prev.map((val, i) => val + 0.5 * k1_h[i]);
+    v_k2[0] = v_k2[1]; v_k2[N - 1] = v_k2[N - 2];
     for (let i = 1; i < N - 1; i++) {
       k2_v[i] = dt * f_v(v_k2, h_k2, i, current_stimulus);
       k2_h[i] = dt * f_h(v_k2, h_k2, i);
     }
 
     // K3
-    const v_k3 = [...v_prev];
-    const h_k3 = [...h_prev];
-    for (let i = 1; i < N - 1; i++) {
-      v_k3[i] = v_prev[i] + 0.5 * k2_v[i];
-      h_k3[i] = h_prev[i] + 0.5 * k2_h[i];
-    }
-    // Aplica as condições de contorno para o cálculo de K3
-    v_k3[0] = v_k3[1];
-    v_k3[N - 1] = v_k3[N - 2];
-    h_k3[0] = h_k3[1];
-    h_k3[N - 1] = h_k3[N - 2];
+    const v_k3 = v_prev.map((val, i) => val + 0.5 * k2_v[i]);
+    const h_k3 = h_prev.map((val, i) => val + 0.5 * k2_h[i]);
+    v_k3[0] = v_k3[1]; v_k3[N - 1] = v_k3[N - 2];
     for (let i = 1; i < N - 1; i++) {
       k3_v[i] = dt * f_v(v_k3, h_k3, i, current_stimulus);
       k3_h[i] = dt * f_h(v_k3, h_k3, i);
     }
 
     // K4
-    const v_k4 = [...v_prev];
-    const h_k4 = [...h_prev];
-    for (let i = 1; i < N - 1; i++) {
-      v_k4[i] = v_prev[i] + k3_v[i];
-      h_k4[i] = h_prev[i] + k3_h[i];
-    }
-    // Aplica as condições de contorno para o cálculo de K4
-    v_k4[0] = v_k4[1];
-    v_k4[N - 1] = v_k4[N - 2];
-    h_k4[0] = h_k4[1];
-    h_k4[N - 1] = h_k4[N - 2];
+    const v_k4 = v_prev.map((val, i) => val + k3_v[i]);
+    const h_k4 = h_prev.map((val, i) => val + k3_h[i]);
+    v_k4[0] = v_k4[1]; v_k4[N - 1] = v_k4[N - 2];
     for (let i = 1; i < N - 1; i++) {
       k4_v[i] = dt * f_v(v_k4, h_k4, i, current_stimulus);
       k4_h[i] = dt * f_h(v_k4, h_k4, i);
     }
 
-    // Atualiza os valores de v e h 
+    // Atualiza v e h
     for (let i = 1; i < N - 1; i++) {
       v[i] = v_prev[i] + (1.0 / 6.0) * (k1_v[i] + 2 * k2_v[i] + 2 * k3_v[i] + k4_v[i]);
       h[i] = h_prev[i] + (1.0 / 6.0) * (k1_h[i] + 2 * k2_h[i] + 2 * k3_h[i] + k4_h[i]);

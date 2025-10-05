@@ -1,45 +1,36 @@
 import { useState, useEffect, useCallback } from 'react';
-import FHNChart from '../../components/FHNChart';
-import SpatiotemporalChart from '../../components/SpatiotemporalChart';
+import HeatmapChart from '../../components/HeatmapChart';
+import Colorbar from '../../components/Colorbar';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
-import Modal from '../../components/Modal';
-import Chart from '../../components/Chart';
-import SimulationWorker from '../../simulation_fhn.worker.js?worker';
+import SimulationWorker from '../../simulation_2d.worker.js?worker';
 import './styles.css';
 
-const FitzHughNagumoPage = ({ onBack }) => {
+const Model2DPage = ({ onBack }) => {
   const [simulationData, setSimulationData] = useState([]);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [initialCondition, setInitialCondition] = useState('left_pulse');
-  const [viewMode, setViewMode] = useState('line');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedX, setSelectedX] = useState(null);
-  const [simulationSpeed, setSimulationSpeed] = useState(50); 
+  const [simulationSpeed, setSimulationSpeed] = useState(50);
 
   // Parâmetros da simulação que o usuário pode alterar
   const [editableParams, setEditableParams] = useState({
-    k: 2.0,
-    A: 1.0,
-    alpha: 0.1,
-    epsilon: 0.005,
-    gamma: 2.0,
-    L: 100,
-    dx: 1,
-    dt: 0.1,
-    totalTime: 400,
+    valor_inicial: 50,
+    D: 0.1,
+    L: 1,
+    N: 21,
+    dt: 0.001,
+    totalTime: 1,
     downsamplingFactor: 10,
   });
 
-  // Configura o Worker 
+  // Configura o Worker
   useEffect(() => {
     const simulationWorker = new SimulationWorker();
     setWorker(simulationWorker);
 
-    // Recebe os dados da simulação.
+    // Recebe os dados da simulação
     simulationWorker.onmessage = (e) => {
       setSimulationData(e.data);
       setCurrentFrame(0);
@@ -57,7 +48,7 @@ const FitzHughNagumoPage = ({ onBack }) => {
   useEffect(() => {
     let interval;
     if (isPlaying && simulationData.length > 0) {
-      const delay = 101 - simulationSpeed; // Ajusta o delay com base na velocidade
+      const delay = 101 - simulationSpeed;
       interval = setInterval(() => {
         setCurrentFrame((prevFrame) => {
           const nextFrame = prevFrame + 1;
@@ -70,9 +61,9 @@ const FitzHughNagumoPage = ({ onBack }) => {
       }, delay);
     }
     return () => clearInterval(interval); 
-  }, [isPlaying, simulationData, simulationSpeed]); // Adicionado simulationSpeed
+  }, [isPlaying, simulationData, simulationSpeed]); // Adiciona simulationSpeed
 
-  // Atualiza os parâmetros quando o usuário muda os valores nos inputs
+  // Atualiza os parâmetros editáveis
   const handleChange = useCallback((e, name) => {
     const value = parseFloat(e.target.value);
     setEditableParams((prev) => ({ ...prev, [name]: value }));
@@ -84,56 +75,27 @@ const FitzHughNagumoPage = ({ onBack }) => {
       setLoading(true);
       setSimulationData([]);
       setIsPlaying(false);
-      // Envia os parâmetros e a condição inicial para o worker
-      worker.postMessage({ ...editableParams, initialCondition });
+      worker.postMessage(editableParams);
     }
-  }, [worker, editableParams, initialCondition]);
+  }, [worker, editableParams]);
 
-  // Lida com a mudança no controle deslizante de tempo
+  // Mudança no controle deslizante de tempo
   const handleSliderChange = (e) => {
     setIsPlaying(false);
     setCurrentFrame(parseInt(e.target.value, 10));
   };
-  
-  // Clique no gráfico de cores para mostrar o modal
-  const handlePointClick = useCallback((xIndex) => {
-    setSelectedX(xIndex);
-    setIsModalOpen(true);
-  }, []);
 
-  // Filtra com base no 'selectedX'
-  const getTimeseriesForPoint = () => {
-    if (selectedX === null || simulationData.length === 0) return [];
-    return simulationData.map(frame => ({
-      tempo: parseFloat(frame.time),
-      v: frame.data[selectedX].v,
-      h: frame.data[selectedX].w,
-    }));
-  };
-
+  // Dados do gráfico para o frame atual
   const currentChartData = simulationData[currentFrame]?.data || [];
-  const timeseriesData = getTimeseriesForPoint();
 
+  // Renderiza a página 
   return (
     <div className="page-container">
       <Button onClick={onBack}>Voltar para Home</Button>
-      <h1>Modelo FitzHugh-Nagumo 1D</h1>
+      <h1>Modelo de Difusão 2D</h1>
 
+      {/* Inputs para os parâmetros da simulação */}
       <div className="params-container">
-        {/* Input para selecionar a condição inicial */}
-        <div className="input-container">
-          <label>Condição Inicial</label>
-          <select 
-            value={initialCondition} 
-            onChange={(e) => setInitialCondition(e.target.value)} 
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-          >
-            <option value="left_pulse">Pulso na Borda</option>
-            <option value="reentry">Simulação de Reentrada</option>
-          </select>
-        </div>
-        
-        {/* Inputs para os parâmetros da simulação */}
         {Object.keys(editableParams).map((key) => (
           <Input
             key={key}
@@ -144,7 +106,7 @@ const FitzHughNagumoPage = ({ onBack }) => {
         ))}
       </div>
 
-      {/* Controles da simulação */}
+      {/* Botões de controle */}
       <div className="button-container">
         <Button onClick={handleSimularClick} disabled={loading}>
           {loading ? 'Simulando...' : 'Simular'}
@@ -152,23 +114,21 @@ const FitzHughNagumoPage = ({ onBack }) => {
         <Button onClick={() => setIsPlaying(!isPlaying)} disabled={simulationData.length === 0}>
           {isPlaying ? 'Pausar' : 'Retomar'}
         </Button>
-        <Button onClick={() => setViewMode(viewMode === 'line' ? 'color' : 'line')} disabled={simulationData.length === 0}>
-          {viewMode === 'line' ? 'Gráfico de Cores' : 'Gráfico de Linhas'}
-        </Button>
       </div>
 
-      {/* Renderiza o gráfico de linha ou de cores */}
-      {viewMode === 'line' ? (
-        <FHNChart data={currentChartData} />
-      ) : (
-        <SpatiotemporalChart simulationData={simulationData} currentFrame={currentFrame} onPointClick={handlePointClick} />
-      )}
+      {/* Gráfico de calor e Colorbar */}
+      <div className="chart-colorbar-wrapper">
+        <HeatmapChart data={currentChartData} maxValue={editableParams.valor_inicial} />
+        {simulationData.length > 0 && (
+          <Colorbar maxValue={editableParams.valor_inicial} minValue={0} />
+        )}
+      </div>
 
-      {/* Renderiza o controle deslizante de tempo */}
+      {/* Controles deslizantes */}
       {simulationData.length > 0 && (
         <>
           <div className="slider-container">
-            <label>Tempo: {simulationData[currentFrame]?.time || 0} ms</label>
+            <label>Tempo: {simulationData[currentFrame]?.time || 0} s</label>
             <input
               type="range"
               min="0"
@@ -178,6 +138,7 @@ const FitzHughNagumoPage = ({ onBack }) => {
               className="slider"
             />
           </div>
+
           {/* Controle de Velocidade */}
           <div className="slider-container">
             <label>Velocidade da Animação</label>
@@ -192,13 +153,8 @@ const FitzHughNagumoPage = ({ onBack }) => {
           </div>
         </>
       )}
-
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <h2>Potencial em X = {selectedX !== null ? (selectedX * editableParams.dx).toFixed(2) : ''}</h2>
-        <Chart data={timeseriesData} />
-      </Modal>
     </div>
   );
 };
 
-export default FitzHughNagumoPage;
+export default Model2DPage;
