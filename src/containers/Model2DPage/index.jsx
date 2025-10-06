@@ -21,6 +21,7 @@ const Model2DPage = ({ onBack }) => {
     L: 1,
     N: 21,
     dt: 0.001,
+    dx: 0.05, 
     totalTime: 1,
     downsamplingFactor: 10,
   });
@@ -60,7 +61,7 @@ const Model2DPage = ({ onBack }) => {
         });
       }, delay);
     }
-    return () => clearInterval(interval); 
+    return () => clearInterval(interval);
   }, [isPlaying, simulationData, simulationSpeed]); // Adiciona simulationSpeed
 
   // Atualiza os parâmetros editáveis
@@ -88,7 +89,7 @@ const Model2DPage = ({ onBack }) => {
   // Dados do gráfico para o frame atual
   const currentChartData = simulationData[currentFrame]?.data || [];
 
-  // Renderiza a página 
+  // Renderiza a página
   return (
     <div className="page-container">
       <Button onClick={onBack}>Voltar para Home</Button>

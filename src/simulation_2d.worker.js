@@ -5,13 +5,13 @@ self.onmessage = (e) => {
     L,
     N,
     dt,
+    dx,
     totalTime,
     downsamplingFactor,
     valor_inicial
   } = params;
 
-  const dx = L / (N - 1);
-  const dy = L / (N - 1);
+  const dy = dx; // dy é igual a dx
 
   // condição de CFL para 2D
   const cfl_limit = (dx * dx) / (4 * D);
@@ -25,8 +25,8 @@ self.onmessage = (e) => {
   // condição inicial é um quadrado central com valor_inicial
   const center = Math.floor(N / 2);
   const stimulusSize = 2; // ajusta o tamanho do estímulo inicial
-  for (let di = -stimulusSize; di <= stimulusSize; di++) { 
-    for (let dj = -stimulusSize; dj <= stimulusSize; dj++) { 
+  for (let di = -stimulusSize; di <= stimulusSize; di++) {
+    for (let dj = -stimulusSize; dj <= stimulusSize; dj++) {
       const ii = center + di;
       const jj = center + dj;
       if (ii >= 0 && ii < N && jj >= 0 && jj < N) {
@@ -35,7 +35,7 @@ self.onmessage = (e) => {
     }
   }
 
-  const steps = Math.floor(totalTime / dt); 
+  const steps = Math.floor(totalTime / dt);
   const outputData = [];
 
   // loop de tempo
@@ -45,7 +45,7 @@ self.onmessage = (e) => {
     // atualiza interior com laplaciano central
     for (let i = 1; i < N - 1; i++) {
       for (let j = 1; j < N - 1; j++) {
-        const laplacian = // laplaciano 
+        const laplacian = // laplaciano
           (u_prev[i + 1][j] + u_prev[i - 1][j] - 2 * u_prev[i][j]) / (dx * dx) +
           (u_prev[i][j + 1] + u_prev[i][j - 1] - 2 * u_prev[i][j]) / (dy * dy);
 
@@ -55,12 +55,12 @@ self.onmessage = (e) => {
 
     // condições de contorno Neumann
     for (let j = 0; j < N; j++) {
-      u[0][j] = u[1][j]; 
-      u[N - 1][j] = u[N - 2][j]; 
+      u[0][j] = u[1][j];
+      u[N - 1][j] = u[N - 2][j];
     }
     // bordas verticais
     for (let i = 0; i < N; i++) {
-      u[i][0] = u[i][1];         
+      u[i][0] = u[i][1];
       u[i][N - 1] = u[i][N - 2];
     }
 
