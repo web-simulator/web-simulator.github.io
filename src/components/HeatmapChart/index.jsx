@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, memo, useState } from 'react';
 import './styles.css';
 
-const HeatmapChart = ({ data, maxValue = 1, onPointClick }) => {
+const HeatmapChart = ({ data, maxValue = 1, onPointClick, fibrosisMap, fibrosisConductivity }) => {
   const canvasRef = useRef(null);
   
-  // tootltip
+  // tooltip
   const [tooltip, setTooltip] = useState({
     visible: false, 
     y: 0,           
@@ -40,9 +40,13 @@ const HeatmapChart = ({ data, maxValue = 1, onPointClick }) => {
     // Itera sobre cada ponto da matriz de dados
     for (let i = 0; i < nRows; i++) {
       for (let j = 0; j < nCols; j++) {
-        // exibe o pixel com sua respectiva cor
-        const value = data[i][j];
-        offscreenCtx.fillStyle = getColor(value);
+        // Checa se existe um mapa de fibrose e se a célula atual é fibrótica
+        if (fibrosisMap && fibrosisMap[i] && fibrosisMap[i][j] === fibrosisConductivity) {
+            offscreenCtx.fillStyle = 'black'; // Pinta a célula de preto
+        } else {
+            const value = data[i][j];
+            offscreenCtx.fillStyle = getColor(value); // Pinta com a cor do potencial
+        }
         offscreenCtx.fillRect(j, i, 1, 1);
       }
     }
@@ -52,7 +56,7 @@ const HeatmapChart = ({ data, maxValue = 1, onPointClick }) => {
     ctx.imageSmoothingQuality = 'high';
     ctx.clearRect(0, 0, width, height);
     ctx.drawImage(offscreenCanvas, 0, 0, width, height);
-  }, [data, maxValue]);
+  }, [data, maxValue, fibrosisMap, fibrosisConductivity]); // Adicione as novas props às dependências
 
   // Mostra o tooltip ao mover o mouse
   const handleMouseMove = (event) => {
@@ -130,10 +134,7 @@ const HeatmapChart = ({ data, maxValue = 1, onPointClick }) => {
 
       {/* Mostra o tooltip*/}
       {tooltip.visible && (
-        <div
-          className="heatmap-tooltip"
-          style={{ top: `${tooltip.y}px`, left: `${tooltip.x}px` }}
-        >
+        <div className="heatmap-tooltip" style={{ top: `${tooltip.y}px`, left: `${tooltip.x}px` }}>
           Valor: {tooltip.value}
         </div>
       )}
