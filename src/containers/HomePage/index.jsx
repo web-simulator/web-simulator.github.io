@@ -47,8 +47,8 @@ const HomePage = ({ onNavigate }) => {
     },
     { // Modelo 2D
       id: 'model_2d',
-      title: 'Modelo de Difusão 2D',
-      description: 'Um modelo simples de difusão bidimensional.',
+      title: 'Modelo Mitchell-Schaeffer 2D',
+      description: 'Simula a propagação de ondas 2D, permitindo protocolos S1-S2 e inclusão de fibrose.',
       category: 'Modelos 2D'
     }
   ];

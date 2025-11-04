@@ -71,16 +71,16 @@ const Model2DPage = ({ onBack }) => {
 
   // Parâmetros do modelo
   const [ms2dParams, setMs2dParams] = useState({
-    k: 0.002,
+    k: 0.004,
     Tau_in: 0.3,
     Tau_out: 6.0,
-    Tau_open: 110.0,
-    Tau_close: 120.0,
+    Tau_open: 120.0,
+    Tau_close: 80.0,
     gate: 0.13,
-    L: 1.0,
+    L: 10,
     dt: 0.05,
-    dx: 0.02,
-    totalTime: 1500,
+    dx: 0.2,
+    totalTime: 3000,
     downsamplingFactor: 10,
   });
 
@@ -93,24 +93,24 @@ const Model2DPage = ({ onBack }) => {
       duration: 2,
       amplitude: 1.0,
       shape: 'rectangle', // Forma do estímulo
-      rectParams: { x1: 0, y1: 0, x2: 0.1, y2: 1.0 }, // Parâmetros se for retângulo
+      rectParams: { x1: 0.0, y1: 0.0, x2: 1, y2: 10.0 }, // Parâmetros se for retângulo
       circleParams: { cx: 0.5, cy: 0.5, radius: 0.1 } // Parâmetros se for círculo
     },
     {
       id: 2,
       startTime: 0, // calcula automaticamente 
-      interval: 180, // Intervalo apos o anteriror  
+      interval: 275, // Intervalo apos o anteriror  
       duration: 2,
       amplitude: 1.0,
-      shape: 'circle',
-      rectParams: { x1: 0.8, y1: 0.3, x2: 0.9, y2: 0.4 },
+      shape: 'rectangle',
+      rectParams: { x1: 6, y1: 3, x2: 8, y2: 7 },
       circleParams: { cx: 0.8, cy: 0.3, radius: 0.1 }
     }
   ]);
 
   // Região de fibrose
   const [fibrosisParams, setFibrosisParams] = useState({
-    enabled: true, // Ativa ou não
+    enabled: false, // Ativa ou não
     conductivity: 0.0, // Condutividade
     density: 0.1, // Densidade 
     regionSize: 0.2, // Tamanho
@@ -277,6 +277,7 @@ const Model2DPage = ({ onBack }) => {
               <Input label={paramTranslations['regionSize']} value={fibrosisParams.regionSize} onChange={(e) => handleFibrosisChange(e, 'regionSize')} />
               <Input label={paramTranslations['seed']} value={fibrosisParams.seed} onChange={(e) => handleFibrosisChange(e, 'seed')} />
           </>}
+          
       </div>
 
       <div className="button-container">
