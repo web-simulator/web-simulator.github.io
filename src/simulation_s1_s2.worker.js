@@ -52,7 +52,7 @@ self.onmessage = (e) => {
   h[0] = h_inicial;
   tempo[0] = 0;
 
-  // Euler explícito
+  // RK4
   for (let i = 1; i < passos; i++) {
     tempo[i] = i * dt;
     const t = tempo[i];
@@ -60,24 +60,47 @@ self.onmessage = (e) => {
     // Determina se há estímulo aplicado neste instante
     const estimulo = aplicarEstimulo(t, amplitude, duração, inicio, BCL_S1, intervalo_S2, num_estimulos_s1);
 
-    // Despolarização e repolarização
-    const J_entrada = (h[i - 1] * v[i - 1] ** 2 * (1 - v[i - 1])) / despolarização;
-    const J_saida = -v[i - 1] / repolarização;
+    const v_prev = v[i - 1];
+    const h_prev = h[i - 1];
 
-    // Variação do potencial
-    const dv = J_entrada + J_saida + estimulo;
+    // Funções de derivada 
+    const f_v = (vv, hh) => {
+      const J_entrada = (hh * vv ** 2 * (1 - vv)) / despolarização;
+      const J_saida = -vv / repolarização;
+      return J_entrada + J_saida + estimulo;
+    };
 
-    // Variação da variável gate
-    let dh;
-    if (v[i - 1] < gate) {
-      dh = (1 - h[i - 1]) / recuperação; // Recuperação lenta
-    } else {
-      dh = -h[i - 1] / inativação; // Inativação rápida
-    }
+    const f_h = (vv, hh) => {
+      if (vv < gate) {
+        return (1 - hh) / recuperação; // Recuperação lenta
+      } else {
+        return -hh / inativação; // Inativação rápida
+      }
+    };
+    
+    // K1
+    const k1_v = dt * f_v(v_prev, h_prev);
+    const k1_h = dt * f_h(v_prev, h_prev);
+
+    // K2
+    const k2_v = dt * f_v(v_prev + 0.5 * k1_v, h_prev + 0.5 * k1_h);
+    const k2_h = dt * f_h(v_prev + 0.5 * k1_v, h_prev + 0.5 * k1_h);
+
+    // K3
+    const k3_v = dt * f_v(v_prev + 0.5 * k2_v, h_prev + 0.5 * k2_h);
+    const k3_h = dt * f_h(v_prev + 0.5 * k2_v, h_prev + 0.5 * k2_h);
+
+    // K4
+    const k4_v = dt * f_v(v_prev + k3_v, h_prev + k3_h);
+    const k4_h = dt * f_h(v_prev + k3_v, h_prev + k3_h);
+
+    // Próximo valor
+    const v_next = v_prev + (1.0 / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v);
+    const h_next = h_prev + (1.0 / 6.0) * (k1_h + 2 * k2_h + 2 * k3_h + k4_h);
     
     // Atualiza as variáveis e mantém no intervalo 0,1
-    v[i] = Math.max(0.0, Math.min(1.0, v[i - 1] + dt * dv));
-    h[i] = Math.max(0.0, Math.min(1.0, h[i - 1] + dt * dh));
+    v[i] = Math.max(0.0, Math.min(1.0, v_next));
+    h[i] = Math.max(0.0, Math.min(1.0, h_next));
   }
 
   // Reduz a quantidade de pontos para otimização

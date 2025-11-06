@@ -15,7 +15,7 @@ const RestitutionCurvePage = ({ onBack }) => {
   const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showTimeSeries, setShowTimeSeries] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('s1s2'); // opcões: 's1s2', 'mms', 'dynamic'
+  const [selectedModel, setSelectedModel] = useState('mms'); // opcões: 's1s2', 'mms', 'dynamic'
 
   // Parâmetros editáveis para cada modelo
 

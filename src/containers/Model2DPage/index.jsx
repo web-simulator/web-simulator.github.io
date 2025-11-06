@@ -265,7 +265,7 @@ const Model2DPage = ({ onBack }) => {
       ))}
       <Button onClick={addStimulus} style={{ marginTop: '10px' }}>Adicionar Estímulo</Button>
       
-      <h2>Parâmetros da Fibrose Compacta</h2>
+      <h2>Parâmetros da Fibrose</h2>
       <div className="params-container">
           <div className="input-container" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <label htmlFor="fibrosis-enabled">Habilitar Fibrose</label>
