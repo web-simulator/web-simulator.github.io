@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Chart from '../../components/Chart';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
+import Modal from '../../components/Modal'; // Importar o Modal
 import './styles.css';
 import SimulationWorker from '../../simulation_8_stimuli.worker.js?worker';
 
@@ -14,6 +15,9 @@ const MultipleStimuliPage = ({ onBack }) => {
   
   // Indica se a simulação está em execução
   const [loading, setLoading] = useState(false);
+
+  // Estado para o modal de informações
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 /*
   // Parâmetros que podem ser alterados pelo usuário
   const [editableParams, setEditableParams] = useState({
@@ -123,6 +127,53 @@ const handleSimularClick = useCallback(() => {
 
       {/* Exibe o gráfico com os resultados */}
       <Chart data={data} />
+
+      {/* Botão e Modal de Informações */}
+      <div style={{ marginTop: '20px' }}>
+        <Button onClick={() => setIsInfoModalOpen(true)}>
+          Saiba mais sobre essa simulação
+        </Button>
+      </div>
+
+      <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
+        <div className="info-modal-content">
+          <h2>Múltiplos Estímulos</h2>
+          
+          <h3>Modelo Matemático</h3>
+          <p>
+            Esta simulação usa o modelo Mitchell-Schaeffer para descrever o potencial de ação cardíaco. É um modelo de duas variáveis,
+            o que significa que simula o comportamento de uma única célula.
+          </p>
+          <p>As equações do modelo são:</p>
+          <ul>
+            <li><code>dv/dt = (h * v² * (1 - v)) / τ_in - v / τ_out + I_stim</code></li>
+            <li><code>dh/dt = (1 - h) / τ_open</code> (se <code>v &lt; v_gate</code>)</li>
+            <li><code>dh/dt = -h / τ_close</code> (se <code>v ≥ v_gate</code>)</li>
+          </ul>
+          
+          <h3>Protocolo de Estimulação</h3>
+          <p>
+            Em vez de um único pulso, uma sequência de <code>num_estimulos</code> estímulos é aplicada. 
+            O parâmetro BCL (Basic Cycle Length) define o intervalo de tempo (em ms) entre o início de um estímulo e o início do próximo.
+          </p>
+
+          <h3>Método Numérico</h3>
+          <p>
+            As equações são resolvidas numericamente usando o método Runge-Kutta de 4ª Ordem.
+          </p>
+
+          <h3>Significado dos Parâmetros</h3>
+          <ul>
+            <li>Despolarização (τ_in): Controla a velocidade de ascensão do potencial de ação.</li>
+            <li>Repolarização (τ_out): Controla a velocidade de repolarização.</li>
+            <li>Recuperação (τ_open): Controla o tempo de recuperação da excitabilidade.</li>
+            <li>Inativação (τ_close): Controla o tempo de inativação (período refratário).</li>
+            <li>Gate (v_gate): O limiar de voltagem que alterna o comportamento de <code>h</code>.</li>
+            <li>BCL: O intervalo entre os estímulos.</li>
+            <li>Num Estimulos: O número total de estímulos aplicados.</li>
+          </ul>
+        </div>
+      </Modal>
     </div>
   );
 };

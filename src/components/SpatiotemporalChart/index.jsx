@@ -10,6 +10,9 @@ const SpatiotemporalChart = ({ simulationData, currentFrame, onPointClick }) => 
     if (!simulationData || simulationData.length === 0) return;
 
     const canvas = canvasRef.current;
+
+    canvas.width = canvas.clientWidth;
+
     const ctx = canvas.getContext('2d');
     const width = canvas.width;
     const height = canvas.height;
@@ -22,12 +25,14 @@ const SpatiotemporalChart = ({ simulationData, currentFrame, onPointClick }) => 
     if (!frameData) return;
 
     const numPoints = frameData.length;
-    const cellWidth = width / numPoints;
+    const cellWidth = width / numPoints; 
     const cellHeight = height;
 
     // O valor v varia de 0 a 1
     const getColor = (value) => {
-      const hue = (1 - value) * 240; // 240 é azul, 0 é vermelho
+      // Normaliza o valor para garantir que esteja entre 0 e 1
+      const normalizedValue = Math.max(0, Math.min(1, value || 0)); 
+      const hue = (1 - normalizedValue) * 240; // 240 é azul, 0 é vermelho
       return `hsl(${hue}, 100%, 50%)`;
     };
 
@@ -35,7 +40,7 @@ const SpatiotemporalChart = ({ simulationData, currentFrame, onPointClick }) => 
     for (let x = 0; x < numPoints; x++) {
       const value = frameData[x].v;
       ctx.fillStyle = getColor(value);
-      ctx.fillRect(x * cellWidth, 0, cellWidth, cellHeight);
+      ctx.fillRect(x * cellWidth, 0, Math.ceil(cellWidth), cellHeight); 
     }
   }, [simulationData, currentFrame]); // Re-executa quando os dados mudam
 
@@ -49,12 +54,10 @@ const SpatiotemporalChart = ({ simulationData, currentFrame, onPointClick }) => 
       // Pega a posição do clique 
       const rect = canvas.getBoundingClientRect();
       const clickX = event.clientX - rect.left;
-      
-      // Calcula qual ponto x foi clicado.
       const numPoints = simulationData[0].data.length;
-      const cellWidth = canvas.width / numPoints;
+      const cellWidth = canvas.clientWidth / numPoints;
       const xIndex = Math.floor(clickX / cellWidth);
-      
+  
       // Chama a função de clique passando o índice do ponto clicado
       onPointClick(xIndex);
     };
@@ -76,8 +79,15 @@ const SpatiotemporalChart = ({ simulationData, currentFrame, onPointClick }) => 
   return (
     <div style={{ padding: '20px', textAlign: 'center' }}>
       <h2>Visualização do estímulo</h2>
-      <p>A cor muda de acordo com o potencial de ação (v). Clique no gráfico para ver o comportamento do potencial em um ponto.</p>
-      <canvas ref={canvasRef} width="800" height="50" style={{ border: '1px solid #ccc' }}></canvas>
+      <canvas 
+        ref={canvasRef} 
+        height="50" 
+        style={{ 
+          width: '100%', 
+          border: '1px solid #ccc', 
+          backgroundColor: '#f0f0f0' 
+        }}
+      ></canvas>
     </div>
   );
 };

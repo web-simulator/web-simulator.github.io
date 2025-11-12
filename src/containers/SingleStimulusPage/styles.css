@@ -8,3 +8,41 @@
   gap: 10px;
   margin: 20px 0;
 }
+
+.info-modal-content h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.info-modal-content h3 {
+  font-size: 1.25em;
+  font-weight: bold;
+  margin-top: 15px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+
+.info-modal-content p {
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.info-modal-content ul, .info-modal-content ol {
+  list-style-type: disc;
+  margin-left: 20px;
+  margin-bottom: 10px;
+}
+
+.info-modal-content ol {
+  list-style-type: decimal;
+}
+
+.info-modal-content code {
+  background-color: #f4f4f4;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-family: monospace;
+  word-wrap: break-word;
+}

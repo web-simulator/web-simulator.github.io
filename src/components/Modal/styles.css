@@ -9,15 +9,19 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 20px;
 }
 
 .modal-content {
   background-color: white;
   padding: 30px;
   border-radius: 8px;
-  width: 80%;
+  width: 95%; 
   max-width: 800px;
   position: relative;
+  max-height: 90vh; 
+  overflow-y: auto; 
+  box-sizing: border-box; 
 }
 
 .modal-close-button {
@@ -28,4 +32,10 @@
   border: none;
   font-size: 28px;
   cursor: pointer;
+}
+
+@media (min-width: 600px) {
+  .modal-content {
+    width: 80%;
+  }
 }

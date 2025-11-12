@@ -17,6 +17,7 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [viewMode, setViewMode] = useState('line');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedX, setSelectedX] = useState(null);
   const [simulationSpeed, setSimulationSpeed] = useState(50);
 
@@ -192,10 +193,58 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
         </>
       )}
 
+      {/* Botão e Modal de Informações */}
+      <div style={{ marginTop: '20px' }}>
+        <Button onClick={() => setIsInfoModalOpen(true)}>
+          Saiba mais sobre essa simulação
+        </Button>
+      </div>
+
       {/* Modal para exibir o gráfico de um ponto clicado. */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <h2>Potencial em X = {selectedX !== null ? (selectedX * editableParams.dx).toFixed(2) : ''}</h2>
         <Chart data={timeseriesData} />
+      </Modal>
+
+      {/* Modal para Informações */}
+      <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
+        <div className="info-modal-content">
+          <h2>Modelo Mitchell-Schaeffer 1D</h2>
+          
+          <h3>Modelo Matemático</h3>
+          <p>
+            Esta é a versão 1D do modelo Mitchell-Schaeffer. Ele adiciona um termo de difusão espacial à equação da voltagem <code>v</code>, permitindo a propagação da onda.
+          </p>
+          <p>As equações de reação-difusão são:</p>
+          <ul>
+            <li><code>∂v/∂t = k * (∂²v/∂x²) + (h * v² * (1 - v)) / τ_in - v / τ_out + I_stim</code></li>
+            <li><code>∂h/∂t = (1 - h) / τ_open</code> (se <code>v &lt; v_gate</code>)</li>
+            <li><code>∂h/∂t = -h / τ_close</code> (se <code>v ≥ v_gate</code>)</li>
+          </ul>
+          <p>
+            O estímulo (<code>I_stim</code>) é aplicado em uma região específica definida por <code>posição_do_estímulo</code> e <code>tamanho_do_estímulo</code>.
+          </p>
+          <h3>Método Numérico</h3>
+          <ol>
+            <li>O termo de difusão espacial <code>k * (∂²v/∂x²)</code> é aproximado usando Diferenças Finitas de 2ª Ordem.</li>
+            <li>Isso transforma a Equação Diferencial Parcial em um grande sistema de Equações Diferenciais Ordinárias, uma para cada ponto <code>i</code> no cabo.</li>
+            <li>Esse sistema de EDOs é resolvido no tempo usando Runge-Kutta de 4ª Ordem .</li>
+          </ol>
+
+          <h3>Significado dos Parâmetros</h3>
+          <ul>
+            <li>k (Condutividade): Controla a velocidade de propagação da onda.</li>
+            <li>Despolarização (τ_in): Controla a velocidade da fase de ascensão do potencial de ação. Um valor menor torna a subida mais rápida.</li>
+            <li>Repolarização (τ_out): Controla a velocidade da fase de repolarização. Um valor menor torna a descida mais rápida.</li>
+            <li>Recuperação (τ_open): Controla o tempo que a célula leva para se tornar excitável novamente.</li>
+            <li>Inativação (τ_close): Controla a velocidade com que a célula se torna refratária durante o potencial de ação.</li>
+            <li>Gate (v_gate): Limite de voltagem que alterna o comportamento da variável <code>h</code> entre recuperação e inativação.</li>
+            <li>L, dx: Comprimento do cabo e discretização espacial.</li>
+            <li>dt: Passo de tempo da simulação.</li>
+            <li>Posição/Tamanho do Estímulo: Define a região onde <code>I_stim</code> é aplicado.</li>
+            <li>Num Estimulos / BCL: Define quantos estímulos são aplicados e o intervalo entre eles.</li>
+          </ul>
+        </div>
       </Modal>
     </div>
   );

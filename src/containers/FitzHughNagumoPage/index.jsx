@@ -16,7 +16,8 @@ const FitzHughNagumoPage = ({ onBack }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [initialCondition, setInitialCondition] = useState('left_pulse');
   const [viewMode, setViewMode] = useState('line');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false); 
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedX, setSelectedX] = useState(null);
   const [simulationSpeed, setSimulationSpeed] = useState(50); 
 
@@ -193,9 +194,55 @@ const FitzHughNagumoPage = ({ onBack }) => {
         </>
       )}
 
+      {/* Botão e Modal de Informações */}
+      <div style={{ marginTop: '20px' }}>
+        <Button onClick={() => setIsInfoModalOpen(true)}>
+          Saiba mais sobre essa simulação
+        </Button>
+      </div>
+
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <h2>Potencial em X = {selectedX !== null ? (selectedX * editableParams.dx).toFixed(2) : ''}</h2>
         <Chart data={timeseriesData} />
+      </Modal>
+
+      <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
+        <div className="info-modal-content">
+          <h2>Modelo FitzHugh-Nagumo 1D</h2>
+          
+          <h3>Modelo Matemático</h3>
+          <p>
+            O modelo FitzHugh-Nagumo é um modelo de duas variáveis (<code>v</code> e <code>w</code>) que simplifica a dinâmica do potencial de ação. 
+            A variável <code>v</code> representa o potencial de membrana,
+            enquanto <code>w</code> representa uma variável de recuperação mais lenta.
+          </p>
+          <p>As equações de reação-difusão são:</p>
+          <ul>
+            <li><code>∂v/∂t = k * (∂²v/∂x²) + A * v * (1 - v) * (v - α) - w</code></li>
+            <li><code>∂w/∂t = ε * (v - γ * w)</code></li>
+          </ul>
+          <p>
+            A simulação de Reentrada simula uma onda quebrada que pode se propagar de forma auto-sustentada, gerando uma arritmia.
+          </p>
+          
+          <h3>Método Numérico</h3>
+          <p>
+            A equação é resolvida usando Diferenças Finitas de 2ª Ordem para o espaço e Runge-Kutta de 4ª Ordem para o tempo.
+          </p>
+
+          <h3>Significado dos Parâmetros</h3>
+          <ul>
+            <li>k (Difusão): Velocidade de propagação da onda <code>v</code>.</li>
+            <li>A: Amplitude da reação de <code>v</code>.</li>
+            <li>alpha (α): Limiar de excitação para <code>v</code>.</li>
+            <li>epsilon (ε): Controla a escala de tempo da variável lenta <code>w</code>. Valores pequenos (ε &lt;&lt; 1) tornam <code>w</code> muito mais lenta que <code>v</code>.</li>
+            <li>gamma (γ): Controla a variável <code>w</code>.</li>
+            <li>L: Comprimento total do cabo.</li>
+            <li>dx: Tamanho do passo espacial.</li>
+            <li>dt: Tamanho do passo de tempo.</li>
+            <li>Total Time: Duração total da simulação.</li>
+          </ul>
+        </div>
       </Modal>
     </div>
   );

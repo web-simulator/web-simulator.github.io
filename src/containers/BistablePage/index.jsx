@@ -16,7 +16,8 @@ const BistablePage = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [viewMode, setViewMode] = useState('line');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false); 
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedX, setSelectedX] = useState(null);
   const [simulationSpeed, setSimulationSpeed] = useState(50);
 
@@ -177,9 +178,55 @@ const BistablePage = ({ onBack }) => {
         </>
       )}
 
+      {/* Botão e Modal de Informações */}
+      <div style={{ marginTop: '20px' }}>
+        <Button onClick={() => setIsInfoModalOpen(true)}>
+          Saiba mais sobre essa simulação
+        </Button>
+      </div>
+
+      {/* Modal para gráfico de ponto */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <h2>Potencial em X = {selectedX !== null ? (selectedX * editableParams.dx).toFixed(2) : ''}</h2>
         <Chart data={timeseriesData} />
+      </Modal>
+
+      {/* Modal para Informações */}
+      <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
+        <div className="info-modal-content">
+          <h2>Simulação do Modelo Bistable</h2>
+          <h3>Modelo Matemático</h3>
+          <p>
+            Este é um modelo de reação-difusão de uma única variável, 
+            usado para demonstrar a formação de frentes de onda. 
+            Ele exibe comportamento biestável, o que significa que tem dois estados estáveis (<code>v=0</code> e <code>v=1</code>).
+          </p>
+          <p>A equação utilizada para os cálculos é:</p>
+          <ul>
+            <li><code>∂v/∂t = k * (∂²v/∂x²) + A * v * (1 - v) * (v - α)</code></li>
+          </ul>
+          <p>
+            O termo <code>k * (∂²v/∂x²)</code> é o termo de difusão, que descreve como o potencial <code>v</code> se espalha.
+            O termo <code>A * v * (1 - v) * (v - α)</code> é o termo de reação, que descreve o comportamento local.
+          </p>
+          
+          <h3>Método Numérico</h3>
+          <p>
+            A equação é resolvida usando Diferenças Finitas de 2ª Ordem para o espaço e o sistema resultantes de EDOs no tempo é resolvido com Runge-Kutta de 4ª Ordem.
+          </p>
+          <p>São usadas condições de contorno de Neumann (<code>dv/dx = 0</code>) nas bordas.</p>
+
+          <h3>Significado dos Parâmetros</h3>
+          <ul>
+            <li>k (Coeficiente de Difusão): Controla a velocidade com que a onda se propaga. Valores maiores resultam em propagação mais rápida.</li>
+            <li>A (Amplitude da Reação): Escala a velocidade da reação local.</li>
+            <li>alpha (α): O limiar de excitação. O estado <code>v=0</code> é estável, e <code>v=1</code> é estável, enquanto <code>v=α</code> é um ponto de equilíbrio instável.</li>
+            <li>L: Comprimento total do cabo.</li>
+            <li>dx: Tamanho do passo espacial.</li>
+            <li>dt: Tamanho do passo de tempo.</li>
+            <li>Total Time: Duração total da simulação.</li>
+          </ul>
+        </div>
       </Modal>
     </div>
   );

@@ -119,6 +119,7 @@ const Model2DPage = ({ onBack }) => {
 
   // Modal para o gráfico do ponto clicado
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState(null);
 
   // Adiciona um novo estímulo à lista
@@ -276,8 +277,8 @@ const Model2DPage = ({ onBack }) => {
               <Input label={paramTranslations['density']} value={fibrosisParams.density} onChange={(e) => handleFibrosisChange(e, 'density')} />
               <Input label={paramTranslations['regionSize']} value={fibrosisParams.regionSize} onChange={(e) => handleFibrosisChange(e, 'regionSize')} />
               <Input label={paramTranslations['seed']} value={fibrosisParams.seed} onChange={(e) => handleFibrosisChange(e, 'seed')} />
-          </>}
-          
+          </>
+          }
       </div>
 
       <div className="button-container">
@@ -308,6 +309,13 @@ const Model2DPage = ({ onBack }) => {
           </div>
         </>
       )}
+
+      {/* Botão e Modal de Informações */}
+      <div style={{ marginTop: '20px' }}>
+        <Button onClick={() => setIsInfoModalOpen(true)}>
+          Saiba mais sobre essa simulação
+        </Button>
+      </div>
       
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <h2>
@@ -316,6 +324,62 @@ const Model2DPage = ({ onBack }) => {
           )
         </h2>
         <Chart data={timeseriesData} />
+      </Modal>
+
+      {/* Modal para Informações */}
+      <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
+        <div className="info-modal-content">
+          <h2>Modelo Mitchell-Schaeffer (2D)</h2>
+          
+          <h3>Modelo Matemático</h3>
+          <p>
+            Esta é a versão 2D do modelo Mitchell-Schaeffer, simulando a propagação de ondas em um tecido bidimensional.
+          </p>
+          <p>As equações de reação-difusão são:</p>
+          <ul>
+            <li><code>∂v/∂t = ∇ ⋅ (k(x,y) * ∇v) + (h * v² * (1 - v)) / τ_in - v / τ_out + I_stim</code></li>
+            <li><code>∂h/∂t = (1 - h) / τ_open</code> (se <code>v &lt; v_gate</code>)</li>
+            <li><code>∂h/∂t = -h / τ_close</code> (se <code>v ≥ v_gate</code>)</li>
+          </ul>
+          <p>
+            O termo <code>∇ ⋅ (k(x,y) * ∇v)</code> é o termo de difusão em 2D, onde <code>k(x,y)</code> é a condutividade no ponto (x,y).
+          </p>
+          
+          <h3>Método Numérico</h3>
+          <p>
+            A equação é resolvida usando Diferenças Finitas para o Laplaciano e Runge-Kutta de 4ª Ordem para o tempo.
+          </p>
+
+          <h3>Protocolo de Estímulos</h3>
+          <p>
+            Um protocolo de múltiplos estímulos é implementado. Cada estímulo pode ter uma forma (retângulo ou círculo) e um tempo de início (<code>startTime</code> para o primeiro, 
+            <code>interval</code> para os próximos) definidos.
+          </p>
+          <h3>Parametros</h3>
+          <ul>
+            <li>Despolarização (τ_in): Controla a velocidade da fase de ascensão (despolarização) do potencial de ação. Um valor menor torna a subida mais rápida.</li>
+            <li>Repolarização (τ_out): Controla a velocidade da fase de repolarização (descida). Um valor menor torna a descida mais rápida.</li>
+            <li>Recuperação (τ_open): Controla o tempo que a célula leva para se tornar excitável novamente (recuperação da variável <code>h</code>).</li>
+            <li>Inativação (τ_close): Controla a rapidez com que a célula se torna refratária durante o potencial de ação (inativação da variável <code>h</code>).</li>
+            <li>Gate (v_gate): O limiar de voltagem que alterna o comportamento da variável <code>h</code> entre recuperação e inativação.</li>
+            <li>inicio: Tempo de início do primeiro estímulo em ms.</li>
+            <li>intervalo: Intervalo em ms após o estímulo anterior para os próximos estímulos.</li>
+            <li>duracao: Duração do estímulo em ms.</li>
+            <li>amplitude: Amplitude do estímulo aplicado ao potencial de ação.</li>
+            <li>formato: Forma do estímulo, pode ser retangular ou circular.</li>
+          </ul>
+
+          <h3>Simulação de Fibrose</h3>
+          <p>
+            Quando habilitada, a fibrose é simulada criando regiões circulares aleatórias onde a condutividade <code>k</code> é reduzida para o valor de <code>conductivity</code>, bloqueando ou retardando a propagação da onda.
+          </p>
+          <ul>
+            <li>condutividade (Fibrose): O valor de <code>k</code> dentro das regiões fibróticas.</li>
+            <li>densidade: A fração da área do tecido coberta por fibrose.</li>
+            <li>tamanho da região: O raio das regiões circulares de fibrose.</li>
+            <li>semente: Semente para o gerador de números aleatórios, garantindo que o mesmo padrão de fibrose possa ser recriado.</li>
+          </ul>
+        </div>
       </Modal>
     </div>
   );

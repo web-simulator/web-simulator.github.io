@@ -3,6 +3,7 @@ import Chart from '../../components/Chart';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import RestitutionChart from '../../components/RestitutionChart';
+import Modal from '../../components/Modal'; // Importar o Modal
 import RestitutionWorker from '../../simulation_restitution.worker.js?worker';
 import MMSWorker from '../../simulation_mms_restitution_alt.worker.js?worker';
 import DynamicWorker from '../../simulation_dynamic_protocol1.worker.js?worker';
@@ -16,6 +17,7 @@ const RestitutionCurvePage = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [showTimeSeries, setShowTimeSeries] = useState(false);
   const [selectedModel, setSelectedModel] = useState('mms'); // opcões: 's1s2', 'mms', 'dynamic'
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false); // Estado para o modal
 
   // Parâmetros editáveis para cada modelo
 
@@ -160,6 +162,96 @@ const RestitutionCurvePage = ({ onBack }) => {
       worker.postMessage(editableParams[selectedModel]);
     }
   }, [worker, editableParams, selectedModel]);
+
+  // Função para renderizar o conteúdo do modal de informações
+  const renderInfoModalContent = () => {
+    const commonContent = (
+      <>
+        <h3>O que é a Curva de Restituição?</h3>
+        <p>
+          A Curva de Restituição Eletrofisiológica descreve a relação entre a Duração do Potencial de Ação (APD) e o Intervalo Diastólico (DI) anterior. 
+          O DI é o tempo que a célula passa em repouso (repolarizada) entre o fim de um potencial de ação e o início do próximo.
+        </p>
+        <p>
+          A curva mostra como o APD (duração da contração) se encurta à medida que o DI (tempo de descanso) diminui. 
+          A inclinação dessa curva é diz muito sobre a simulação: inclinações maiores que 1 estão associadas a arritmias.
+        </p>
+        <h3>Medindo APD e DI</h3>
+        <ul>
+          <li>APD (Duração do Potencial de Ação): Medido como o tempo para a voltagem repolarizar 90% (APD90), desde o pico até 90% da amplitude total.</li>
+          <li>DI (Intervalo Diastólico): Calculado como <code>BCL - APD_anterior</code>, onde BCL é o intervalo entre os estímulos (Basic Cycle Length).</li>
+        </ul>
+      </>
+    );
+
+    if (selectedModel === 's1s2') {
+      return (
+        <div className="info-modal-content">
+          <h2>Curva de Restituição (Protocolo S1-S2)</h2>
+          {commonContent}
+          <h3>Protocolo S1-S2</h3>
+          <ol>
+            <li>A célula é estimulada com uma sequência de estímulos S1 a um <code>BCL_S1</code> fixo para atingir o estado estacionário.</li>
+            <li>Mede-se o APD do último S1.</li>
+            <li>Um pulso S2 é aplicado com um intervalo de acoplamento após o último S1.</li>
+            <li>Mede-se o APD do pulso S2.</li>
+            <li>O Intervalo Diastólico é <code>Intervalo_S2 - APD_S1</code>.</li>
+            <li>O processo é repetido, diminuindo o <code>Intervalo_S2</code> para traçar a curva.</li>
+          </ol>
+          <h3>Modelo Celular</h3>
+          <p>Utiliza o modelo Mitchell-Schaeffer .</p>
+        </div>
+      );
+    }
+
+    if (selectedModel === 'mms') {
+      return (
+        <div className="info-modal-content">
+          <h2>Curva de Restituição (Protocolo S1-S2 com MMS)</h2>
+          {commonContent}
+          <h3>Protocolo S1-S2</h3>
+          <ol>
+            <li>A célula é estimulada com uma sequência de estímulos S1 a um <code>BCL_S1</code> fixo para atingir o estado estacionário.</li>
+            <li>Mede-se o APD do último S1.</li>
+            <li>Um pulso S2 é aplicado com um intervalo de acoplamento após o último S1.</li>
+            <li>Mede-se o APD do pulso S2.</li>
+            <li>O Intervalo Diastólico é <code>Intervalo_S2 - APD_S1</code>.</li>
+            <li>O processo é repetido, diminuindo o <code>Intervalo_S2</code> para traçar a curva.</li>
+          </ol>
+          <h3>Mitchell-Schaeffer Modificado - MMS</h3>
+          <p>O MMS altera a corrente de entrada para:</p>
+          <ul>
+            <li><code>J_in = (h * v * (v - v_gate) * (1 - v)) / τ_in</code></li>
+          </ul>
+          <p>Compare com o MS padrão:</p>
+          <ul>
+            <li><code>J_in = (h * v² * (1 - v)) / τ_in</code></li>
+          </ul>
+          <p>Esta modificação permite o cálculo de uma <strong>Curva de Restituição Analítica</strong>, que pode ser comparada com os resultados da simulação numérica.</p>
+        </div>
+      );
+    }
+
+    if (selectedModel === 'dynamic') {
+      return (
+        <div className="info-modal-content">
+          <h2>Curva de Restituição (Protocolo Dinâmico)</h2>
+          {commonContent}
+          <h3>Protocolo Dinâmico</h3>
+          <p>Este método é considerado mais fisiologicamente relevante, pois a célula não retorna ao estado estacionário a cada passo.</p>
+          <ol>
+            <li>A simulação começa com um BCL longo, <code>CI1</code>.</li>
+            <li>A célula é estimulada <code>nbeats</code> vezes nesse BCL. O APD do último batimento é medido. O DI é <code>CI1 - APD</code>.</li>
+            <li>O BCL é então encurtado por um decremento (<code>CIinc</code>), e o processo se repete.</li>
+            <li>Isso continua até que o BCL atinja <code>CI0</code>.</li>
+          </ol>
+          <p>A curva resultante ou é a curva de restituição dinâmica.</p>
+          <h3>Modelo Celular</h3>
+          <p>Utiliza o modelo Mitchell-Schaeffer.</p>
+        </div>
+      );
+    }
+  };
   
   // Parâmetros atuais baseados no modelo selecionado
   const currentParams = editableParams[selectedModel];
@@ -217,6 +309,17 @@ const RestitutionCurvePage = ({ onBack }) => {
           <Chart data={data} />
         </div>
       )}
+
+      {/* Botão e Modal de Informações */}
+      <div style={{ marginTop: '20px' }}>
+        <Button onClick={() => setIsInfoModalOpen(true)}>
+          Saiba mais sobre essa simulação
+        </Button>
+      </div>
+
+      <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
+        {renderInfoModalContent()}
+      </Modal>
     </div>
   );
 };
