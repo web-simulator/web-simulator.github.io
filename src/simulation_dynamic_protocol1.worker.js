@@ -87,40 +87,34 @@ self.onmessage = (e) => {
         const v_prev = v[passo_atual - 1];
         const h_prev = h[passo_atual - 1];
 
-        // Define as funções que representam as equações diferenciais do modelo
-        const f_v = (vv, hh) => { // Derivada da voltagem 
-          const J_entrada = (hh * vv ** 2 * (1 - vv)) / tau_in;
-          const J_saida = -vv / tau_out;
-          return J_entrada + J_saida + estimulo;
-        };
-        const f_h = (vv, hh) => { // Derivada da variável de gate 
-          if (vv < v_gate) {
-            return (1 - hh) / tau_open;
-          } else {
-            return -hh / tau_close;
-          }
-        };
-
-        // k1
-        const k1_v = dt * f_v(v_prev, h_prev);
-        const k1_h = dt * f_h(v_prev, h_prev);
-
-        // k2
-        const k2_v = dt * f_v(v_prev + 0.5 * k1_v, h_prev + 0.5 * k1_h);
-        const k2_h = dt * f_h(v_prev + 0.5 * k1_v, h_prev + 0.5 * k1_h);
-
-        // k3
-        const k3_v = dt * f_v(v_prev + 0.5 * k2_v, h_prev + 0.5 * k2_h);
-        const k3_h = dt * f_h(v_prev + 0.5 * k2_v, h_prev + 0.5 * k2_h);
-
-        // k4
-        const k4_v = dt * f_v(v_prev + k3_v, h_prev + k3_h);
-        const k4_h = dt * f_h(v_prev + k3_v, h_prev + k3_h);
+        // Euler para v
+        const J_entrada = (h_prev * v_prev ** 2 * (1 - v_prev)) / tau_in;
+        const J_saida = -v_prev / tau_out;
+        const dv_dt = J_entrada + J_saida + estimulo;
         
-        // Próximo valor
-        const v_next = v_prev + (1.0 / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v);
-        const h_next = h_prev + (1.0 / 6.0) * (k1_h + 2 * k2_h + 2 * k3_h + k4_h);
+        const v_next = v_prev + dv_dt * dt;
 
+        // Rush-Larsen para h
+        let alpha_h, beta_h;
+        if (v_prev < v_gate) {
+          alpha_h = 1.0 / tau_open;
+          beta_h = 0.0;
+        } else {
+          alpha_h = 0.0;
+          beta_h = 1.0 / tau_close;
+        }
+
+        const sum_ab = alpha_h + beta_h;
+        let h_next;
+        
+        if (sum_ab > 0) {
+          const h_inf = alpha_h / sum_ab;
+          const h_exp = Math.exp(-sum_ab * dt);
+          h_next = h_inf + (h_prev - h_inf) * h_exp;
+        } else {
+          h_next = h_prev;
+        }
+        
         // Garante que V e h permaneçam entre 0 e 1
         v[passo_atual] = Math.max(0.0, Math.min(1.0, v_next));
         h[passo_atual] = Math.max(0.0, Math.min(1.0, h_next));

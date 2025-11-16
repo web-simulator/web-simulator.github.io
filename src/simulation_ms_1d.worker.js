@@ -48,35 +48,11 @@ self.onmessage = (e) => {
   const steps = Math.floor(totalTime / dt); // Calcula o número total de passos na simulação
   const outputData = []; // Array para armazenar os resultados.
 
-  // Funções de derivada para o método RK4
-  function f_v(vv, hh, i, current_stimulus) {
-    // Calcula a difusão do potencial
-    const diffusion = k * (vv[i + 1] - 2 * vv[i] + vv[i - 1]) / (dx * dx);
-    // Calcula a reação
-    const J_entrada = (hh[i] * vv[i] ** 2 * (1 - vv[i])) / Tau_in;
-    const J_saida = -vv[i] / Tau_out;
-    const reaction = J_entrada + J_saida;
-
-    // Converte a posição e o tamanho do estímulo para índices da malha
-    const stimulus_center_index = Math.floor(posição_do_estímulo / dx);
-    const stimulus_half_size_index = Math.floor(tamanho_do_estímulo / (2 * dx));
-
-    // Aplica o estímulo em uma região
-    if (i >= stimulus_center_index - stimulus_half_size_index && i <= stimulus_center_index + stimulus_half_size_index) {
-        return diffusion + reaction + current_stimulus;
-    }
-
-    return diffusion + reaction;
-  }
-
-  function f_h(vv, hh, i) {
-    // A taxa de mudança de 'h' depende do valor de 'v' em relação ao limiar
-    if (vv[i] < gate) {
-      return (1 - hh[i]) / Tau_open;
-    } else {
-      return -hh[i] / Tau_close;
-    }
-  }
+  // Índices para o estímulo
+  const stimulus_center_index = Math.floor(posição_do_estímulo / dx);
+  const stimulus_half_size_index = Math.floor(tamanho_do_estímulo / (2 * dx));
+  const stim_start_idx = Math.max(1, stimulus_center_index - stimulus_half_size_index);
+  const stim_end_idx = Math.min(N - 2, stimulus_center_index + stimulus_half_size_index);
 
   // Loop principal 
   for (let t = 0; t < steps; t++) {
@@ -87,56 +63,45 @@ self.onmessage = (e) => {
     const v_prev = [...v];
     const h_prev = [...h];
     
-    // Ks do Runge-Kutta 4
-    const k1_v = new Array(N).fill(0);
-    const k1_h = new Array(N).fill(0);
-    const k2_v = new Array(N).fill(0);
-    const k2_h = new Array(N).fill(0);
-    const k3_v = new Array(N).fill(0);
-    const k3_h = new Array(N).fill(0);
-    const k4_v = new Array(N).fill(0);
-    const k4_h = new Array(N).fill(0);
-
-    // K1
+    // Loop espacial
     for (let i = 1; i < N - 1; i++) {
-      k1_v[i] = dt * f_v(v_prev, h_prev, i, current_stimulus);
-      k1_h[i] = dt * f_h(v_prev, h_prev, i);
-    }
+        const vp = v_prev[i];
+        const hp = h_prev[i];
 
-    // K2
-    const v_k2 = v_prev.map((val, i) => val + 0.5 * k1_v[i]);
-    const h_k2 = h_prev.map((val, i) => val + 0.5 * k1_h[i]);
-    v_k2[0] = v_k2[1]; v_k2[N - 1] = v_k2[N - 2];
-    for (let i = 1; i < N - 1; i++) {
-      k2_v[i] = dt * f_v(v_k2, h_k2, i, current_stimulus);
-      k2_h[i] = dt * f_h(v_k2, h_k2, i);
-    }
+        // Rush-Larsen para h
+        let alpha_h, beta_h;
+        if (vp < gate) {
+          alpha_h = 1.0 / Tau_open;
+          beta_h = 0.0;
+        } else {
+          alpha_h = 0.0;
+          beta_h = 1.0 / Tau_close;
+        }
 
-    // K3
-    const v_k3 = v_prev.map((val, i) => val + 0.5 * k2_v[i]);
-    const h_k3 = h_prev.map((val, i) => val + 0.5 * k2_h[i]);
-    v_k3[0] = v_k3[1]; v_k3[N - 1] = v_k3[N - 2];
-    for (let i = 1; i < N - 1; i++) {
-      k3_v[i] = dt * f_v(v_k3, h_k3, i, current_stimulus);
-      k3_h[i] = dt * f_h(v_k3, h_k3, i);
-    }
+        const sum_ab = alpha_h + beta_h;
+        if (sum_ab > 0) {
+          const h_inf = alpha_h / sum_ab;
+          const h_exp = Math.exp(-sum_ab * dt);
+          h[i] = h_inf + (hp - h_inf) * h_exp;
+        }
 
-    // K4
-    const v_k4 = v_prev.map((val, i) => val + k3_v[i]);
-    const h_k4 = h_prev.map((val, i) => val + k3_h[i]);
-    v_k4[0] = v_k4[1]; v_k4[N - 1] = v_k4[N - 2];
-    for (let i = 1; i < N - 1; i++) {
-      k4_v[i] = dt * f_v(v_k4, h_k4, i, current_stimulus);
-      k4_h[i] = dt * f_h(v_k4, h_k4, i);
-    }
+        // Euler para v
+        const diffusion = k * (v_prev[i + 1] - 2 * vp + v_prev[i - 1]) / (dx * dx);
+        const J_entrada = (hp * vp ** 2 * (1 - vp)) / Tau_in;
+        const J_saida = -vp / Tau_out;
+        const reaction = J_entrada + J_saida;
 
-    // Atualiza v e h
-    for (let i = 1; i < N - 1; i++) {
-      v[i] = v_prev[i] + (1.0 / 6.0) * (k1_v[i] + 2 * k2_v[i] + 2 * k3_v[i] + k4_v[i]);
-      h[i] = h_prev[i] + (1.0 / 6.0) * (k1_h[i] + 2 * k2_h[i] + 2 * k3_h[i] + k4_h[i]);
-      // Garante que os valores fiquem entre 0 e 1
-      v[i] = Math.max(0.0, Math.min(1.0, v[i]));
-      h[i] = Math.max(0.0, Math.min(1.0, h[i]));
+        // Aplica o estímulo na região
+        let stimulus = 0;
+        if (i >= stim_start_idx && i <= stim_end_idx) {
+            stimulus = current_stimulus;
+        }
+
+        v[i] = vp + (diffusion + reaction + stimulus) * dt;
+
+        // Garante que os valores fiquem entre 0 e 1
+        v[i] = Math.max(0.0, Math.min(1.0, v[i]));
+        h[i] = Math.max(0.0, Math.min(1.0, h[i]));
     }
     
     // Aplica as condições de contorno de Neumann nas bordas do array final

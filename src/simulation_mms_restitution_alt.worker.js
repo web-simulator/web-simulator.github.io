@@ -63,7 +63,7 @@ function runSingleCycle(params) {
   const h = new Array(passos).fill(h_inicial); // Gate 'h'
   const tempo = new Array(passos); // Tempo
 
-  // Loop principal da simulação, que avança no tempo passo a passo
+  // Loop principal da simulação
   for (let i = 1; i < passos; i++) {
     tempo[i] = i * dt;
     const t = tempo[i];
@@ -88,39 +88,33 @@ function runSingleCycle(params) {
     const v_prev = v[i - 1];
     const h_prev = h[i - 1];
 
-    function f_v(vv, hh) { // Derivada de V
-        const J_in = (hh * (vv + a) * (vv + a - lambda) * (1 - vv)) / tau_in;
-        const J_out = -vv / tau_out;
-        return J_in + J_out + estimulo;
+    // Euler para v
+    const J_in = (h_prev * (v_prev + a) * (v_prev + a - lambda) * (1 - v_prev)) / tau_in;
+    const J_out = -v_prev / tau_out;
+    const dv_dt = J_in + J_out + estimulo;
+
+    const v_next = v_prev + dv_dt * dt;
+    
+    // Rush-Larsen para h
+    let alpha_h, beta_h;
+    if (v_prev < v_gate) {
+      alpha_h = 1.0 / tau_open;
+      beta_h = 0.0;
+    } else {
+      alpha_h = 0.0;
+      beta_h = 1.0 / tau_close;
     }
+    
+    const sum_ab = alpha_h + beta_h;
+    let h_next;
 
-    function f_h(vv, hh) { // Derivada de H
-      if (vv < v_gate) {
-        return (1 - hh) / tau_open;
-      } else {
-        return -hh / tau_close;
-      }
+    if (sum_ab > 0) {
+      const h_inf = alpha_h / sum_ab;
+      const h_exp = Math.exp(-sum_ab * dt);
+      h_next = h_inf + (h_prev - h_inf) * h_exp;
+    } else {
+      h_next = h_prev;
     }
-
-    // K1
-    const k1_v = dt * f_v(v_prev, h_prev);
-    const k1_h = dt * f_h(v_prev, h_prev);
-
-    // K2
-    const k2_v = dt * f_v(v_prev + 0.5 * k1_v, h_prev + 0.5 * k1_h);
-    const k2_h = dt * f_h(v_prev + 0.5 * k1_v, h_prev + 0.5 * k1_h);
-
-    // K3
-    const k3_v = dt * f_v(v_prev + 0.5 * k2_v, h_prev + 0.5 * k2_h);
-    const k3_h = dt * f_h(v_prev + 0.5 * k2_v, h_prev + 0.5 * k2_h);
-
-    // K4
-    const k4_v = dt * f_v(v_prev + k3_v, h_prev + k3_h);
-    const k4_h = dt * f_h(v_prev + k3_v, h_prev + k3_h);
-
-    // Proximo valor
-    const v_next = v_prev + (1.0 / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v);
-    const h_next = h_prev + (1.0 / 6.0) * (k1_h + 2 * k2_h + 2 * k3_h + k4_h);
     
     // Garante que V e h permaneçam entre 0 e 1
     v[i] = Math.max(0.0, Math.min(1.0, v_next));

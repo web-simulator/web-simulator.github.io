@@ -128,43 +128,34 @@ self.onmessage = (e) => {
                 const local_k = k_map[idx]; // Pega a condutividade local
                 const stimulus = current_stimulus_map ? current_stimulus_map[idx] * stimulus_amplitude : 0;
 
+
+                // Rush-Larsen para h
+                let alpha_h, beta_h;
+                if (vp < gate) {
+                  alpha_h = 1.0 / Tau_open;
+                  beta_h = 0.0;
+                } else {
+                  alpha_h = 0.0;
+                  beta_h = 1.0 / Tau_close;
+                }
+                
+                const sum_ab = alpha_h + beta_h;
+                if (sum_ab > 0) {
+                  const h_inf = alpha_h / sum_ab;
+                  const h_exp = Math.exp(-sum_ab * dt);
+                  h[idx] = h_inf + (hp - h_inf) * h_exp;
+                } 
+
+                //Euler para v
                 // Calcula a difusão (interação com as células vizinhas)
-                let lap_v = (v_prev[idx - N] + v_prev[idx + N] + v_prev[idx - 1] + v_prev[idx + 1] - 4 * vp) / (dx * dx);
+                const lap_v = (v_prev[idx - N] + v_prev[idx + N] + v_prev[idx - 1] + v_prev[idx + 1] - 4 * vp) / (dx * dx);
                 
-                // RK4
-                // K1
-                let J_in = (hp * vp * vp * (1 - vp)) / Tau_in;
-                let J_out = -vp / Tau_out;
-                const k1_v = dt * (local_k * lap_v + J_in + J_out + stimulus);
-                const k1_h = dt * ((vp < gate) ? (1 - hp) / Tau_open : -hp / Tau_close);
-
-                // K2
-                const v2 = vp + 0.5 * k1_v;
-                const h2 = hp + 0.5 * k1_h;
-                J_in = (h2 * v2 * v2 * (1 - v2)) / Tau_in;
-                J_out = -v2 / Tau_out;
-                const k2_v = dt * (local_k * lap_v + J_in + J_out + stimulus);
-                const k2_h = dt * ((v2 < gate) ? (1 - h2) / Tau_open : -h2 / Tau_close);
-
-                // K3
-                const v3 = vp + 0.5 * k2_v;
-                const h3 = hp + 0.5 * k2_h;
-                J_in = (h3 * v3 * v3 * (1 - v3)) / Tau_in;
-                J_out = -v3 / Tau_out;
-                const k3_v = dt * (local_k * lap_v + J_in + J_out + stimulus);
-                const k3_h = dt * ((v3 < gate) ? (1 - h3) / Tau_open : -h3 / Tau_close);
-
-                // K4
-                const v4 = vp + k3_v;
-                const h4 = hp + k3_h;
-                J_in = (h4 * v4 * v4 * (1 - v4)) / Tau_in;
-                J_out = -v4 / Tau_out;
-                const k4_v = dt * (local_k * lap_v + J_in + J_out + stimulus);
-                const k4_h = dt * ((v4 < gate) ? (1 - h4) / Tau_open : -h4 / Tau_close);
+                // Reação
+                const J_in = (hp * vp * vp * (1 - vp)) / Tau_in;
+                const J_out = -vp / Tau_out;
                 
-                // Calcula o valor final de v e h para o passo atual
-                v[idx] = vp + (1/6) * (k1_v + 2*k2_v + 2*k3_v + k4_v);
-                h[idx] = hp + (1/6) * (k1_h + 2*k2_h + 2*k3_h + k4_h);
+                // Atualiza v
+                v[idx] = vp + dt * (local_k * lap_v + J_in + J_out + stimulus);
 
                 // Garante que os valores de v e h fiquem entre 0 e 1
                 v[idx] = Math.max(0.0, Math.min(1.0, v[idx]));

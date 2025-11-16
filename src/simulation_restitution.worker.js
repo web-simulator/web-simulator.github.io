@@ -65,67 +65,59 @@ function runSingleCycle(params) {
 
   // Loop principal
   for (let i = 1; i < passos; i++) {
-  tempo[i] = i * dt;
-  const t = tempo[i];
+    tempo[i] = i * dt;
+    const t = tempo[i];
 
-  let estimulo = 0;
-  // Pulsos S1
-  for (let j = 0; j < num_estimulos_s1; j++) {
-    const inicio_pulso = inicio + j * BCL_S1;
-    if (t >= inicio_pulso && t < inicio_pulso + duracao) {
+    let estimulo = 0;
+    // Pulsos S1
+    for (let j = 0; j < num_estimulos_s1; j++) {
+      const inicio_pulso = inicio + j * BCL_S1;
+      if (t >= inicio_pulso && t < inicio_pulso + duracao) {
+        estimulo = amplitude;
+        break;
+      }
+    }
+    // Pulso S2
+    const inicio_s2 = inicio + (num_estimulos_s1 - 1) * BCL_S1 + intervalo_S2;
+    if (t >= inicio_s2 && t < inicio_s2 + duracao) {
       estimulo = amplitude;
-      break;
     }
-  }
-  // Pulso S2
-  const inicio_s2 = inicio + (num_estimulos_s1 - 1) * BCL_S1 + intervalo_S2;
-  if (t >= inicio_s2 && t < inicio_s2 + duracao) {
-    estimulo = amplitude;
-  }
 
-  const v_prev = v[i - 1];
-  const h_prev = h[i - 1];
+    const v_prev = v[i - 1];
+    const h_prev = h[i - 1];
 
-  // Funções de derivada
-  function f_v(vv, hh, t) {
-    const J_entrada = (hh * vv ** 2 * (1 - vv)) / tau_in;
-    const J_saida = -vv / tau_out;
-    return J_entrada + J_saida + estimulo;
-  }
+    // Euler para v
+    const J_entrada = (h_prev * v_prev ** 2 * (1 - v_prev)) / tau_in;
+    const J_saida = -v_prev / tau_out;
+    const dv_dt = J_entrada + J_saida + estimulo;
 
-  function f_h(vv, hh) {
-    if (vv < v_gate) {
-      return (1 - hh) / tau_open;
+    const v_next = v_prev + dv_dt * dt;
+
+    // Rush-Larsen para h
+    let alpha_h, beta_h;
+    if (v_prev < v_gate) {
+      alpha_h = 1.0 / tau_open;
+      beta_h = 0.0;
     } else {
-      return -hh / tau_close;
+      alpha_h = 0.0;
+      beta_h = 1.0 / tau_close;
     }
+    
+    const sum_ab = alpha_h + beta_h;
+    let h_next;
+
+    if (sum_ab > 0) {
+      const h_inf = alpha_h / sum_ab;
+      const h_exp = Math.exp(-sum_ab * dt);
+      h_next = h_inf + (h_prev - h_inf) * h_exp;
+    } else {
+      h_next = h_prev;
+    }
+
+    // Garante que v e h estejam no intervalo 0, 1
+    v[i] = Math.max(0.0, Math.min(1.0, v_next));
+    h[i] = Math.max(0.0, Math.min(1.0, h_next));
   }
-
-  // RK4
-  //k1
-  const k1_v = dt * f_v(v_prev, h_prev, t);
-  const k1_h = dt * f_h(v_prev, h_prev);
-
-  //k2
-  const k2_v = dt * f_v(v_prev + 0.5 * k1_v, h_prev + 0.5 * k1_h, t + 0.5 * dt);
-  const k2_h = dt * f_h(v_prev + 0.5 * k1_v, h_prev + 0.5 * k1_h);
-
-  //k3
-  const k3_v = dt * f_v(v_prev + 0.5 * k2_v, h_prev + 0.5 * k2_h, t + 0.5 * dt);
-  const k3_h = dt * f_h(v_prev + 0.5 * k2_v, h_prev + 0.5 * k2_h);
-
-  //k4
-  const k4_v = dt * f_v(v_prev + k3_v, h_prev + k3_h, t + dt);
-  const k4_h = dt * f_h(v_prev + k3_v, h_prev + k3_h);
-
-  // Atualiza valores
-  const v_next = v_prev + (1.0 / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v);
-  const h_next = h_prev + (1.0 / 6.0) * (k1_h + 2 * k2_h + 2 * k3_h + k4_h);
-
-  // Garante que v e h estejam no intervalo 0, 1
-  v[i] = Math.max(0.0, Math.min(1.0, v_next));
-  h[i] = Math.max(0.0, Math.min(1.0, h_next));
-}
 
   // Potencial de ação do último S1 para calcular APD
   const inicio_ultimo_s1_idx = Math.round((inicio + (num_estimulos_s1 - 1) * BCL_S1) / dt);

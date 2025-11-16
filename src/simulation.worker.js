@@ -4,8 +4,8 @@ self.onmessage = (e) => {
   const {
     despolarização,       // Ativação do potencial
     repolarização,        // Tepolarização
-    recuperação,          // Tempo de recuperação 
-    inativação,           // Tempo de inativação 
+    recuperação,          // Tempo de recuperação (tau_open)
+    inativação,           // Tempo de inativação (tau_close)
     gate,                 // Limite para ativar ou inativar
     dt,                   // Passo de tempo da simulação
     tempo_total,          // Duração total
@@ -29,7 +29,7 @@ self.onmessage = (e) => {
   h[0] = h_inicial;
   tempo[0] = 0;
 
-  // RK4
+  // Loop principal da simulação (Euler + Rush-Larsen)
   for (let i = 1; i < passos; i++) {
     tempo[i] = i * dt; // Tempo atual
     const t = tempo[i];
@@ -43,42 +43,36 @@ self.onmessage = (e) => {
     const v_prev = v[i - 1];
     const h_prev = h[i - 1];
 
-    // Funções de derivada
-    const f_v = (vv, hh) => {
-      const J_entrada = (hh * vv ** 2 * (1 - vv)) / despolarização;
-      const J_saida = -vv / repolarização;
-      return J_entrada + J_saida + estimulo; // estimulo é constante para este passo dt
-    };
+    // Método de Euler Explícito para v
+    const J_entrada = (h_prev * v_prev ** 2 * (1 - v_prev)) / despolarização;
+    const J_saida = -v_prev / repolarização;
+    const dv_dt = J_entrada + J_saida + estimulo;
+    
+    const v_next = v_prev + dv_dt * dt;
 
-    const f_h = (vv, hh) => {
-      if (vv < gate) {
-        return (1 - hh) / recuperação;  // Recuperação lenta
-      } else {
-        return -hh / inativação;        // Inativação rápida
-      }
-    };
+    // Método de Rush-Larsen para h
+    let alpha_h, beta_h;
+    if (v_prev < gate) {
+      alpha_h = 1.0 / recuperação;
+      beta_h = 0.0;
+    } else {
+      alpha_h = 0.0;
+      beta_h = 1.0 / inativação;
+    }
 
-    // K1
-    const k1_v = dt * f_v(v_prev, h_prev);
-    const k1_h = dt * f_h(v_prev, h_prev);
+    const sum_ab = alpha_h + beta_h;
+    let h_next;
 
-    // K2
-    const k2_v = dt * f_v(v_prev + 0.5 * k1_v, h_prev + 0.5 * k1_h);
-    const k2_h = dt * f_h(v_prev + 0.5 * k1_v, h_prev + 0.5 * k1_h);
+    // Evita divisão por zero
+    if (sum_ab > 0) {
+      const h_inf = alpha_h / sum_ab;
+      const h_exp = Math.exp(-sum_ab * dt);
+      h_next = h_inf + (h_prev - h_inf) * h_exp;
+    } else {
+      h_next = h_prev; // Sem mudança
+    }
 
-    // K3
-    const k3_v = dt * f_v(v_prev + 0.5 * k2_v, h_prev + 0.5 * k2_h);
-    const k3_h = dt * f_h(v_prev + 0.5 * k2_v, h_prev + 0.5 * k2_h);
-
-    // K4
-    const k4_v = dt * f_v(v_prev + k3_v, h_prev + k3_h);
-    const k4_h = dt * f_h(v_prev + k3_v, h_prev + k3_h);
-
-    // Próximo valor
-    const v_next = v_prev + (1.0 / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v);
-    const h_next = h_prev + (1.0 / 6.0) * (k1_h + 2 * k2_h + 2 * k3_h + k4_h);
-
-    // Atualiza v e h 
+    // Garante que v e h permaneçam entre 0 e 1
     v[i] = Math.max(0.0, Math.min(1.0, v_next));
     h[i] = Math.max(0.0, Math.min(1.0, h_next));
   }
