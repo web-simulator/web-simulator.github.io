@@ -54,8 +54,11 @@ self.onmessage = (e) => {
   // Loop principal da simulação
   for (let t = 0; t < steps; t++) {
     // Funções de derivada para o método RK4
-    function f_v(vv, ww, i) { // Derivada de V
-      const diffusion = k * (vv[i + 1] - 2 * vv[i] + vv[i - 1]) / (dx * dx);
+        function f_v(vv, ww, i) { // Derivada de V
+      const v_left = (i === 0) ? vv[N - 1] : vv[i - 1];
+      const v_right = (i === N - 1) ? vv[0] : vv[i + 1];
+      
+      const diffusion = k * (v_right - 2 * vv[i] + v_left) / (dx * dx);
       const reaction_v = A * vv[i] * (1 - vv[i]) * (vv[i] - alpha);
       return diffusion + reaction_v - ww[i];
     }
@@ -75,7 +78,7 @@ self.onmessage = (e) => {
     const k4_w = new Array(N);
 
     // K1
-    for (let i = 1; i < N - 1; i++) {
+    for (let i = 0; i < N; i++) {
       k1_v[i] = dt * f_v(v, w, i);
       k1_w[i] = dt * f_w(v, w, i);
     }
@@ -83,16 +86,12 @@ self.onmessage = (e) => {
     // K2
     const v_k2 = [...v];
     const w_k2 = [...w];
-    for (let i = 1; i < N - 1; i++) {
+    for (let i = 0; i < N; i++) {
       v_k2[i] = v[i] + 0.5 * k1_v[i];
       w_k2[i] = w[i] + 0.5 * k1_w[i];
     }
-    v_k2[0] = v_k2[1];
-    v_k2[N - 1] = v_k2[N - 2];
-    w_k2[0] = w_k2[1];
-    w_k2[N - 1] = w_k2[N - 2];
 
-    for (let i = 1; i < N - 1; i++) {
+    for (let i = 0; i < N; i++) { 
       k2_v[i] = dt * f_v(v_k2, w_k2, i);
       k2_w[i] = dt * f_w(v_k2, w_k2, i);
     }
@@ -100,16 +99,12 @@ self.onmessage = (e) => {
     // K3
     const v_k3 = [...v];
     const w_k3 = [...w];
-    for (let i = 1; i < N - 1; i++) {
+    for (let i = 0; i < N; i++) { 
       v_k3[i] = v[i] + 0.5 * k2_v[i];
       w_k3[i] = w[i] + 0.5 * k2_w[i];
     }
-    v_k3[0] = v_k3[1];
-    v_k3[N - 1] = v_k3[N - 2];
-    w_k3[0] = w_k3[1];
-    w_k3[N - 1] = w_k3[N - 2];
 
-    for (let i = 1; i < N - 1; i++) {
+    for (let i = 0; i < N; i++) { 
       k3_v[i] = dt * f_v(v_k3, w_k3, i);
       k3_w[i] = dt * f_w(v_k3, w_k3, i);
     }
@@ -117,31 +112,22 @@ self.onmessage = (e) => {
     // K4
     const v_k4 = [...v];
     const w_k4 = [...w];
-    for (let i = 1; i < N - 1; i++) {
+    for (let i = 0; i < N; i++) { 
       v_k4[i] = v[i] + k3_v[i];
       w_k4[i] = w[i] + k3_w[i];
     }
-    v_k4[0] = v_k4[1];
-    v_k4[N - 1] = v_k4[N - 2];
-    w_k4[0] = w_k4[1];
-    w_k4[N - 1] = w_k4[N - 2];
+      
     
-    for (let i = 1; i < N - 1; i++) {
+    for (let i = 0; i < N; i++) {
       k4_v[i] = dt * f_v(v_k4, w_k4, i);
       k4_w[i] = dt * f_w(v_k4, w_k4, i);
     }
 
     // Atualiza v e w usando a média ponderada dos K's
-    for (let i = 1; i < N - 1; i++) {
+    for (let i = 0; i < N; i++) { 
       v[i] = v[i] + (1.0 / 6.0) * (k1_v[i] + 2 * k2_v[i] + 2 * k3_v[i] + k4_v[i]);
       w[i] = w[i] + (1.0 / 6.0) * (k1_w[i] + 2 * k2_w[i] + 2 * k3_w[i] + k4_w[i]);
     }
-
-    // Condições de Neumann nas bordas
-    v[0] = v[1];
-    v[N - 1] = v[N - 2];
-    w[0] = w[1];
-    w[N - 1] = w[N - 2];
 
     // Salva o snapshot
     if (t % downsamplingFactor === 0) {

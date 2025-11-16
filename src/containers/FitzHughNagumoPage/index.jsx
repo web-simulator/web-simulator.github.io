@@ -28,10 +28,10 @@ const FitzHughNagumoPage = ({ onBack }) => {
     alpha: 0.1,
     epsilon: 0.005,
     gamma: 2.0,
-    L: 100,
+    L: 300,
     dx: 1,
     dt: 0.1,
-    totalTime: 400,
+    totalTime: 1000,
     downsamplingFactor: 10,
   });
 
