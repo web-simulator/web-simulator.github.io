@@ -108,13 +108,20 @@ const Model2DPage = ({ onBack }) => {
     }
   ]);
 
-  // Região de fibrose
   const [fibrosisParams, setFibrosisParams] = useState({
     enabled: false, // Ativa ou não
+    type: 'compacta', // compacta ou difusa
     conductivity: 0.0, // Condutividade
     density: 0.1, // Densidade 
     regionSize: 0.2, // Tamanho
     seed: Date.now(), // Semente 
+    // Parâmetros para a região difusa
+    regionParams: {
+      x1: 2.0,
+      y1: 2.0,
+      x2: 8.0,
+      y2: 8.0,
+    }
   });
 
   // Modal para o gráfico do ponto clicado
@@ -180,13 +187,23 @@ const Model2DPage = ({ onBack }) => {
 
   // Atualizar os parâmetros
   const handleParamChange = (setter) => useCallback((e, name) => {
-    const value = e.target.type === 'checkbox' ? e.target.checked : parseFloat(e.target.value);
+    const value = e.target.type === 'checkbox' ? e.target.checked : (e.target.type === 'select-one' ? e.target.value : parseFloat(e.target.value));
     setter((prev) => ({ ...prev, [name]: value }));
   }, [setter]);
   
   // parametrod do modelo e da fibrose
   const handleMs2dChange = handleParamChange(setMs2dParams);
   const handleFibrosisChange = handleParamChange(setFibrosisParams);
+
+  const handleFibrosisRegionChange = useCallback((name, value) => {
+    setFibrosisParams(prev => ({
+      ...prev,
+      regionParams: {
+        ...prev.regionParams,
+        [name]: parseFloat(value)
+      }
+    }));
+  }, []);
 
   // Quando clica em simular
   const handleSimularClick = useCallback(() => {
@@ -237,7 +254,8 @@ const Model2DPage = ({ onBack }) => {
     k: "Condutividade (k)", Tau_in: "Tau in", Tau_out: "Tau out", Tau_open: "Tau open", Tau_close: "Tau close", gate: "Gate", L: "Comprimento", dt: "dt", dx: "dx", totalTime: "Tempo Total",
     duracao: "Duração (ms)", amplitude: "Amplitude", startTime: "Início (ms)", intervalo: "Intervalo Após Anterior (ms)",
     downsamplingFactor: "Fator de Redução", radius: "Raio", cx: "Centro X", cy: "Centro Y", x1: "X1", y1: "Y1", x2: "X2", y2: "Y2",
-    conductivity: "Condutividade (k)", density: "Densidade", seed: "Semente", regionSize: "Tamanho da Região"
+    conductivity: "Condutividade (k)", density: "Densidade", seed: "Semente", regionSize: "Tamanho da Região",
+    fibrosis_x1: "X1", fibrosis_y1: "Y1", fibrosis_x2: "X2", fibrosis_y2: "Y2"
   };
 
   // Estrutura da página
@@ -265,18 +283,43 @@ const Model2DPage = ({ onBack }) => {
         />
       ))}
       <Button onClick={addStimulus} style={{ marginTop: '10px' }}>Adicionar Estímulo</Button>
-      
+
       <h2>Parâmetros da Fibrose</h2>
       <div className="params-container">
           <div className="input-container" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <label htmlFor="fibrosis-enabled">Habilitar Fibrose</label>
               <input type="checkbox" id="fibrosis-enabled" checked={fibrosisParams.enabled} onChange={(e) => setFibrosisParams(prev => ({...prev, enabled: e.target.checked}))} />
           </div>
+          
           {fibrosisParams.enabled && <>
+              {/* Seletor do Tipo de Fibrose */}
+              <div className="input-container">
+                <label>Tipo de Fibrose</label>
+                <select value={fibrosisParams.type} onChange={(e) => handleFibrosisChange(e, 'type')}>
+                  <option value="compacta">Compacta</option>
+                  <option value="difusa">Difusa</option>
+                </select>
+              </div>
+
+              {/* Parâmetros Comuns */}
               <Input label={paramTranslations['conductivity']} value={fibrosisParams.conductivity} onChange={(e) => handleFibrosisChange(e, 'conductivity')} />
               <Input label={paramTranslations['density']} value={fibrosisParams.density} onChange={(e) => handleFibrosisChange(e, 'density')} />
               <Input label={paramTranslations['regionSize']} value={fibrosisParams.regionSize} onChange={(e) => handleFibrosisChange(e, 'regionSize')} />
               <Input label={paramTranslations['seed']} value={fibrosisParams.seed} onChange={(e) => handleFibrosisChange(e, 'seed')} />
+
+              {/* Parâmetros Para Fibrose Difusa */}
+              {fibrosisParams.type === 'difusa' && (
+                <>
+                  {Object.keys(fibrosisParams.regionParams).map(key => (
+                    <Input 
+                      key={`fib-${key}`}
+                      label={paramTranslations[`fibrosis_${key}`] || key} 
+                      value={fibrosisParams.regionParams[key]} 
+                      onChange={(e) => handleFibrosisRegionChange(key, e.target.value)} 
+                    />
+                  ))}
+                </>
+              )}
           </>
           }
       </div>
@@ -347,7 +390,7 @@ const Model2DPage = ({ onBack }) => {
           
           <h3>Método Numérico</h3>
           <p>
-            A equação é resolvida usando Diferenças Finitas para o Laplaciano e Runge-Kutta de 4ª Ordem para o tempo.
+            A equação é resolvida usando Diferenças Finitas para o Laplaciano e o método de Euler-Rush-Larsen para o tempo.
           </p>
 
           <h3>Protocolo de Estímulos</h3>
@@ -371,9 +414,11 @@ const Model2DPage = ({ onBack }) => {
 
           <h3>Simulação de Fibrose</h3>
           <p>
-            Quando habilitada, a fibrose é simulada criando regiões circulares aleatórias onde a condutividade <code>k</code> é reduzida para o valor de <code>conductivity</code>, bloqueando ou retardando a propagação da onda.
+            A fibrose é simulada criando regiões onde a condutividade <code>k</code> é reduzida.
           </p>
           <ul>
+            <li><strong>Compacta:</strong> As regiões fibróticas são aleatorizadas em todo o domínio.</li>
+            <li><strong>Difusa:</strong> As regiões fibróticas são aleatorizadas apenas dentro de uma área retangular pré-definida.</li>
             <li>condutividade (Fibrose): O valor de <code>k</code> dentro das regiões fibróticas.</li>
             <li>densidade: A fração da área do tecido coberta por fibrose.</li>
             <li>tamanho da região: O raio das regiões circulares de fibrose.</li>

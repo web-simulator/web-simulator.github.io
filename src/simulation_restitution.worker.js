@@ -121,11 +121,13 @@ function runSingleCycle(params) {
 
   // Potencial de ação do último S1 para calcular APD
   const inicio_ultimo_s1_idx = Math.round((inicio + (num_estimulos_s1 - 1) * BCL_S1) / dt);
-  const v_s1 = v.slice(inicio_ultimo_s1_idx, inicio_ultimo_s1_idx + Math.round(BCL_S1 / dt));
+
+  const slice_duration_idx = Math.round(1.5 * BCL_S1 / dt);
+  const v_s1 = v.slice(inicio_ultimo_s1_idx, inicio_ultimo_s1_idx + slice_duration_idx);
   
   // Potencial de ação do S2 para calcular APD
   const inicio_s2_idx = Math.round((inicio + (num_estimulos_s1 - 1) * BCL_S1 + intervalo_S2) / dt);
-  const v_s2 = v.slice(inicio_s2_idx, inicio_s2_idx + Math.round(BCL_S1 / dt));
+  const v_s2 = v.slice(inicio_s2_idx, inicio_s2_idx + slice_duration_idx);
   
   return { v_s1, v_s2, full_v: v, full_h: h, full_tempo: tempo };
 }
@@ -158,8 +160,10 @@ self.onmessage = (e) => {
     const apd_s2 = calculateAPD90(v_s2, params.dt);
 
     if (apd_s1 > 0 && apd_s2 > 0) {
-      const bcl = intervalo_S2;
-      restitutionData.push({ bcl, apd: apd_s2 });
+      const di = intervalo_S2 - apd_s1; // Calcula o DI
+      if (di > 0) {
+        restitutionData.push({ bcl: di, apd: apd_s2 }); 
+      }
     }
 
     // Otimização do gráfico
@@ -177,7 +181,7 @@ self.onmessage = (e) => {
     }
   }
 
-  // Ordena os dados da curva pelo BCL
+  // Ordena os dados da curva pelo DI
   restitutionData.sort((a, b) => a.bcl - b.bcl);
 
   self.postMessage({ timeSeriesData: allTimeSeriesData, restitutionData });

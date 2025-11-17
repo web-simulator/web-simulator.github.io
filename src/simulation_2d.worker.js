@@ -11,6 +11,10 @@ class SeededRandom {
   }
   // Gera um número aleatório inteiro dentro de um intervalo
   nextInt(min, max) {
+    // Garante que min <= max
+    if (min > max) {
+      [min, max] = [max, min];
+    }
     return Math.floor(this.next() * (max - min + 1)) + min;
   }
 }
@@ -38,20 +42,49 @@ self.onmessage = (e) => {
     // condutividade de cada célula
     let k_map = new Float32Array(N * N).fill(k);
     
-    // Mudanças para caso tenha fibrose
     if (fibrosisParams.enabled) {
-      const { density, regionSize, seed, conductivity } = fibrosisParams;
+      const { density, regionSize, seed, conductivity, type, regionParams } = fibrosisParams;
       const random = new SeededRandom(seed); // Usa a classe de números aleatórios
-      // Cria regiões circulares de fibrose em locais aleatórios
-      const numRegions = Math.ceil(((L * L) * density) / (Math.PI * regionSize * regionSize));
-      for (let r = 0; r < numRegions; r++) {
-        const centerRow = random.nextInt(0, N - 1);
-        const centerCol = random.nextInt(0, N - 1);
-        const radiusInPixels = regionSize / dx;
-        const radiusSq = radiusInPixels * radiusInPixels;
+      
+      let numRegions, i_min, i_max, j_min, j_max;
 
-        for (let i = 0; i < N; i++) {
-          for (let j = 0; j < N; j++) {
+      if (type === 'difusa') {
+        // fibrose difusa 
+        const { x1, y1, x2, y2 } = regionParams;
+        // Converte coordenadas para índices da malha
+        i_min = Math.floor(Math.min(y1, y2) / dy);
+        i_max = Math.floor(Math.max(y1, y2) / dy);
+        j_min = Math.floor(Math.min(x1, x2) / dx);
+        j_max = Math.floor(Math.max(x1, x2) / dx);
+
+        // Calcula a área da região e o número de círculos de fibrose
+        const regionArea = (Math.abs(x2 - x1) * Math.abs(y2 - y1));
+        numRegions = Math.ceil((regionArea * density) / (Math.PI * regionSize * regionSize));
+
+      } else {
+        // fibrose compacta
+        i_min = 0;
+        i_max = N - 1;
+        j_min = 0;
+        j_max = N - 1;
+        numRegions = Math.ceil(((L * L) * density) / (Math.PI * regionSize * regionSize));
+      }
+
+      const radiusInPixels = regionSize / dx;
+      const radiusSq = radiusInPixels * radiusInPixels;
+
+      for (let r = 0; r < numRegions; r++) {
+        // Gera centros aleatórios dentro dos limites definidos
+        const centerRow = random.nextInt(i_min, i_max);
+        const centerCol = random.nextInt(j_min, j_max);
+
+        const i_start = Math.max(0, centerRow - Math.floor(radiusInPixels));
+        const i_end = Math.min(N - 1, centerRow + Math.ceil(radiusInPixels));
+        const j_start = Math.max(0, centerCol - Math.floor(radiusInPixels));
+        const j_end = Math.min(N - 1, centerCol + Math.ceil(radiusInPixels));
+
+        for (let i = i_start; i <= i_end; i++) {
+          for (let j = j_start; j <= j_end; j++) {
             const distanceSq = (i - centerRow) ** 2 + (j - centerCol) ** 2;
             if (distanceSq <= radiusSq) {
               k_map[i * N + j] = conductivity; // Define a condutividade da fibrose

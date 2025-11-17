@@ -64,6 +64,8 @@ self.onmessage = (e) => {
   const restitutionData = []; // Pontos da curva de restituição
   let passo_atual = 1; // Contador 
   let tempo_atual_estimulo = inicio; // Controla o momento de aplicar o próximo estímulo
+  
+  let apd_anterior = 0; // Pega o APD anterior para calcular o DI
 
   // Itera sobre cada valor de CI, do maior (CI1) para o menor (CI0).
   for (let CI = CI1; CI >= CI0; CI -= CIinc) {
@@ -122,17 +124,25 @@ self.onmessage = (e) => {
         passo_atual++; // Avança para o próximo passo de tempo
       }
       
+      // Calcula o APD do batimento atual
+      const janela_medicao_passos = Math.round(2 * CI / dt); 
+      const v_pulso = v.slice(passo_inicio_pulso, passo_inicio_pulso + janela_medicao_passos);
+      const apd_atual = calculateAPD90(v_pulso, dt);
+      
       // Apenas no último batimento de um CI, calcula o APD para gerar a curva de restituição
       if (beat === nbeats - 1) {
-        // Cria uma "janela de medição" longa o suficiente (2x o CI) para garantir que o PA inteiro seja capturado
-        const janela_medicao_passos = Math.round(2 * CI / dt); 
-        const v_pulso = v.slice(passo_inicio_pulso, passo_inicio_pulso + janela_medicao_passos);
-        const apd = calculateAPD90(v_pulso, dt);
-        
-        // Se um APD válido foi calculado, adiciona o ponto aos dados da curva
-        if (apd > 0) {
-          restitutionData.push({ bcl: CI, apd });
+        if (apd_atual > 0 && apd_anterior > 0) { 
+          const di = CI - apd_anterior;
+          if (di > 0) {
+             restitutionData.push({ bcl: di, apd: apd_atual });
+          }
         }
+      }
+
+      if (apd_atual > 0) {
+        apd_anterior = apd_atual; // Atualiza o APD anterior para o próximo ciclo
+      } else {
+        apd_anterior = 0; // Reseta se o batimento falhar
       }
       
       // Atualiza o tempo do próximo estímulo para o início do próximo ciclo
@@ -152,7 +162,7 @@ self.onmessage = (e) => {
     }
   }
   
-  // Ordena os dados da curva de restituição pelo BCL
+  // Ordena os dados da curva de restituição pelo DI
   restitutionData.sort((a, b) => a.bcl - b.bcl);
   
   // Envia os resultados para a página principal.

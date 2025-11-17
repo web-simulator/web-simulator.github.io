@@ -20,7 +20,6 @@ const RestitutionCurvePage = ({ onBack }) => {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false); // Estado para o modal
 
   // Parâmetros editáveis para cada modelo
-
   const [editableParams, setEditableParams] = useState({
     // Parâmetros para o modelo S1S2
     s1s2: {
@@ -83,31 +82,50 @@ const RestitutionCurvePage = ({ onBack }) => {
     }
   });
 
-  // Função para calcular a curva analítica para o modelo MMS
+  // Função para calcular a curva analítica
   const calculateAnalyticalCurve = useCallback((simulatedData) => {
-    if (!simulatedData || simulatedData.length === 0 || selectedModel !== 'mms') {
+    if (!simulatedData || simulatedData.length === 0) {
       setAnalyticalData([]);
       return;
     }
 
-    // Extrai os parâmetros necessários
-    const { tau_out, tau_in, v_gate, tau_close, tau_open } = editableParams.mms;
+    let analyticalPoints = [];
+    const currentParams = editableParams[selectedModel];
+    const { tau_out, tau_in, tau_close, tau_open, v_gate } = currentParams;
 
-    // Cálculo da curva analítica
-    const h_mms_min = Math.pow(1 + (tau_out / (4 * tau_in)) * Math.pow(1 - v_gate, 2), -1);
+    if (selectedModel === 'mms') {
+      // Calculo analitico do modelo MMS
+      const h_mms_min = Math.pow(1 + (tau_out / (4 * tau_in)) * Math.pow(1 - v_gate, 2), -1);
 
-    // Cálculo dos pontos analíticos
-    const analyticalPoints = simulatedData.map(point => {
-      const di = point.bcl;
-      const analyticalApd = tau_close * Math.log((1 - (1 - h_mms_min) * Math.exp(-di / tau_open)) / h_mms_min);
-      if (analyticalApd && analyticalApd > 0) { // Garantir que apd seja positivo
-        return { bcl: di, apd: analyticalApd };
-      }
-      return null;
-    }).filter(Boolean); // Remove pontos nulos
+      analyticalPoints = simulatedData.map(point => {
+        const di = point.bcl; // Eixo X 
+        const analyticalApd = tau_close * Math.log((1 - (1 - h_mms_min) * Math.exp(-di / tau_open)) / h_mms_min);
+        if (analyticalApd && analyticalApd > 0) {
+          return { bcl: di, apd: analyticalApd };
+        }
+        return null;
+      }).filter(Boolean); // Remove pontos nulos
+
+    } else if (selectedModel === 's1s2' || selectedModel === 'dynamic') {
+      // Calculo analitico do modelo MS
+      const h_min = (4 * tau_in) / tau_out;
+
+      analyticalPoints = simulatedData.map(point => {
+        const di = point.bcl; // Eixo X 
+
+        const numerator = 1 - (1 - h_min) * Math.exp(-di / tau_open);
+        const analyticalApd = tau_close * Math.log(numerator / h_min);
+        
+        if (analyticalApd && analyticalApd > 0) {
+          return { bcl: di, apd: analyticalApd };
+        }
+        return null;
+      }).filter(Boolean); // Remove pontos nulos
+    }
 
     setAnalyticalData(analyticalPoints); 
-  }, [editableParams.mms, selectedModel]);
+  }, [editableParams, selectedModel]);
+
 
   useEffect(() => {
     let simulationWorker;
@@ -130,7 +148,8 @@ const RestitutionCurvePage = ({ onBack }) => {
         setData(timeSeriesData);
       }
       setRestitutionData(restitutionData);
-      calculateAnalyticalCurve(restitutionData);
+      // Calcula a curva analítica
+      calculateAnalyticalCurve(restitutionData); 
       setLoading(false);
     };
 
@@ -138,7 +157,7 @@ const RestitutionCurvePage = ({ onBack }) => {
     return () => {
       simulationWorker.terminate();
     };
-  }, [selectedModel, calculateAnalyticalCurve]);
+  }, [selectedModel, calculateAnalyticalCurve]); 
 
   //  função para lidar com mudanças nos inputs
   const handleChange = useCallback((e, name) => {
@@ -199,7 +218,7 @@ const RestitutionCurvePage = ({ onBack }) => {
             <li>O processo é repetido, diminuindo o <code>Intervalo_S2</code> para traçar a curva.</li>
           </ol>
           <h3>Modelo Celular</h3>
-          <p>Utiliza o modelo Mitchell-Schaeffer .</p>
+          <p>Utiliza o modelo Mitchell-Schaeffer (padrão).</p>
         </div>
       );
     }
@@ -241,13 +260,13 @@ const RestitutionCurvePage = ({ onBack }) => {
           <p>Este método é considerado mais fisiologicamente relevante, pois a célula não retorna ao estado estacionário a cada passo.</p>
           <ol>
             <li>A simulação começa com um BCL longo, <code>CI1</code>.</li>
-            <li>A célula é estimulada <code>nbeats</code> vezes nesse BCL. O APD do último batimento é medido. O DI é <code>CI1 - APD</code>.</li>
+            <li>A célula é estimulada <code>nbeats</code> vezes nesse BCL. O APD do último batimento é medido. O DI é <code>CI1 - APD_anterior</code>.</li>
             <li>O BCL é então encurtado por um decremento (<code>CIinc</code>), e o processo se repete.</li>
             <li>Isso continua até que o BCL atinja <code>CI0</code>.</li>
           </ol>
           <p>A curva resultante ou é a curva de restituição dinâmica.</p>
           <h3>Modelo Celular</h3>
-          <p>Utiliza o modelo Mitchell-Schaeffer.</p>
+          <p>Utiliza o modelo Mitchell-Schaeffer (padrão).</p>
         </div>
       );
     }
