@@ -71,7 +71,8 @@ const Model2DPage = ({ onBack }) => {
 
   // Parâmetros do modelo
   const [ms2dParams, setMs2dParams] = useState({
-    k: 0.004,
+    sigma_x: 0.004, // Condutividade em X 
+    sigma_y: 0.001, // Condutividade em Y
     Tau_in: 0.3,
     Tau_out: 6.0,
     Tau_open: 120.0,
@@ -92,19 +93,19 @@ const Model2DPage = ({ onBack }) => {
       interval: 0, // Intervalo
       duration: 2,
       amplitude: 1.0,
-      shape: 'rectangle', // Forma do estímulo
+      shape: 'rectangle',
       rectParams: { x1: 0.0, y1: 0.0, x2: 1, y2: 10.0 }, // Parâmetros se for retângulo
-      circleParams: { cx: 0.5, cy: 0.5, radius: 0.1 } // Parâmetros se for círculo
+      circleParams: { cx: 5.0, cy: 5.0, radius: 0.5 } // Centro do domínio para ver propagação
     },
     {
       id: 2,
-      startTime: 0, // calcula automaticamente 
-      interval: 275, // Intervalo apos o anteriror  
+      startTime: 0, // Tempo de início
+      interval: 275, // Intervalo após o anterior
       duration: 2,
       amplitude: 1.0,
       shape: 'rectangle',
-      rectParams: { x1: 6, y1: 3, x2: 8, y2: 7 },
-      circleParams: { cx: 0.8, cy: 0.3, radius: 0.1 }
+      rectParams: { x1: 6.0, y1: 2.0, x2: 8, y2: 7.0 }, // Parâmetros se for retângulo
+      circleParams: { cx: 8.0, cy: 3.0, radius: 1 } // Centro do domínio para ver propagação
     }
   ]);
 
@@ -251,7 +252,9 @@ const Model2DPage = ({ onBack }) => {
   const timeseriesData = getTimeseriesForPoint(); 
 
   const paramTranslations = {
-    k: "Condutividade (k)", Tau_in: "Tau in", Tau_out: "Tau out", Tau_open: "Tau open", Tau_close: "Tau close", gate: "Gate", L: "Comprimento", dt: "dt", dx: "dx", totalTime: "Tempo Total",
+    sigma_x: "Condutividade X", 
+    sigma_y: "Condutividade Y",
+    Tau_in: "Tau in", Tau_out: "Tau out", Tau_open: "Tau open", Tau_close: "Tau close", gate: "Gate", L: "Comprimento", dt: "dt", dx: "dx", totalTime: "Tempo Total",
     duracao: "Duração (ms)", amplitude: "Amplitude", startTime: "Início (ms)", intervalo: "Intervalo Após Anterior (ms)",
     downsamplingFactor: "Fator de Redução", radius: "Raio", cx: "Centro X", cy: "Centro Y", x1: "X1", y1: "Y1", x2: "X2", y2: "Y2",
     conductivity: "Condutividade (k)", density: "Densidade", seed: "Semente", regionSize: "Tamanho da Região",
@@ -262,7 +265,7 @@ const Model2DPage = ({ onBack }) => {
   return (
     <div className="page-container">
       <Button onClick={onBack}>Voltar para Home</Button>
-      <h1>Modelo de Simulação 2D</h1>
+      <h1>Modelo de Simulação 2D (Anisotrópico)</h1>
       
       <h2>Parâmetros da Simulação</h2>
       <div className="params-container">
@@ -376,30 +379,47 @@ const Model2DPage = ({ onBack }) => {
           
           <h3>Modelo Matemático</h3>
           <p>
-            Esta é a versão 2D do modelo Mitchell-Schaeffer, simulando a propagação de ondas em um tecido bidimensional.
+            Este modelo simula a propagação do potencial de ação em um tecido cardíaco bidimensional. 
+            Ele estende o modelo Mitchell-Schaeffer original incorporando um termo de difusão preferencial, 
+            o que permite simular diferentes velocidades de propagação nas direções horizontal (X) e vertical (Y).
           </p>
-          <p>As equações de reação-difusão são:</p>
+          <p>As equações diferenciais parciais (EDPs) de reação-difusão são:</p>
           <ul>
-            <li><code>∂v/∂t = ∇ ⋅ (k(x,y) * ∇v) + (h * v² * (1 - v)) / τ_in - v / τ_out + I_stim</code></li>
-            <li><code>∂h/∂t = (1 - h) / τ_open</code> (se <code>v &lt; v_gate</code>)</li>
-            <li><code>∂h/∂t = -h / τ_close</code> (se <code>v ≥ v_gate</code>)</li>
+            <li>
+              <code>
+                ∂v/∂t = σ_x * (∂²v/∂x²) + σ_y * (∂²v/∂y²) + (h * v² * (1 - v)) / τ_in - v / τ_out + I_stim
+              </code>
+            </li>
+            <li>
+              <code>∂h/∂t = (1 - h) / τ_open</code> (se <code>v &lt; v_gate</code>)
+            </li>
+            <li>
+              <code>∂h/∂t = -h / τ_close</code> (se <code>v ≥ v_gate</code>)
+            </li>
           </ul>
-          <p>
-            O termo <code>∇ ⋅ (k(x,y) * ∇v)</code> é o termo de difusão em 2D, onde <code>k(x,y)</code> é a condutividade no ponto (x,y).
-          </p>
           
           <h3>Método Numérico</h3>
-          <p>
-            A equação é resolvida usando Diferenças Finitas para o Laplaciano e o método de Euler-Rush-Larsen para o tempo.
-          </p>
+          <p>O sistema é resolvido numericamente discretizando o espaço e o tempo:</p>
+          <ol>
+            <li>
+              Espaço: O termo de difusão (Laplaciano) é aproximado usando o Método de Diferenças Finitas de 2ª Ordem.
+              Isso permite calcular a difusão separadamente para X e Y usando <code>σ_x</code> e <code>σ_y</code>.
+            </li>
+            <li>
+              Tempo (Variável v): Utiliza o método de Euler Explícito para integração temporal da voltagem.
+            </li>
+            <li>
+              Tempo (Variável h): Utiliza o método de Rush-Larsen, que é incondicionalmente estável para a variável de gate, permitindo maior precisão.
+            </li>
+            <li>
+              Condições de Contorno: São aplicadas condições de Neumann, que garantem fluxo zero nas bordas do domínio.
+            </li>
+          </ol>
 
-          <h3>Protocolo de Estímulos</h3>
-          <p>
-            Um protocolo de múltiplos estímulos é implementado. Cada estímulo pode ter uma forma (retângulo ou círculo) e um tempo de início (<code>startTime</code> para o primeiro, 
-            <code>interval</code> para os próximos) definidos.
-          </p>
-          <h3>Parametros</h3>
+          <h3>Significado dos Parâmetros</h3>
           <ul>
+            <li>σ_x (Sigma X): Condutividade na direção horizontal. Controla a velocidade de propagação em X.</li>
+            <li>σ_y (Sigma Y): Condutividade na direção vertical. Controla a velocidade de propagação em Y.</li>
             <li>Despolarização (τ_in): Controla a velocidade da fase de ascensão (despolarização) do potencial de ação. Um valor menor torna a subida mais rápida.</li>
             <li>Repolarização (τ_out): Controla a velocidade da fase de repolarização (descida). Um valor menor torna a descida mais rápida.</li>
             <li>Recuperação (τ_open): Controla o tempo que a célula leva para se tornar excitável novamente (recuperação da variável <code>h</code>).</li>
@@ -410,11 +430,14 @@ const Model2DPage = ({ onBack }) => {
             <li>duracao: Duração do estímulo em ms.</li>
             <li>amplitude: Amplitude do estímulo aplicado ao potencial de ação.</li>
             <li>formato: Forma do estímulo, pode ser retangular ou circular.</li>
+            <li>dx / dt: Passo espacial e temporal da simulação.</li>
           </ul>
 
           <h3>Simulação de Fibrose</h3>
           <p>
-            A fibrose é simulada criando regiões onde a condutividade <code>k</code> é reduzida.
+            A fibrose é simulada criando regiões onde a condutividade <code>k</code> é reduzida. <br />
+            A condutividade selecionada para a fibrose se sobrepõe às condutividades preferenciais definidas para o tecido. <br />
+            Existem dois tipos de distribuição de fibrose:
           </p>
           <ul>
             <li><strong>Compacta:</strong> As regiões fibróticas são aleatorizadas em todo o domínio.</li>

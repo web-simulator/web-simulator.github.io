@@ -24,24 +24,29 @@ self.onmessage = (e) => {
   const { modelType } = params; // Tipo de modelo
 
     // Parâmetros
-    const { k, Tau_in, Tau_out, Tau_open, Tau_close, gate, L, dx, totalTime, downsamplingFactor, stimuli, fibrosisParams } = params;
+    const { sigma_x, sigma_y, Tau_in, Tau_out, Tau_open, Tau_close, gate, L, dx, totalTime, downsamplingFactor, stimuli, fibrosisParams } = params;
     let { dt } = params;
     
     // Calcula o tamanho da malha
     const N = Math.floor(L / dx);
     const dy = dx; // A malha é quadrada
 
-    // Condição de CFL
-    const cfl_limit = (dx * dx) / (4 * k);
+    // Condição de CFL para 2D anisotrópico
+    const max_sigma = Math.max(sigma_x, sigma_y);
+    const cfl_limit = (dx * dx) / (4 * max_sigma); 
     if (dt > cfl_limit) dt = cfl_limit * 0.9;
 
     // Arrays para V e h
     let v = new Float32Array(N * N).fill(0.0);
     let h = new Float32Array(N * N).fill(1.0);
     
-    // condutividade de cada célula
-    let k_map = new Float32Array(N * N).fill(k);
+    // Mapas de condutividade para X e Y separadamente
+    let sigma_x_map = new Float32Array(N * N).fill(sigma_x);
+    let sigma_y_map = new Float32Array(N * N).fill(sigma_y);
     
+    // Mapa para renderizar a fibrose em preto
+    let visual_k_map = new Float32Array(N * N).fill(sigma_x);
+
     if (fibrosisParams.enabled) {
       const { density, regionSize, seed, conductivity, type, regionParams } = fibrosisParams;
       const random = new SeededRandom(seed); // Usa a classe de números aleatórios
@@ -87,7 +92,11 @@ self.onmessage = (e) => {
           for (let j = j_start; j <= j_end; j++) {
             const distanceSq = (i - centerRow) ** 2 + (j - centerCol) ** 2;
             if (distanceSq <= radiusSq) {
-              k_map[i * N + j] = conductivity; // Define a condutividade da fibrose
+              const idx = i * N + j;
+              // A condutividade da fibrose se sobrepõe a das outras direções
+              sigma_x_map[idx] = conductivity;
+              sigma_y_map[idx] = conductivity;
+              visual_k_map[idx] = conductivity;
             }
           }
         }
@@ -158,7 +167,11 @@ self.onmessage = (e) => {
                 // Pega os valores da célula no passo anterior
                 const vp = v_prev[idx];
                 const hp = h_prev[idx];
-                const local_k = k_map[idx]; // Pega a condutividade local
+                
+                // Pega a condutividade local para X e Y separadamente
+                const local_sx = sigma_x_map[idx];
+                const local_sy = sigma_y_map[idx];
+                
                 const stimulus = current_stimulus_map ? current_stimulus_map[idx] * stimulus_amplitude : 0;
 
 
@@ -179,16 +192,22 @@ self.onmessage = (e) => {
                   h[idx] = h_inf + (hp - h_inf) * h_exp;
                 } 
 
-                //Euler para v
-                // Calcula a difusão (interação com as células vizinhas)
-                const lap_v = (v_prev[idx - N] + v_prev[idx + N] + v_prev[idx - 1] + v_prev[idx + 1] - 4 * vp) / (dx * dx);
+                // Euler para v
+          
+                // Difusão em X: sigma_x * d2v/dx2
+                const diff_x = local_sx * (v_prev[idx - 1] - 2 * vp + v_prev[idx + 1]) / (dx * dx);
+                
+                // Difusão em Y: sigma_y * d2v/dy2
+                const diff_y = local_sy * (v_prev[idx - N] - 2 * vp + v_prev[idx + N]) / (dy * dy);
+                
+                const lap_v_anisotropic = diff_x + diff_y;
                 
                 // Reação
                 const J_in = (hp * vp * vp * (1 - vp)) / Tau_in;
                 const J_out = -vp / Tau_out;
                 
                 // Atualiza v
-                v[idx] = vp + dt * (local_k * lap_v + J_in + J_out + stimulus);
+                v[idx] = vp + dt * (lap_v_anisotropic + J_in + J_out + stimulus);
 
                 // Garante que os valores de v e h fiquem entre 0 e 1
                 v[idx] = Math.max(0.0, Math.min(1.0, v[idx]));
@@ -213,7 +232,7 @@ self.onmessage = (e) => {
             for(let i = 0; i < N; i++) {
                 for (let j = 0; j < N; j++) {
                     snapshot[i][j] = v[i * N + j];
-                    fibrosisSnapshot[i][j] = k_map[i * N + j];
+                    fibrosisSnapshot[i][j] = visual_k_map[i * N + j];
                 }
             }
             // Adiciona os dados do potencial e da fibrose ao array de resultados
