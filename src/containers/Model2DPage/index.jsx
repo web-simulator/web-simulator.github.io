@@ -265,7 +265,7 @@ const Model2DPage = ({ onBack }) => {
   return (
     <div className="page-container">
       <Button onClick={onBack}>Voltar para Home</Button>
-      <h1>Modelo de Simulação 2D (Anisotrópico)</h1>
+      <h1>Modelo de Simulação 2D</h1>
       
       <h2>Parâmetros da Simulação</h2>
       <div className="params-container">
@@ -293,7 +293,7 @@ const Model2DPage = ({ onBack }) => {
               <label htmlFor="fibrosis-enabled">Habilitar Fibrose</label>
               <input type="checkbox" id="fibrosis-enabled" checked={fibrosisParams.enabled} onChange={(e) => setFibrosisParams(prev => ({...prev, enabled: e.target.checked}))} />
           </div>
-          
+           
           {fibrosisParams.enabled && <>
               {/* Seletor do Tipo de Fibrose */}
               <div className="input-container">
