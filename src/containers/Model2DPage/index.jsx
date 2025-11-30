@@ -372,7 +372,7 @@ const Model2DPage = ({ onBack }) => {
           </ul>
           
           <h3>{t('modals.numerical_method')}</h3>
-          <p>O sistema é resolvido numericamente discretizando o espaço e o tempo.</p>
+          <p>{t('modals.ms2d.method')}</p>
 
           <h3>{t('modals.param_meaning')}</h3>
           <ul>

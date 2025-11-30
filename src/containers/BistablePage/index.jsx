@@ -203,7 +203,7 @@ const BistablePage = ({ onBack }) => {
           </ul>
           
           <h3>{t('modals.numerical_method')}</h3>
-          <p>A equação é resolvida usando Diferenças Finitas de 2ª Ordem para o espaço e Runge-Kutta de 4ª Ordem no tempo.</p>
+          <p>{t('modals.bistable.method')}</p>
 
           <h3>{t('modals.param_meaning')}</h3>
           <ul>

@@ -221,7 +221,7 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
             <li><code>{t('modals.single.eq_h2')}</code></li>
           </ul>
           <h3>{t('modals.numerical_method')}</h3>
-          <p>Diferenças Finitas de 2ª Ordem no espaço e Runge-Kutta de 4ª Ordem no tempo.</p>
+          <p>{t('modals.ms1d.method')}</p>
 
           <h3>{t('modals.param_meaning')}</h3>
           <ul>

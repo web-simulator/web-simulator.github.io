@@ -46,7 +46,8 @@
     "diffuse": "Difusa",
     "show_stimuli": "Mostrar estímulos",
     "select_model": "Selecione o Modelo",
-    "simulation_params": "Parâmetros da Simulação"
+    "simulation_params": "Parâmetros da Simulação",
+    "stimuli": "Estímulos"
   },
   "params": {
     "despolarização": "Despolarização (tau_in)",
@@ -106,12 +107,13 @@
     "math_model": "Modelo Matemático",
     "numerical_method": "Método Numérico",
     "param_meaning": "Significado dos Parâmetros",
+    "protocol": "Protocolo",
     "single": {
       "desc": "Esta simulação usa o modelo Mitchell-Schaeffer para descrever o potencial de ação cardíaco. É um modelo de duas variáveis, simulando o comportamento de uma única célula.",
       "eq_v": "dv/dt = (h * v² * (1 - v)) / τ_in - v / τ_out + I_stim",
       "eq_h1": "dh/dt = (1 - h) / τ_open (se v < v_gate)",
       "eq_h2": "dh/dt = -h / τ_close (se v ≥ v_gate)",
-      "method": "As equações são resolvidas numericamente usando o método Runge-Kutta de 4ª Ordem."
+      "method": "As equações são resolvidas usando o método de Euler Explícito para o potencial (v) e Rush-Larsen para a variável de portão (h)."
     },
     "multiple": {
       "protocol_title": "Protocolo de Estimulação",
@@ -129,28 +131,66 @@
       "measuring": "Medindo APD e DI",
       "apd_def": "APD: Tempo para a voltagem repolarizar 90% (APD90).",
       "di_def": "DI: Calculado como BCL - APD_anterior.",
-      "s1s2_method": "Protocolo S1-S2",
-      "dynamic_method": "Protocolo Dinâmico",
-      "mms_title": "Mitchell-Schaeffer Modificado (MMS)",
-      "mms_desc": "O MMS altera a corrente de entrada para permitir o cálculo de uma Curva de Restituição Analítica."
+      "s1s2": {
+        "title": "Protocolo S1-S2 (Mitchell-Schaeffer Padrão)",
+        "desc": "Utiliza o modelo Mitchell-Schaeffer original com o protocolo S1-S2. A corrente de entrada é proporcional ao quadrado da voltagem.",
+        "eq_v": "J_in = (h * v² * (1 - v)) / τ_in",
+        "eq_h": "dh/dt depende de τ_open e τ_close via Rush-Larsen",
+        "method": "Euler Explícito (v) e Rush-Larsen (h).",
+        "steps": [
+          "A célula é estimulada com uma sequência S1 em BCL fixo para atingir estado estacionário.",
+          "Um pulso S2 é aplicado com um intervalo variável após o último S1.",
+          "Mede-se o APD do S2 e o DI correspondente.",
+          "O processo se repete reduzindo o intervalo S2."
+        ]
+      },
+      "mms": {
+        "title": "Mitchell-Schaeffer Modificado (MMS)",
+        "desc": "O modelo MMS altera a equação da corrente de entrada (J_in) para permitir uma análise matemática mais robusta e cálculo da curva analítica.",
+        "eq_v": "J_in = (h * v * (v - v_gate) * (1 - v)) / τ_in",
+        "eq_h": "dh/dt depende de τ_open e τ_close via Rush-Larsen",
+        "method": "Euler Explícito (v) e Rush-Larsen (h).",
+        "steps": [
+          "Utiliza o mesmo protocolo S1-S2 descrito anteriormente.",
+          "A principal diferença está na equação do modelo celular.",
+          "Permite comparação direta com a curva analítica teórica."
+        ]
+      },
+      "dynamic": {
+        "title": "Protocolo Dinâmico (Mitchell-Schaeffer Padrão)",
+        "desc": "Utiliza o modelo Mitchell-Schaeffer padrão, mas com um protocolo de estimulação contínuo (Dynamic Pacing), que é fisiologicamente mais relevante por incluir memória cardíaca.",
+        "eq_v": "J_in = (h * v² * (1 - v)) / τ_in",
+        "eq_h": "dh/dt depende de τ_open e τ_close via Rush-Larsen",
+        "method": "Euler Explícito (v) e Rush-Larsen (h).",
+        "steps": [
+          "A simulação começa com um BCL longo (CI1).",
+          "A célula é estimulada 'nbeats' vezes nesse ritmo. O APD do último batimento é medido.",
+          "O BCL é encurtado (CIinc) e o processo se repete sem pausas longas.",
+          "Isso continua até que o BCL atinja o valor final (CI0)."
+        ]
+      }
     },
     "bistable": {
       "desc": "Modelo de reação-difusão de uma única variável, usado para demonstrar a formação de frentes de onda e comportamento biestável (dois estados estáveis: v=0 e v=1).",
-      "eq": "∂v/∂t = k * (∂²v/∂x²) + A * v * (1 - v) * (v - α)"
+      "eq": "∂v/∂t = k * (∂²v/∂x²) + A * v * (1 - v) * (v - α)",
+      "method": "Espaço: Diferenças Finitas de 2ª Ordem. Tempo: Runge-Kutta de 4ª Ordem (RK4)."
     },
     "fhn": {
       "desc": "Modelo de duas variáveis (v e w) que simplifica a dinâmica do potencial de ação. v é o potencial, w é a recuperação.",
-      "reentry": "A simulação de Reentrada simula uma onda quebrada que pode se propagar de forma auto-sustentada."
+      "reentry": "A simulação de Reentrada simula uma onda quebrada que pode se propagar de forma auto-sustentada.",
+      "method": "Espaço: Diferenças Finitas de 2ª Ordem. Tempo: Runge-Kutta de 4ª Ordem (RK4)."
     },
     "ms1d": {
       "desc": "Versão 1D do modelo Mitchell-Schaeffer. Adiciona um termo de difusão espacial para permitir a propagação da onda.",
-      "eq": "∂v/∂t = k * (∂²v/∂x²) + (h * v² * (1 - v)) / τ_in - v / τ_out + I_stim"
+      "eq": "∂v/∂t = k * (∂²v/∂x²) + (h * v² * (1 - v)) / τ_in - v / τ_out + I_stim",
+      "method": "Espaço: Diferenças Finitas de 2ª Ordem. Tempo: Euler Explícito para potencial (v) e Rush-Larsen para gate (h)."
     },
     "ms2d": {
       "desc": "Simula a propagação em tecido 2D, incorporando difusão preferencial.",
       "eq": "∂v/∂t = σ_x * (∂²v/∂x²) + σ_y * (∂²v/∂y²) + ...",
       "fibrosis_title": "Simulação de Fibrose",
-      "fibrosis_desc": "A fibrose é simulada criando regiões onde a condutividade é reduzida. Pode ser Compacta (aleatória em todo o domínio) ou Difusa (área restrita)."
+      "fibrosis_desc": "A fibrose é simulada criando regiões onde a condutividade é reduzida. Pode ser Compacta (aleatória em todo o domínio) ou Difusa (área restrita).",
+      "method": "Espaço: Diferenças Finitas de 2ª Ordem. Tempo: Euler Explícito para potencial (v) e Rush-Larsen para gate (h)."
     }
   }
 }

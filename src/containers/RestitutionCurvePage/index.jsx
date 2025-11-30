@@ -49,7 +49,7 @@ const RestitutionCurvePage = ({ onBack }) => {
       BCL_S2_inicial: 900,
       BCL_S2_final: 200,
       delta_CL: 20,
-      tau_in: 0.3,
+      tau_in: 0.3, 
       tau_out: 6.0,
       tau_open: 120.0,
       tau_close: 150.0,
@@ -109,7 +109,7 @@ const RestitutionCurvePage = ({ onBack }) => {
       }).filter(Boolean); 
 
     } else if (selectedModel === 's1s2' || selectedModel === 'dynamic') {
-      // Calculo analitico do modelo MS
+      // Calculo analitico do modelo MS padrão
       const h_min = (4 * tau_in) / tau_out;
 
       analyticalPoints = simulatedData.map(point => {
@@ -186,84 +186,54 @@ const RestitutionCurvePage = ({ onBack }) => {
 
   // Função para renderizar o conteúdo do modal de informações
   const renderInfoModalContent = () => {
-    const commonContent = (
-      <>
+    const modelKey = selectedModel; // 's1s2', 'mms', ou 'dynamic'
+    const steps = t(`modals.restitution.${modelKey}.steps`, { returnObjects: true });
+    
+    // Lista de parâmetros relevantes para exibir no modal
+    const currentParamsList = Object.keys(editableParams[selectedModel]);
+
+    return (
+      <div className="info-modal-content">
+        <h2>{t(`modals.restitution.${modelKey}.title`)}</h2>
+        
+        {/* Seção Geral: O que é a curva */}
         <h3>{t('modals.restitution.what_is')}</h3>
         <p>{t('modals.restitution.what_is_desc')}</p>
+        
         <h3>{t('modals.restitution.measuring')}</h3>
         <ul>
           <li>{t('modals.restitution.apd_def')}</li>
           <li>{t('modals.restitution.di_def')}</li>
         </ul>
-      </>
+        
+        <h3>{t('modals.protocol')}</h3>
+        <p>{t(`modals.restitution.${modelKey}.desc`)}</p>
+        <ol>
+          {Array.isArray(steps) && steps.map((step, index) => (
+            <li key={index}>{step}</li>
+          ))}
+        </ol>
+
+        <h3>{t('modals.math_model')}</h3>
+        <p>
+          <code>{t(`modals.restitution.${modelKey}.eq_v`)}</code>
+        </p>
+        <p>
+          {t(`modals.restitution.${modelKey}.eq_h`)}
+        </p>
+
+        <h3>{t('modals.numerical_method')}</h3>
+        <p>{t(`modals.restitution.${modelKey}.method`)}</p>
+        <h3>{t('modals.param_meaning')}</h3>
+        <ul>
+          {currentParamsList.map((param) => (
+            <li key={param}>
+              <strong>{param}:</strong> {t(`params.${param}`)}
+            </li>
+          ))}
+        </ul>
+      </div>
     );
-
-    if (selectedModel === 's1s2') {
-      return (
-        <div className="info-modal-content">
-          <h2>{t('home.models.restitution_curve.title')} ({t('modals.restitution.s1s2_method')})</h2>
-          {commonContent}
-          <h3>{t('modals.restitution.s1s2_method')}</h3>
-          <ol>
-            <li>A célula é estimulada com uma sequência de estímulos S1 a um <code>BCL_S1</code> fixo para atingir o estado estacionário.</li>
-            <li>Mede-se o APD do último S1.</li>
-            <li>Um pulso S2 é aplicado com um intervalo de acoplamento após o último S1.</li>
-            <li>Mede-se o APD do pulso S2.</li>
-            <li>O Intervalo Diastólico é <code>Intervalo_S2 - APD_S1</code>.</li>
-            <li>O processo é repetido, diminuindo o <code>Intervalo_S2</code> para traçar a curva.</li>
-          </ol>
-          <h3>{t('modals.math_model')}</h3>
-          <p>Utiliza o modelo Mitchell-Schaeffer (padrão).</p>
-        </div>
-      );
-    }
-
-    if (selectedModel === 'mms') {
-      return (
-        <div className="info-modal-content">
-          <h2>{t('home.models.restitution_curve.title')} (MMS)</h2>
-          {commonContent}
-          <h3>{t('modals.restitution.s1s2_method')}</h3>
-          <ol>
-            <li>A célula é estimulada com uma sequência de estímulos S1 a um <code>BCL_S1</code> fixo para atingir o estado estacionário.</li>
-            <li>Mede-se o APD do último S1.</li>
-            <li>Um pulso S2 é aplicado com um intervalo de acoplamento após o último S1.</li>
-            <li>Mede-se o APD do pulso S2.</li>
-            <li>O Intervalo Diastólico é <code>Intervalo_S2 - APD_S1</code>.</li>
-            <li>O processo é repetido, diminuindo o <code>Intervalo_S2</code> para traçar a curva.</li>
-          </ol>
-          <h3>{t('modals.restitution.mms_title')}</h3>
-          <p>{t('modals.restitution.mms_desc')}</p>
-          <p>O MMS altera a corrente de entrada para:</p>
-          <ul>
-            <li><code>J_in = (h * v * (v - v_gate) * (1 - v)) / τ_in</code></li>
-          </ul>
-          <p>Compare com o MS padrão:</p>
-          <ul>
-            <li><code>J_in = (h * v² * (1 - v)) / τ_in</code></li>
-          </ul>
-        </div>
-      );
-    }
-
-    if (selectedModel === 'dynamic') {
-      return (
-        <div className="info-modal-content">
-          <h2>{t('home.models.restitution_curve.title')} ({t('modals.restitution.dynamic_method')})</h2>
-          {commonContent}
-          <h3>{t('modals.restitution.dynamic_method')}</h3>
-          <p>Este método é considerado mais fisiologicamente relevante, pois a célula não retorna ao estado estacionário a cada passo.</p>
-          <ol>
-            <li>A simulação começa com um BCL longo, <code>CI1</code>.</li>
-            <li>A célula é estimulada <code>nbeats</code> vezes nesse BCL. O APD do último batimento é medido. O DI é <code>CI1 - APD_anterior</code>.</li>
-            <li>O BCL é então encurtado por um decremento (<code>CIinc</code>), e o processo se repete.</li>
-            <li>Isso continua até que o BCL atinja <code>CI0</code>.</li>
-          </ol>
-          <h3>{t('modals.math_model')}</h3>
-          <p>Utiliza o modelo Mitchell-Schaeffer (padrão).</p>
-        </div>
-      );
-    }
   };
   
   // Parâmetros atuais baseados no modelo selecionado
@@ -279,9 +249,9 @@ const RestitutionCurvePage = ({ onBack }) => {
         <div className="input-container">
           <label>{t('common.select_model')}</label>
           <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}>
-            <option value="s1s2">{t('modals.restitution.s1s2_method')}</option>
-            <option value="mms">{t('modals.restitution.mms_title')}</option>
-            <option value="dynamic">{t('modals.restitution.dynamic_method')}</option>
+            <option value="s1s2">{t('modals.restitution.s1s2.title')}</option>
+            <option value="mms">{t('modals.restitution.mms.title')}</option>
+            <option value="dynamic">{t('modals.restitution.dynamic.title')}</option>
           </select>
         </div>
       </div>
@@ -318,7 +288,7 @@ const RestitutionCurvePage = ({ onBack }) => {
 
       {showTimeSeries && (
         <div>
-          <h2>Estímulos</h2>
+          <h2>{t('common.stimuli')}</h2>
           <Chart data={data} />
         </div>
       )}

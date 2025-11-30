@@ -222,7 +222,7 @@ const FitzHughNagumoPage = ({ onBack }) => {
           <p>{t('modals.fhn.reentry')}</p>
           
           <h3>{t('modals.numerical_method')}</h3>
-          <p>A equação é resolvida usando Diferenças Finitas de 2ª Ordem para o espaço e Runge-Kutta de 4ª Ordem para o tempo.</p>
+          <p>{t('modals.fhn.method')}</p>
 
           <h3>{t('modals.param_meaning')}</h3>
           <ul>
