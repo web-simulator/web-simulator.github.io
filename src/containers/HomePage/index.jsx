@@ -1,55 +1,59 @@
 import Button from '../../components/Button';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 import './styles.css';
 
 const HomePage = ({ onNavigate }) => {
+  const { t } = useTranslation();
+
   const models = [
     { // Mitchell-Schaeffer 1 estímulo
       id: 'single_stimulus', 
-      title: 'Mitchell-Schaeffer (1 Estímulo)', 
-      description: 'Simula a resposta de um único estímulo elétrico em uma célula cardíaca.',
-      category: 'Modelos 0D' 
+      title: 'home.models.single_stimulus.title', 
+      description: 'home.models.single_stimulus.desc',
+      category: 'home.categories.0d' 
     },
     { // Mitchell-Schaeffer 8 estímulos
       id: 'multiple_stimuli', 
-      title: 'Mitchell-Schaeffer (8 Estímulos)', 
-      description: 'Observa a resposta celular a uma série de estímulos com intervalo fixo.',
-      category: 'Modelos 0D' 
+      title: 'home.models.multiple_stimuli.title', 
+      description: 'home.models.multiple_stimuli.desc',
+      category: 'home.categories.0d' 
     },
     { // Protocolo S1-S2
       id: 's1_s2', 
-      title: 'Protocolo S1-S2', 
-      description: 'Protocolo padrão para investigar a refratariedade e a vulnerabilidade do tecido cardíaco.',
-      category: 'Modelos 0D' 
+      title: 'home.models.s1_s2.title', 
+      description: 'home.models.s1_s2.desc',
+      category: 'home.categories.0d' 
     },
     { // Curvas de Restituição
       id: 'restitution_curve', 
-      title: 'Curva de Restituição', 
-      description: 'Analisa a relação entre o intervalo de acoplamento e a duração do potencial de ação, utilizando diferentes protocolos.',
-      category: 'Modelos 0D' 
+      title: 'home.models.restitution_curve.title', 
+      description: 'home.models.restitution_curve.desc',
+      category: 'home.categories.0d' 
     },
     { // Bistable 1D
       id: 'bistable', 
-      title: 'Bistable', 
-      description: 'Modelo unidimensional que exibe comportamento biestável.',
-      category: 'Modelos 1D' 
+      title: 'home.models.bistable.title', 
+      description: 'home.models.bistable.desc',
+      category: 'home.categories.1d' 
     },
     { // FitzHugh-Nagumo 1D
       id: 'fhn', 
-      title: 'FitzHugh-Nagumo', 
-      description: 'Modelo simplificado da excitabilidade cardíaca em uma dimensão.',
-      category: 'Modelos 1D' 
+      title: 'home.models.fhn.title', 
+      description: 'home.models.fhn.desc',
+      category: 'home.categories.1d' 
     },
     { // Mitchell-Schaeffer 1D
       id: 'ms_1d', 
-      title: 'Mitchell-Schaeffer', 
-      description: 'Mitchell-Schaeffer estendido para uma dimensão espacial.',
-      category: 'Modelos 1D' 
+      title: 'home.models.ms_1d.title', 
+      description: 'home.models.ms_1d.desc',
+      category: 'home.categories.1d' 
     },
     { // Modelo 2D
       id: 'model_2d',
-      title: 'Modelo Mitchell-Schaeffer 2D',
-      description: 'Simula a propagação de ondas 2D, permitindo protocolos S1-S2 e inclusão de fibrose.',
-      category: 'Modelos 2D'
+      title: 'home.models.model_2d.title',
+      description: 'home.models.model_2d.desc',
+      category: 'home.categories.2d'
     }
   ];
 
@@ -64,21 +68,22 @@ const HomePage = ({ onNavigate }) => {
   // Renderiza a página inicial com seções para cada categoria de modelo
   return (
     <div className="homepage-container">
+      <LanguageSwitcher />
       <header className="homepage-header">
-        <h1>Simulador de Eletrofisiologia Cardíaca</h1>
+        <h1>{t('home.title')}</h1>
       </header>
       
       <main className="models-sections">
-        {Object.keys(modelsByCategory).map(category => (
-          <section key={category} className="models-section">
-            <h2>{category}</h2>
+        {Object.keys(modelsByCategory).map(categoryKey => (
+          <section key={categoryKey} className="models-section">
+            <h2>{t(categoryKey)}</h2>
             <div className="models-grid">
-              {modelsByCategory[category].map(model => (
+              {modelsByCategory[categoryKey].map(model => (
                 <div key={model.id} className="model-card">
-                  <h3>{model.title}</h3>
-                  <p>{model.description}</p>
+                  <h3>{t(model.title)}</h3>
+                  <p>{t(model.description)}</p>
                   <Button onClick={() => onNavigate(model.id)} className="launch-button">
-                    Iniciar Simulação
+                    {t('home.btn_start')}
                   </Button>
                 </div>
               ))}

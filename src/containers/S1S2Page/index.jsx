@@ -4,9 +4,11 @@ import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal'; 
 import SimulationWorker from '../../simulation_s1_s2.worker.js?worker';
+import { useTranslation } from 'react-i18next';
 import './styles.css';
 
 const S1S2Page = ({ onBack }) => {
+  const { t } = useTranslation();
   const [data, setData] = useState([]);
   const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -64,16 +66,16 @@ const S1S2Page = ({ onBack }) => {
 
   return (
     <div className="page-container">
-      <Button onClick={onBack}>Voltar para Home</Button>
-      <h1>Modelo Mitchell-Schaeffer - Protocolo S1-S2</h1>
+      <Button onClick={onBack}>{t('common.back')}</Button>
+      <h1>{t('home.models.s1_s2.title')}</h1>
       
       {/* Inputs */}
-      <h2>Parâmetros da Simulação</h2>
+      <h2>{t('common.simulation_params')}</h2>
       <div className="params-container">
         {Object.keys(editableParams).map((key) => (
           <Input
             key={key}
-            label={key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')}
+            label={t(`params.${key}`)}
             value={editableParams[key]}
             onChange={(e) => handleChange(e, key)}
           />
@@ -81,7 +83,7 @@ const S1S2Page = ({ onBack }) => {
       </div>
 
       <Button onClick={handleSimularClick} disabled={loading}>
-        {loading ? 'Simulando...' : 'Simular S1-S2'}
+        {loading ? t('common.simulating') : t('common.simulate')}
       </Button>
 
       <Chart data={data} />
@@ -89,53 +91,49 @@ const S1S2Page = ({ onBack }) => {
       {/* Botão e Modal de Informações */}
       <div style={{ marginTop: '20px' }}>
         <Button onClick={() => setIsInfoModalOpen(true)}>
-          Saiba mais sobre essa simulação
+          {t('common.more_info')}
         </Button>
       </div>
 
       <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
         <div className="info-modal-content">
-          <h2>Protocolo S1-S2</h2>
+          <h2>{t('home.models.s1_s2.title')}</h2>
           
-          <h3>Protocolo de Estimulação</h3>
-          <p>
-            O protocolo S1-S2 é um método padrão em eletrofisiologia para medir o período refratário de uma célula.
-          </p>
+          <h3>{t('modals.s1s2.protocol_title')}</h3>
+          <p>{t('modals.s1s2.protocol_desc')}</p>
           <ul>
-            <li><strong>S1:</strong> Uma sequência de estímulos (<code>num_estimulos_s1</code>) é aplicada a um intervalo fixo (<code>BCL_S1</code>). Isso leva a célula a um estado estacionário.</li>
-            <li><strong>S2:</strong> Um único estímulo prematuro (S2) é aplicado após o último S1, com um atraso definido pelo <code>intervalo_S2</code>.</li>
+            <li><strong>S1:</strong> {t('modals.s1s2.s1_desc')}</li>
+            <li><strong>S2:</strong> {t('modals.s1s2.s2_desc')}</li>
           </ul>
           <p>
             Ao variar o <code>intervalo_S2</code>, pode-se encontrar o menor intervalo que ainda consegue gerar um potencial de ação, definindo assim o período refratário da célula.
           </p>
           
-          <h3>Modelo Matemático</h3>
+          <h3>{t('modals.math_model')}</h3>
           <p>O modelo celular é o Mitchell-Schaeffer:</p>
           <ul>
-            <li><code>dv/dt = (h * v² * (1 - v)) / τ_in - v / τ_out + I_stim</code></li>
-            <li><code>dh/dt = (1 - h) / τ_open</code> (se <code>v &lt; v_gate</code>)</li>
-            <li><code>dh/dt = -h / τ_close</code> (se <code>v ≥ v_gate</code>)</li>
+            <li><code>{t('modals.single.eq_v')}</code></li>
+            <li><code>{t('modals.single.eq_h1')}</code></li>
+            <li><code>{t('modals.single.eq_h2')}</code></li>
           </ul>
 
-          <h3>Método Numérico</h3>
-          <p>
-            As equações são resolvidas numericamente usando o método Runge-Kutta de 4ª Ordem.
-          </p>
+          <h3>{t('modals.numerical_method')}</h3>
+          <p>{t('modals.single.method')}</p>
 
-          <h3>Significado dos Parâmetros</h3>
+          <h3>{t('modals.param_meaning')}</h3>
           <ul>
-            <li>BCL S1: Intervalo BCL dos estímulos S1.</li>
-            <li>Intervalo S2: O intervalo em que o estímulo S2 é aplicado após o último S1.</li>
-            <li>Num Estimulos S1: Número de pulsos S1 para atingir o estado estacionário.</li>
-            <li>Despolarização (τ_in): Controla a velocidade da fase de ascensão do potencial de ação. Um valor menor torna a subida mais rápida.</li>
-            <li>Repolarização (τ_out): Controla a velocidade da fase de repolarização. Um valor menor torna a descida mais rápida.</li>
-            <li>Recuperação (τ_open): Controla o tempo que a célula leva para se tornar excitável novamente.</li>
-            <li>Inativação (τ_close): Controla a rapidez com que a célula se torna refratária durante o potencial de ação.</li>
-            <li>Gate (v_gate): O limiar de voltagem que alterna o comportamento da variável <code>h</code> entre recuperação e inativação.</li>
-            <li>Inicio: O tempo (em ms) em que o estímulo é aplicado.</li>
-            <li>Duração: A duração (em ms) do pulso de estímulo.</li>
-            <li>Amplitude: A intensidade do estímulo (<code>I_stim</code>).</li>
-            <li>Dt: O passo de tempo da simulação numérica.</li>
+            <li>{t('params.BCL_S1')}</li>
+            <li>{t('params.intervalo_S2')}</li>
+            <li>{t('params.num_estimulos_s1')}</li>
+            <li>{t('params.despolarização')}</li>
+            <li>{t('params.repolarização')}</li>
+            <li>{t('params.recuperação')}</li>
+            <li>{t('params.inativação')}</li>
+            <li>{t('params.gate')}</li>
+            <li>{t('params.inicio')}</li>
+            <li>{t('params.duração')}</li>
+            <li>{t('params.amplitude')}</li>
+            <li>{t('params.dt')}</li>
           </ul>
         </div>
       </Modal>

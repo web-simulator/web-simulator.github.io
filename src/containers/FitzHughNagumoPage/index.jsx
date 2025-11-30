@@ -6,9 +6,11 @@ import Button from '../../components/Button';
 import Modal from '../../components/Modal';
 import Chart from '../../components/Chart';
 import SimulationWorker from '../../simulation_fhn.worker.js?worker';
+import { useTranslation } from 'react-i18next';
 import './styles.css';
 
 const FitzHughNagumoPage = ({ onBack }) => {
+  const { t } = useTranslation();
   const [simulationData, setSimulationData] = useState([]);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [worker, setWorker] = useState(null);
@@ -58,7 +60,7 @@ const FitzHughNagumoPage = ({ onBack }) => {
   useEffect(() => {
     let interval;
     if (isPlaying && simulationData.length > 0) {
-      const delay = 101 - simulationSpeed; // Ajusta o delay com base na velocidade
+      const delay = 101 - simulationSpeed; 
       interval = setInterval(() => {
         setCurrentFrame((prevFrame) => {
           const nextFrame = prevFrame + 1;
@@ -71,7 +73,7 @@ const FitzHughNagumoPage = ({ onBack }) => {
       }, delay);
     }
     return () => clearInterval(interval); 
-  }, [isPlaying, simulationData, simulationSpeed]); // Adicionado simulationSpeed
+  }, [isPlaying, simulationData, simulationSpeed]); 
 
   // Atualiza os parâmetros quando o usuário muda os valores nos inputs
   const handleChange = useCallback((e, name) => {
@@ -117,20 +119,20 @@ const FitzHughNagumoPage = ({ onBack }) => {
 
   return (
     <div className="page-container">
-      <Button onClick={onBack}>Voltar para Home</Button>
-      <h1>Modelo FitzHugh-Nagumo 1D</h1>
+      <Button onClick={onBack}>{t('common.back')}</Button>
+      <h1>{t('home.models.fhn.title')}</h1>
 
       <div className="params-container">
         {/* Input para selecionar a condição inicial */}
         <div className="input-container">
-          <label>Condição Inicial</label>
+          <label>{t('common.initial_condition')}</label>
           <select 
             value={initialCondition} 
             onChange={(e) => setInitialCondition(e.target.value)} 
             style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
           >
-            <option value="left_pulse">Pulso na Borda</option>
-            <option value="reentry">Simulação de Reentrada</option>
+            <option value="left_pulse">{t('common.left_pulse')}</option>
+            <option value="reentry">{t('common.reentry')}</option>
           </select>
         </div>
         
@@ -138,7 +140,7 @@ const FitzHughNagumoPage = ({ onBack }) => {
         {Object.keys(editableParams).map((key) => (
           <Input
             key={key}
-            label={key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')}
+            label={t(`params.${key}`)}
             value={editableParams[key]}
             onChange={(e) => handleChange(e, key)}
           />
@@ -148,13 +150,13 @@ const FitzHughNagumoPage = ({ onBack }) => {
       {/* Controles da simulação */}
       <div className="button-container">
         <Button onClick={handleSimularClick} disabled={loading}>
-          {loading ? 'Simulando...' : 'Simular'}
+          {loading ? t('common.simulating') : t('common.simulate')}
         </Button>
         <Button onClick={() => setIsPlaying(!isPlaying)} disabled={simulationData.length === 0}>
-          {isPlaying ? 'Pausar' : 'Retomar'}
+          {isPlaying ? t('common.pause') : t('common.resume')}
         </Button>
         <Button onClick={() => setViewMode(viewMode === 'line' ? 'color' : 'line')} disabled={simulationData.length === 0}>
-          {viewMode === 'line' ? 'Gráfico de Cores' : 'Gráfico de Linhas'}
+          {viewMode === 'line' ? t('common.color_chart') : t('common.line_chart')}
         </Button>
       </div>
 
@@ -169,7 +171,7 @@ const FitzHughNagumoPage = ({ onBack }) => {
       {simulationData.length > 0 && (
         <>
           <div className="slider-container">
-            <label>Tempo: {simulationData[currentFrame]?.time || 0} ms</label>
+            <label>{t('common.time')}: {simulationData[currentFrame]?.time || 0} ms</label>
             <input
               type="range"
               min="0"
@@ -181,7 +183,7 @@ const FitzHughNagumoPage = ({ onBack }) => {
           </div>
           {/* Controle de Velocidade */}
           <div className="slider-container">
-            <label>Velocidade da Animação</label>
+            <label>{t('common.speed')}</label>
             <input
               type="range"
               min="1"
@@ -197,7 +199,7 @@ const FitzHughNagumoPage = ({ onBack }) => {
       {/* Botão e Modal de Informações */}
       <div style={{ marginTop: '20px' }}>
         <Button onClick={() => setIsInfoModalOpen(true)}>
-          Saiba mais sobre essa simulação
+          {t('common.more_info')}
         </Button>
       </div>
 
@@ -208,39 +210,31 @@ const FitzHughNagumoPage = ({ onBack }) => {
 
       <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
         <div className="info-modal-content">
-          <h2>Modelo FitzHugh-Nagumo 1D</h2>
+          <h2>{t('home.models.fhn.title')}</h2>
           
-          <h3>Modelo Matemático</h3>
-          <p>
-            O modelo FitzHugh-Nagumo é um modelo de duas variáveis (<code>v</code> e <code>w</code>) que simplifica a dinâmica do potencial de ação. 
-            A variável <code>v</code> representa o potencial de membrana,
-            enquanto <code>w</code> representa uma variável de recuperação mais lenta.
-          </p>
+          <h3>{t('modals.math_model')}</h3>
+          <p>{t('modals.fhn.desc')}</p>
           <p>As equações de reação-difusão são:</p>
           <ul>
             <li><code>∂v/∂t = k * (∂²v/∂x²) + A * v * (1 - v) * (v - α) - w</code></li>
             <li><code>∂w/∂t = ε * (v - γ * w)</code></li>
           </ul>
-          <p>
-            A simulação de Reentrada simula uma onda quebrada que pode se propagar de forma auto-sustentada, gerando uma arritmia.
-          </p>
+          <p>{t('modals.fhn.reentry')}</p>
           
-          <h3>Método Numérico</h3>
-          <p>
-            A equação é resolvida usando Diferenças Finitas de 2ª Ordem para o espaço e Runge-Kutta de 4ª Ordem para o tempo.
-          </p>
+          <h3>{t('modals.numerical_method')}</h3>
+          <p>A equação é resolvida usando Diferenças Finitas de 2ª Ordem para o espaço e Runge-Kutta de 4ª Ordem para o tempo.</p>
 
-          <h3>Significado dos Parâmetros</h3>
+          <h3>{t('modals.param_meaning')}</h3>
           <ul>
-            <li>k (Difusão): Velocidade de propagação da onda <code>v</code>.</li>
-            <li>A: Amplitude da reação de <code>v</code>.</li>
-            <li>alpha (α): Limiar de excitação para <code>v</code>.</li>
-            <li>epsilon (ε): Controla a escala de tempo da variável lenta <code>w</code>. Valores pequenos (ε &lt;&lt; 1) tornam <code>w</code> muito mais lenta que <code>v</code>.</li>
-            <li>gamma (γ): Controla a variável <code>w</code>.</li>
-            <li>L: Comprimento total do cabo.</li>
-            <li>dx: Tamanho do passo espacial.</li>
-            <li>dt: Tamanho do passo de tempo.</li>
-            <li>Total Time: Duração total da simulação.</li>
+            <li>{t('params.k')}</li>
+            <li>{t('params.A')}</li>
+            <li>{t('params.alpha')}</li>
+            <li>{t('params.epsilon')}</li>
+            <li>{t('params.gamma')}</li>
+            <li>{t('params.L')}</li>
+            <li>{t('params.dx')}</li>
+            <li>{t('params.dt')}</li>
+            <li>{t('params.totalTime')}</li>
           </ul>
         </div>
       </Modal>

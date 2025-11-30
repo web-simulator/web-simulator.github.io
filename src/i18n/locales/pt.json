@@ -1,0 +1,156 @@
+{
+  "home": {
+    "title": "Simulador de Eletrofisiologia Cardíaca",
+    "btn_start": "Iniciar Simulação",
+    "categories": {
+      "0d": "Modelos 0D",
+      "1d": "Modelos 1D",
+      "2d": "Modelos 2D"
+    },
+    "models": {
+      "single_stimulus": { "title": "Mitchell-Schaeffer (1 Estímulo)", "desc": "Simula a resposta de um único estímulo elétrico em uma célula cardíaca." },
+      "multiple_stimuli": { "title": "Mitchell-Schaeffer (8 Estímulos)", "desc": "Observa a resposta celular a uma série de estímulos com intervalo fixo." },
+      "s1_s2": { "title": "Protocolo S1-S2", "desc": "Protocolo padrão para investigar a refratariedade e a vulnerabilidade do tecido cardíaco." },
+      "restitution_curve": { "title": "Curva de Restituição", "desc": "Analisa a relação entre o intervalo de acoplamento e a duração do potencial de ação, utilizando diferentes protocolos." },
+      "bistable": { "title": "Bistable", "desc": "Modelo unidimensional que exibe comportamento biestável." },
+      "fhn": { "title": "FitzHugh-Nagumo", "desc": "Modelo simplificado da excitabilidade cardíaca em uma dimensão." },
+      "ms_1d": { "title": "Mitchell-Schaeffer", "desc": "Mitchell-Schaeffer estendido para uma dimensão espacial." },
+      "model_2d": { "title": "Modelo Mitchell-Schaeffer 2D", "desc": "Simula a propagação de ondas 2D, permitindo protocolos S1-S2 e inclusão de fibrose." }
+    }
+  },
+  "common": {
+    "back": "Voltar para Home",
+    "simulate": "Simular",
+    "simulating": "Simulando...",
+    "pause": "Pausar",
+    "resume": "Retomar",
+    "line_chart": "Gráfico de Linhas",
+    "color_chart": "Gráfico de Cores",
+    "time": "Tempo",
+    "speed": "Velocidade da Animação",
+    "more_info": "Saiba mais sobre essa simulação",
+    "loading": "Aguardando simulação...",
+    "initial_condition": "Condição Inicial",
+    "left_pulse": "Pulso na Borda",
+    "reentry": "Simulação de Reentrada",
+    "stimulus": "Estímulo",
+    "remove": "Remover",
+    "add_stimulus": "Adicionar Estímulo",
+    "shape": "Formato",
+    "rectangle": "Retangular",
+    "circle": "Circular",
+    "fibrosis": "Parâmetros da Fibrose",
+    "enable_fibrosis": "Habilitar Fibrose",
+    "fibrosis_type": "Tipo de Fibrose",
+    "compact": "Compacta",
+    "diffuse": "Difusa",
+    "show_stimuli": "Mostrar estímulos",
+    "select_model": "Selecione o Modelo",
+    "simulation_params": "Parâmetros da Simulação"
+  },
+  "params": {
+    "despolarização": "Despolarização (tau_in)",
+    "repolarização": "Repolarização (tau_out)",
+    "recuperação": "Recuperação (tau_open)",
+    "inativação": "Inativação (tau_close)",
+    "gate": "Gate (v_gate)",
+    "inicio": "Início",
+    "duração": "Duração",
+    "duracao": "Duração",
+    "amplitude": "Amplitude",
+    "dt": "Dt",
+    "tempo_total": "Tempo Total",
+    "totalTime": "Tempo Total",
+    "v_inicial": "V Inicial",
+    "h_inicial": "H Inicial",
+    "downsamplingFactor": "Fator de Redução",
+    "BCL": "BCL",
+    "num_estimulos": "Num Estímulos",
+    "BCL_S1": "BCL S1",
+    "intervalo_S2": "Intervalo S2",
+    "num_estimulos_s1": "Num Estímulos S1",
+    "k": "Difusão (k)",
+    "A": "Amplitude (A)",
+    "alpha": "Alpha",
+    "epsilon": "Epsilon",
+    "gamma": "Gamma",
+    "L": "Comprimento (L)",
+    "dx": "dx",
+    "posição_do_estímulo": "Posição do Estímulo",
+    "tamanho_do_estímulo": "Tamanho do Estímulo",
+    "sigma_x": "Condutividade X",
+    "sigma_y": "Condutividade Y",
+    "Tau_in": "Tau in",
+    "Tau_out": "Tau out",
+    "Tau_open": "Tau open",
+    "Tau_close": "Tau close",
+    "startTime": "Início (ms)",
+    "intervalo": "Intervalo (ms)",
+    "radius": "Raio",
+    "cx": "Centro X",
+    "cy": "Centro Y",
+    "x1": "X1", "y1": "Y1", "x2": "X2", "y2": "Y2",
+    "conductivity": "Condutividade (k)",
+    "density": "Densidade",
+    "seed": "Semente",
+    "regionSize": "Tamanho da Região",
+    "BCL_S2_inicial": "BCL S2 Inicial",
+    "BCL_S2_final": "BCL S2 Final",
+    "delta_CL": "Delta CL",
+    "CI1": "CI Inicial",
+    "CI0": "CI Final",
+    "CIinc": "Decremento CI",
+    "nbeats": "Batimentos"
+  },
+  "modals": {
+    "math_model": "Modelo Matemático",
+    "numerical_method": "Método Numérico",
+    "param_meaning": "Significado dos Parâmetros",
+    "single": {
+      "desc": "Esta simulação usa o modelo Mitchell-Schaeffer para descrever o potencial de ação cardíaco. É um modelo de duas variáveis, simulando o comportamento de uma única célula.",
+      "eq_v": "dv/dt = (h * v² * (1 - v)) / τ_in - v / τ_out + I_stim",
+      "eq_h1": "dh/dt = (1 - h) / τ_open (se v < v_gate)",
+      "eq_h2": "dh/dt = -h / τ_close (se v ≥ v_gate)",
+      "method": "As equações são resolvidas numericamente usando o método Runge-Kutta de 4ª Ordem."
+    },
+    "multiple": {
+      "protocol_title": "Protocolo de Estimulação",
+      "protocol_desc": "Em vez de um único pulso, uma sequência de estímulos é aplicada. O parâmetro BCL (Basic Cycle Length) define o intervalo de tempo entre o início de um estímulo e o próximo."
+    },
+    "s1s2": {
+      "protocol_title": "Protocolo de Estimulação",
+      "protocol_desc": "O protocolo S1-S2 é um método padrão em eletrofisiologia para medir o período refratário.",
+      "s1_desc": "S1: Sequência de estímulos para levar a célula ao estado estacionário.",
+      "s2_desc": "S2: Um único estímulo prematuro aplicado após o último S1."
+    },
+    "restitution": {
+      "what_is": "O que é a Curva de Restituição?",
+      "what_is_desc": "Descreve a relação entre a Duração do Potencial de Ação (APD) e o Intervalo Diastólico (DI) anterior. A inclinação desta curva é crucial para prever arritmias.",
+      "measuring": "Medindo APD e DI",
+      "apd_def": "APD: Tempo para a voltagem repolarizar 90% (APD90).",
+      "di_def": "DI: Calculado como BCL - APD_anterior.",
+      "s1s2_method": "Protocolo S1-S2",
+      "dynamic_method": "Protocolo Dinâmico",
+      "mms_title": "Mitchell-Schaeffer Modificado (MMS)",
+      "mms_desc": "O MMS altera a corrente de entrada para permitir o cálculo de uma Curva de Restituição Analítica."
+    },
+    "bistable": {
+      "desc": "Modelo de reação-difusão de uma única variável, usado para demonstrar a formação de frentes de onda e comportamento biestável (dois estados estáveis: v=0 e v=1).",
+      "eq": "∂v/∂t = k * (∂²v/∂x²) + A * v * (1 - v) * (v - α)"
+    },
+    "fhn": {
+      "desc": "Modelo de duas variáveis (v e w) que simplifica a dinâmica do potencial de ação. v é o potencial, w é a recuperação.",
+      "reentry": "A simulação de Reentrada simula uma onda quebrada que pode se propagar de forma auto-sustentada."
+    },
+    "ms1d": {
+      "desc": "Versão 1D do modelo Mitchell-Schaeffer. Adiciona um termo de difusão espacial para permitir a propagação da onda.",
+      "eq": "∂v/∂t = k * (∂²v/∂x²) + (h * v² * (1 - v)) / τ_in - v / τ_out + I_stim"
+    },
+    "ms2d": {
+      "desc": "Simula a propagação em tecido 2D, incorporando difusão preferencial.",
+      "eq": "∂v/∂t = σ_x * (∂²v/∂x²) + σ_y * (∂²v/∂y²) + ...",
+      "fibrosis_title": "Simulação de Fibrose",
+      "fibrosis_desc": "A fibrose é simulada criando regiões onde a condutividade é reduzida. Pode ser Compacta (aleatória em todo o domínio) ou Difusa (área restrita)."
+    }
+  }
+}

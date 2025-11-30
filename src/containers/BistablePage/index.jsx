@@ -6,10 +6,11 @@ import Button from '../../components/Button';
 import Modal from '../../components/Modal';
 import Chart from '../../components/Chart';
 import SimulationWorker from '../../simulation_bistable.worker.js?worker';
+import { useTranslation } from 'react-i18next';
 import './styles.css';
 
 const BistablePage = ({ onBack }) => {
-  // Estados para gerenciar a simulação
+  const { t } = useTranslation();
   const [simulationData, setSimulationData] = useState([]);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [worker, setWorker] = useState(null);
@@ -56,7 +57,7 @@ const BistablePage = ({ onBack }) => {
   useEffect(() => {
     let interval;
     if (isPlaying && simulationData.length > 0) {
-      const delay = 101 - simulationSpeed; // Ajusta o delay com base na velocidade
+      const delay = 101 - simulationSpeed; 
       interval = setInterval(() => {
         setCurrentFrame((prevFrame) => {
           const nextFrame = prevFrame + 1;
@@ -69,7 +70,7 @@ const BistablePage = ({ onBack }) => {
       }, delay);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, simulationData, simulationSpeed]); // Adicionado simulationSpeed 
+  }, [isPlaying, simulationData, simulationSpeed]); 
 
   // Atualiza os parâmetros quando o usuário muda os valores nos inputs
   const handleChange = useCallback((e, name) => {
@@ -83,7 +84,6 @@ const BistablePage = ({ onBack }) => {
       setLoading(true);
       setSimulationData([]);
       setIsPlaying(false);
-      // Envia os parâmetros para o worker
       worker.postMessage(editableParams);
     }
   }, [worker, editableParams]);
@@ -114,15 +114,15 @@ const BistablePage = ({ onBack }) => {
 
   return (
     <div className="page-container">
-      <Button onClick={onBack}>Voltar para Home</Button>
-      <h1>Modelo Bistable 1D</h1>
+      <Button onClick={onBack}>{t('common.back')}</Button>
+      <h1>{t('home.models.bistable.title')}</h1>
 
       {/* Inputs para os parâmetros da simulação */}
       <div className="params-container">
         {Object.keys(editableParams).map((key) => (
           <Input
             key={key}
-            label={key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')}
+            label={t(`params.${key}`)}
             value={editableParams[key]}
             onChange={(e) => handleChange(e, key)}
           />
@@ -132,13 +132,13 @@ const BistablePage = ({ onBack }) => {
       {/* Controles da simulação */}
       <div className="button-container">
         <Button onClick={handleSimularClick} disabled={loading}>
-          {loading ? 'Simulando...' : 'Simular'}
+          {loading ? t('common.simulating') : t('common.simulate')}
         </Button>
         <Button onClick={() => setIsPlaying(!isPlaying)} disabled={simulationData.length === 0}>
-          {isPlaying ? 'Pausar' : 'Retomar'}
+          {isPlaying ? t('common.pause') : t('common.resume')}
         </Button>
         <Button onClick={() => setViewMode(viewMode === 'line' ? 'color' : 'line')} disabled={simulationData.length === 0}>
-          {viewMode === 'line' ? 'Gráfico de Cores' : 'Gráfico de Linhas'}
+          {viewMode === 'line' ? t('common.color_chart') : t('common.line_chart')}
         </Button>
       </div>
 
@@ -153,7 +153,7 @@ const BistablePage = ({ onBack }) => {
       {simulationData.length > 0 && (
         <>
           <div className="slider-container">
-            <label>Tempo: {simulationData[currentFrame]?.time || 0} ms</label>
+            <label>{t('common.time')}: {simulationData[currentFrame]?.time || 0} ms</label>
             <input
                 type="range"
                 min="0"
@@ -165,7 +165,7 @@ const BistablePage = ({ onBack }) => {
           </div>
           {/* Controle de Velocidade */}
           <div className="slider-container">
-            <label>Velocidade da Animação</label>
+            <label>{t('common.speed')}</label>
             <input
               type="range"
               min="1"
@@ -181,7 +181,7 @@ const BistablePage = ({ onBack }) => {
       {/* Botão e Modal de Informações */}
       <div style={{ marginTop: '20px' }}>
         <Button onClick={() => setIsInfoModalOpen(true)}>
-          Saiba mais sobre essa simulação
+          {t('common.more_info')}
         </Button>
       </div>
 
@@ -194,37 +194,26 @@ const BistablePage = ({ onBack }) => {
       {/* Modal para Informações */}
       <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
         <div className="info-modal-content">
-          <h2>Simulação do Modelo Bistable</h2>
-          <h3>Modelo Matemático</h3>
-          <p>
-            Este é um modelo de reação-difusão de uma única variável, 
-            usado para demonstrar a formação de frentes de onda. 
-            Ele exibe comportamento biestável, o que significa que tem dois estados estáveis (<code>v=0</code> e <code>v=1</code>).
-          </p>
-          <p>A equação utilizada para os cálculos é:</p>
+          <h2>{t('home.models.bistable.title')}</h2>
+          <h3>{t('modals.math_model')}</h3>
+          <p>{t('modals.bistable.desc')}</p>
+          <p>A equação utilizada é:</p>
           <ul>
-            <li><code>∂v/∂t = k * (∂²v/∂x²) + A * v * (1 - v) * (v - α)</code></li>
+            <li><code>{t('modals.bistable.eq')}</code></li>
           </ul>
-          <p>
-            O termo <code>k * (∂²v/∂x²)</code> é o termo de difusão, que descreve como o potencial <code>v</code> se espalha.
-            O termo <code>A * v * (1 - v) * (v - α)</code> é o termo de reação, que descreve o comportamento local.
-          </p>
           
-          <h3>Método Numérico</h3>
-          <p>
-            A equação é resolvida usando Diferenças Finitas de 2ª Ordem para o espaço e o sistema resultantes de EDOs no tempo é resolvido com Runge-Kutta de 4ª Ordem.
-          </p>
-          <p>São usadas condições de contorno de Neumann (<code>dv/dx = 0</code>) nas bordas.</p>
+          <h3>{t('modals.numerical_method')}</h3>
+          <p>A equação é resolvida usando Diferenças Finitas de 2ª Ordem para o espaço e Runge-Kutta de 4ª Ordem no tempo.</p>
 
-          <h3>Significado dos Parâmetros</h3>
+          <h3>{t('modals.param_meaning')}</h3>
           <ul>
-            <li>k (Coeficiente de Difusão): Controla a velocidade com que a onda se propaga. Valores maiores resultam em propagação mais rápida.</li>
-            <li>A (Amplitude da Reação): Escala a velocidade da reação local.</li>
-            <li>alpha (α): O limiar de excitação. O estado <code>v=0</code> é estável, e <code>v=1</code> é estável, enquanto <code>v=α</code> é um ponto de equilíbrio instável.</li>
-            <li>L: Comprimento total do cabo.</li>
-            <li>dx: Tamanho do passo espacial.</li>
-            <li>dt: Tamanho do passo de tempo.</li>
-            <li>Total Time: Duração total da simulação.</li>
+            <li>{t('params.k')}</li>
+            <li>{t('params.A')}</li>
+            <li>{t('params.alpha')}</li>
+            <li>{t('params.L')}</li>
+            <li>{t('params.dx')}</li>
+            <li>{t('params.dt')}</li>
+            <li>{t('params.totalTime')}</li>
           </ul>
         </div>
       </Modal>
