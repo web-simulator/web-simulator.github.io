@@ -62,13 +62,15 @@ const StimulusEditor = ({ stimulus, onUpdate, onRemove, index }) => {
 // Pagina principal
 const Model2DPage = ({ onBack }) => {
   const { t } = useTranslation();
-  const [simulationData, setSimulationData] = useState([]);
+  // Estado agora guarda o objeto completo do buffer (frames, times, fibrosis, N)
+  const [simulationResult, setSimulationResult] = useState(null);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [worker, setWorker] = useState(null); 
   const [loading, setLoading] = useState(false); 
   const [isPlaying, setIsPlaying] = useState(false); 
   const [simulationSpeed, setSimulationSpeed] = useState(50);
   const [progress, setProgress] = useState(0);
+  const [remainingTime, setRemainingTime] = useState(null); // Estado para o tempo restante
 
   // Parâmetros do modelo
   const [ms2dParams, setMs2dParams] = useState({
@@ -163,16 +165,19 @@ const Model2DPage = ({ onBack }) => {
 
     
     simulationWorker.onmessage = (e) => {
-      const { type, value, data } = e.data;
+      const { type, value, remaining, frames, times, fibrosis, N, totalFrames } = e.data;
       
       if (type === 'progress') {
-        setProgress(value); // Atualiza a barra de progresso
+        setProgress(value); 
+        if (remaining !== undefined) setRemainingTime(remaining);
       } else if (type === 'result') {
-        setSimulationData(data); 
+        // Agora recebemos os buffers diretos, muito mais eficiente
+        setSimulationResult({ frames, times, fibrosis, N, totalFrames });
         setCurrentFrame(0); 
         setLoading(false); 
         setIsPlaying(true);
-        setProgress(0); // Reseta o progresso
+        setProgress(0); 
+        setRemainingTime(null);
       }
     };
 
@@ -184,15 +189,32 @@ const Model2DPage = ({ onBack }) => {
 
   // Simulação em um loop com velocidade ajustável
   useEffect(() => {
-    let interval;
-    if (isPlaying && simulationData.length > 0) {
-      const delay = 101 - simulationSpeed; 
-      interval = setInterval(() => {
-        setCurrentFrame((prev) => (prev + 1 >= simulationData.length ? prev : prev + 1));
-      }, delay);
+    let animationFrameId;
+    let lastTime = 0;
+    const interval = Math.max(0, (100 - simulationSpeed) * 2);
+
+    const animate = (time) => {
+      if (!isPlaying || !simulationResult) return;
+
+      if (time - lastTime >= interval) {
+        setCurrentFrame((prev) => {
+          const next = prev + 1;
+          return next >= simulationResult.totalFrames ? 0 : next; 
+        });
+        lastTime = time;
+      }
+      
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    if (isPlaying && simulationResult) {
+      animationFrameId = requestAnimationFrame(animate);
     }
-    return () => clearInterval(interval);
-  }, [isPlaying, simulationData, simulationSpeed]);
+
+    return () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    };
+  }, [isPlaying, simulationResult, simulationSpeed]);
 
   // Atualizar os parâmetros
   const handleParamChange = (setter) => useCallback((e, name) => {
@@ -218,14 +240,21 @@ const Model2DPage = ({ onBack }) => {
   const handleSimularClick = useCallback(() => {
     if (worker) {
       setLoading(true);
-      setSimulationData([]);
+      setSimulationResult(null); 
       setIsPlaying(false);
-      setProgress(0);
+      setProgress(0); 
+      setRemainingTime(null);
       
-      // Envia todos os parâmetros para o worker
+      // Evita travamento de memória
+      const totalSteps = ms2dParams.totalTime / ms2dParams.dt;
+      const maxFrames = 1000;
+      const safeDownsampling = Math.ceil(totalSteps / maxFrames);
+      const finalDownsampling = Math.max(ms2dParams.downsamplingFactor, safeDownsampling);
+
       worker.postMessage({
         modelType: 'ms2d',
         ...ms2dParams,
+        downsamplingFactor: finalDownsampling, 
         stimuli, 
         fibrosisParams,
       });
@@ -246,19 +275,45 @@ const Model2DPage = ({ onBack }) => {
 
   // Gera os dados do gráfico do ponto clicado
   const getTimeseriesForPoint = () => {
-    if (!selectedPoint || !simulationData || simulationData.length === 0) return [];
+    if (!selectedPoint || !simulationResult) return [];
     
-    // Pega o V do ponto selecionado ao longo do tempo
-    return simulationData.map(frame => ({
-      tempo: parseFloat(frame.time),
-      v: frame.data[selectedPoint.i][selectedPoint.j],
-    }));
+    const { frames, times, N, totalFrames } = simulationResult;
+    const { i, j } = selectedPoint;
+    const idx = i * N + j;
+    
+    const timeseries = [];
+    for(let f = 0; f < totalFrames; f++) {
+        const val = frames[f * N * N + idx];
+        const t = times[f];
+        timeseries.push({ tempo: parseFloat(t.toFixed(2)), v: val });
+    }
+    return timeseries;
   };
 
-  //Dados para passar para o HeatmapChart
-  const currentChartData = simulationData[currentFrame]?.data || [];
-  const currentFibrosisMap = simulationData[currentFrame]?.fibrosisMap || [];
+  let currentChartData = null;
+  let currentFibrosisMap = null;
+  let N_dimension = 0;
+
+  if (simulationResult) {
+      const { frames, fibrosis, N } = simulationResult;
+      N_dimension = N;
+      const start = currentFrame * N * N;
+      const end = start + N * N;
+      currentChartData = frames.subarray(start, end);
+      currentFibrosisMap = fibrosis; 
+  }
+
   const timeseriesData = getTimeseriesForPoint(); 
+
+  // Função para formatar o tempo
+  const formatTime = (ms) => {
+    if (!ms && ms !== 0) return '...';
+    const totalSeconds = Math.ceil(ms / 1000);
+    if (totalSeconds < 60) return `${totalSeconds}s`;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}m ${seconds}s`;
+  };
 
   return (
     <div className="page-container">
@@ -330,13 +385,16 @@ const Model2DPage = ({ onBack }) => {
 
       <div className="button-container">
         <Button onClick={handleSimularClick} disabled={loading}>{loading ? t('common.simulating') : t('common.simulate')}</Button>
-        <Button onClick={() => setIsPlaying(!isPlaying)} disabled={simulationData.length === 0}>{isPlaying ? t('common.pause') : t('common.resume')}</Button>
+        <Button onClick={() => setIsPlaying(!isPlaying)} disabled={!simulationResult}>{isPlaying ? t('common.pause') : t('common.resume')}</Button>
       </div>
 
-      {/*Barra de Progresso */}
+      {/*Barra de Progresso com Estimativa */}
       {loading && (
         <div className="progress-wrapper">
-          <p className="progress-text">{t('common.simulating')} {progress}%</p>
+          <p className="progress-text">
+            {t('common.simulating')} {progress}% 
+            {remainingTime !== null && ` - ~${formatTime(remainingTime)} restantes`}
+          </p>
           <div className="progress-bar-bg">
             <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
           </div>
@@ -346,19 +404,20 @@ const Model2DPage = ({ onBack }) => {
       <div className="chart-colorbar-wrapper">
         <HeatmapChart 
             data={currentChartData} 
+            nCols={N_dimension} 
             maxValue={1.0} 
             onPointClick={handlePointClick}
             fibrosisMap={currentFibrosisMap} 
             fibrosisConductivity={fibrosisParams.conductivity}
         />
-        {simulationData.length > 0 && <Colorbar maxValue={1.0} minValue={0} />}
+        {simulationResult && <Colorbar maxValue={1.0} minValue={0} />}
       </div>
 
-      {simulationData.length > 0 && (
+      {simulationResult && (
         <>
           <div className="slider-container">
-            <label>{t('common.time')}: {simulationData[currentFrame]?.time || 0}</label>
-            <input type="range" min="0" max={simulationData.length - 1} value={currentFrame} onChange={handleSliderChange} className="slider" />
+            <label>{t('common.time')}: {simulationResult.times[currentFrame]?.toFixed(2) || 0}</label>
+            <input type="range" min="0" max={simulationResult.totalFrames - 1} value={currentFrame} onChange={handleSliderChange} className="slider" />
           </div>
           <div className="slider-container">
             <label>{t('common.speed')}</label>

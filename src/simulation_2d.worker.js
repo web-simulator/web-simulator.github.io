@@ -43,10 +43,10 @@ self.onmessage = (e) => {
     const base_Dyy = sigma_l * s2 + sigma_t * c2;
     const base_Dxy = (sigma_l - sigma_t) * cs;
 
-    // Calcula condição CFL e ajusta dt se necessário
+    // Condição de CFL 
     const max_D = Math.max(base_Dxx, base_Dyy);
     const cfl_denominator = 4 * max_D + 2 * Math.abs(base_Dxy);
-    const cfl_limit = (dx * dx) / (cfl_denominator || 1); // evita divisão por zero
+    const cfl_limit = (dx * dx) / (cfl_denominator || 1); 
     
     if (dt > cfl_limit) dt = cfl_limit * 0.9;
 
@@ -64,7 +64,7 @@ self.onmessage = (e) => {
 
     if (fibrosisParams.enabled) {
       const { density, regionSize, seed, conductivity, type, regionParams } = fibrosisParams;
-      const random = new SeededRandom(seed); // Usa a classe de números aleatórios
+      const random = new SeededRandom(seed); 
       
       let numRegions, i_min, i_max, j_min, j_max;
 
@@ -82,11 +82,8 @@ self.onmessage = (e) => {
         numRegions = Math.ceil((regionArea * density) / (Math.PI * regionSize * regionSize));
 
       } else {
-        // fibrose compacta
-        i_min = 0;
-        i_max = N - 1;
-        j_min = 0;
-        j_max = N - 1;
+        i_min = 0; i_max = N - 1;
+        j_min = 0; j_max = N - 1;
         numRegions = Math.ceil(((L * L) * density) / (Math.PI * regionSize * regionSize));
       }
 
@@ -110,15 +107,15 @@ self.onmessage = (e) => {
               const idx = i * N + j;
               Dxx_map[idx] = conductivity;
               Dyy_map[idx] = conductivity;
-              Dxy_map[idx] = 0.0; // Sem direção preferencial na fibrose
-              visual_k_map[idx] = conductivity;
+              Dxy_map[idx] = 0.0;
+              fibrosisMap[idx] = conductivity;
             }
           }
         }
       }
     }
 
-    // Prepara os mapas e os tempos para cada estímulo na lista
+    // Prepara os mapas e tempos dos estímulos
     const stimulus_maps = [];
     const stimulus_timings = [];
     let cumulativeTime = 0;
@@ -126,24 +123,18 @@ self.onmessage = (e) => {
     stimuli.forEach((stim, index) => {
       // define onde o estímulo será aplicado
       let map = new Uint8Array(N * N).fill(0);
-      if (stim.shape === 'rectangle') { // Para estímulo retangular
+      if (stim.shape === 'rectangle') { 
         const { x1, y1, x2, y2 } = stim.rectParams;
         const i1=Math.floor(y1/dy), j1=Math.floor(x1/dx), i2=Math.floor(y2/dy), j2=Math.floor(x2/dx);
         for (let i=Math.min(i1,i2); i<=Math.max(i1,i2); i++) for (let j=Math.min(j1,j2); j<=Math.max(j1,j2); j++) if (i>=0&&i<N&&j>=0&&j<N) map[i*N+j]=1;
-      } else { // Para estímulo circular
+      } else { 
         const { cx, cy, radius } = stim.circleParams;
         const rSq = radius*radius;
         for (let i=0; i<N; i++) for (let j=0; j<N; j++) if (((j*dx-cx)**2)+((i*dy-cy)**2)<=rSq) map[i*N+j]=1;
       }
       stimulus_maps.push(map);
       
-      // Calcula o tempo de início e fim de cada estímulo
-      let startTime;
-      if (index === 0) {
-        startTime = stim.startTime; // O primeiro estímulo começa no tempo definido
-      } else {
-        startTime = cumulativeTime + stim.interval; // Os outros começam após o intervalo definido
-      }
+      let startTime = (index === 0) ? stim.startTime : cumulativeTime + stim.interval;
       const endTime = startTime + stim.duration;
       cumulativeTime = endTime;
       
@@ -152,28 +143,45 @@ self.onmessage = (e) => {
 
     // Calcula o número total de passos da simulação
     const steps = Math.floor(totalTime / dt);
-    const outputData = []; // Resultados 
+    
+    // Prepara buffers para os resultados
+    const expectedFrames = Math.floor(steps / downsamplingFactor) + 1;
+    const framesBuffer = new Float32Array(expectedFrames * N * N); // V de todos os tempos
+    const timesBuffer = new Float32Array(expectedFrames); // Tempos salvos
+    
+    let frameCount = 0;
 
-    // Constante 1 / (4 * dx * dy)
     const inv_4dx2 = 1.0 / (4.0 * dx * dx);
     const inv_dx2 = 1.0 / (dx * dx);
 
     // Intervalo da barra de progresso
     const progressInterval = Math.max(1, Math.floor(steps / 100));
 
+    // Tempo de início
+    const startTimeReal = performance.now();
+
     // Loop da simulação
     for (let t = 0; t < steps; t++) {
         // Envia atualização de progresso
         if (t % progressInterval === 0) {
             const progress = Math.round((t / steps) * 100);
-            self.postMessage({ type: 'progress', value: progress });
+            
+            // Estimativa de tempo
+            let remaining = 0;
+            if (t > 0) {
+                const elapsed = performance.now() - startTimeReal; // Tempo passado
+                const rate = elapsed / t; // ms por passo
+                const remainingSteps = steps - t;
+                remaining = remainingSteps * rate; // Estimativa de tempo restante
+            }
+
+            self.postMessage({ type: 'progress', value: progress, remaining });
         }
 
-        // Guarda uma cópia dos valores do passo anterior
         const v_prev = new Float32Array(v);
         const h_prev = new Float32Array(h);
-
-        const currentTime = t * dt; // Tempo atual
+        const currentTime = t * dt;
+        
         let stimulus_amplitude = 0;
         let current_stimulus_map = null;
 
@@ -187,7 +195,7 @@ self.onmessage = (e) => {
           }
         }
         
-        // Calcula os novos valores
+        // Cálculo numérico
         for (let i = 1; i < N - 1; i++) {
             for (let j = 1; j < N - 1; j++) {
                 const idx = i * N + j;
@@ -247,7 +255,7 @@ self.onmessage = (e) => {
             }
         }
         
-        // Condição de contorno
+        // Condições de contorno
         for (let i = 0; i < N; i++) {
             v[i*N] = v[i*N+1]; v[i*N+N-1] = v[i*N+N-2];
             h[i*N] = h[i*N+1]; h[i*N+N-1] = h[i*N+N-2];
@@ -259,17 +267,22 @@ self.onmessage = (e) => {
 
         // Downsampling
         if (t % downsamplingFactor === 0) {
-            const snapshot = Array(N).fill(0).map(() => Array(N).fill(0));
-            const fibrosisSnapshot = Array(N).fill(0).map(() => Array(N).fill(0));
-            for(let i = 0; i < N; i++) {
-                for (let j = 0; j < N; j++) {
-                    snapshot[i][j] = v[i * N + j];
-                    fibrosisSnapshot[i][j] = visual_k_map[i * N + j];
-                }
-            }
-            // Adiciona os dados do potencial e da fibrose ao array de resultados
-            outputData.push({ time: (t * dt).toFixed(4), data: snapshot, fibrosisMap: fibrosisSnapshot });
+            framesBuffer.set(v, frameCount * N * N);
+            timesBuffer[frameCount] = currentTime;
+            frameCount++;
         }
     }
-    self.postMessage({ type: 'result', data: outputData });
+
+    // Envia os resultados de volta
+    self.postMessage(
+        { 
+            type: 'result', 
+            frames: framesBuffer, 
+            times: timesBuffer,
+            fibrosis: fibrosisMap,
+            N,
+            totalFrames: frameCount
+        }, 
+        [framesBuffer.buffer, timesBuffer.buffer, fibrosisMap.buffer]
+    );
 };
