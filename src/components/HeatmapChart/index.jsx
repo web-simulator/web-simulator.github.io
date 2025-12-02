@@ -1,5 +1,14 @@
-import React, { useEffect, useRef, memo, useState } from 'react';
+import React, { useEffect, useRef, memo, useState, useMemo } from 'react';
 import './styles.css';
+
+// Converte HSL para RGB
+const hslToRgb = (h, s, l) => {
+  s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+};
 
 const HeatmapChart = ({ data, maxValue = 1, onPointClick, fibrosisMap, fibrosisConductivity }) => {
   const canvasRef = useRef(null);
@@ -11,71 +20,90 @@ const HeatmapChart = ({ data, maxValue = 1, onPointClick, fibrosisMap, fibrosisC
     value: 0,       
   });
 
-  // Plota o gráfico de calor sempre que os dados ou o valor máximo mudam
+  //Pré-calcula a tabela de cores para evitar contas repetidas no loop
+  const colorMap = useMemo(() => {
+    const map = new Uint8ClampedArray(256 * 3);
+    for (let i = 0; i < 256; i++) {
+      const normalizedValue = i / 255;
+      const hue = (1 - normalizedValue) * 240; // 0 (vermelho) a 240 (azul)
+      const [r, g, b] = hslToRgb(hue, 100, 50);
+      map[i * 3] = r;
+      map[i * 3 + 1] = g;
+      map[i * 3 + 2] = b;
+    }
+    return map;
+  }, []);
+
+  // Plota o gráfico sempre que os dados ou o valor máximo mudam
   useEffect(() => {
-    if (!data || data.length === 0 || !data[0] || data[0].length === 0) return;
+    if (!data || data.length === 0 || !data[0]) return;
 
     // Configura o gráfico
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
-
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    
     // Dimensões dos dados
     const nRows = data.length;
     const nCols = data[0].length;
+    
+    // Ajusta o tamanho interno do canvas para bater com os dados
+    if (canvas.width !== nCols || canvas.height !== nRows) {
+        canvas.width = nCols;
+        canvas.height = nRows;
+    }
 
-    const offscreenCanvas = document.createElement('canvas');
-    offscreenCanvas.width = nCols;
-    offscreenCanvas.height = nRows;
-    const offscreenCtx = offscreenCanvas.getContext('2d');
-
-    // Função que converte um valor numérico em uma cor 
-    const getColor = (value) => {
-      const normalizedValue = Math.max(0, Math.min(1, value / maxValue)); // Normaliza o valor entre 0 e 1
-      const hue = (1 - normalizedValue) * 240; // 0 (vermelho) a 240 (azul)
-      return `hsl(${hue}, 100%, 50%)`;
-    };
+    const imageData = ctx.createImageData(nCols, nRows);
+    const pixels = imageData.data;
 
     // Itera sobre cada ponto da matriz de dados
     for (let i = 0; i < nRows; i++) {
       for (let j = 0; j < nCols; j++) {
+        const idx = (i * nCols + j) * 4; 
+
         // Checa se existe um mapa de fibrose e se a célula atual é fibrótica
         if (fibrosisMap && fibrosisMap[i] && fibrosisMap[i][j] === fibrosisConductivity) {
-            offscreenCtx.fillStyle = 'black'; // Pinta a célula de preto
+            // Pinta a célula de preto
+            pixels[idx] = 0;     
+            pixels[idx + 1] = 0; 
+            pixels[idx + 2] = 0; 
+            pixels[idx + 3] = 255; 
         } else {
-            const value = data[i][j];
-            offscreenCtx.fillStyle = getColor(value); // Pinta com a cor do potencial
+            // Colore com a cor predefinida
+            const val = data[i][j];
+            const safeVal = Math.max(0, Math.min(maxValue, val));
+            const colorIndex = Math.floor((safeVal / maxValue) * 255);
+            
+            pixels[idx] = colorMap[colorIndex * 3];
+            pixels[idx + 1] = colorMap[colorIndex * 3 + 1];
+            pixels[idx + 2] = colorMap[colorIndex * 3 + 2];
+            pixels[idx + 3] = 255;
         }
-        offscreenCtx.fillRect(j, i, 1, 1);
       }
     }
+    ctx.putImageData(imageData, 0, 0);
 
-    // Suavização da imagem
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(offscreenCanvas, 0, 0, width, height);
-  }, [data, maxValue, fibrosisMap, fibrosisConductivity]); // Adicione as novas props às dependências
+  }, [data, maxValue, fibrosisMap, fibrosisConductivity, colorMap]);
 
   // Mostra o tooltip ao mover o mouse
   const handleMouseMove = (event) => {
-    if (!data || data.length === 0 || !data[0] || data[0].length === 0) return;
+    if (!data || data.length === 0) return;
 
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left; // Posição X do mouse
-    const y = event.clientY - rect.top; // Posição Y do mouse
+    
+    // Ajusta coordenadas do mouse para o tamanho real do grafico
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
 
-    const nRows = data.length;
-    const nCols = data[0].length;
+    const x = (event.clientX - rect.left) * scaleX; // Posição X do mouse
+    const y = (event.clientY - rect.top) * scaleY; // Posição Y do mouse
 
     // Calcula em qual célula o mouse está
-    const j = Math.floor(x / (canvas.width / nCols));
-    const i = Math.floor(y / (canvas.height / nRows));
+    const j = Math.floor(x);
+    const i = Math.floor(y);
 
     // Atualiza o tooltip
-    if (i >= 0 && i < nRows && j >= 0 && j < nCols) {
+    if (i >= 0 && i < data.length && j >= 0 && j < data[0].length) {
       const value = data[i][j];
       setTooltip({
         visible: true,
@@ -96,21 +124,21 @@ const HeatmapChart = ({ data, maxValue = 1, onPointClick, fibrosisMap, fibrosisC
   
   // Abre o modal ao clicar no gráfico
   const handleCanvasClick = (event) => {
-    if (!data || data.length === 0 || !data[0] || data[0].length === 0 || !onPointClick) return;
+    if (!data || !onPointClick) return;
 
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
 
-    const nRows = data.length;
-    const nCols = data[0].length;
+    const x = (event.clientX - rect.left) * scaleX;
+    const y = (event.clientY - rect.top) * scaleY;
 
     // Calcula qual foi clicada
-    const j = Math.floor(x / (canvas.width / nCols));
-    const i = Math.floor(y / (canvas.height / nRows));
+    const j = Math.floor(x);
+    const i = Math.floor(y);
 
-    if (i >= 0 && i < nRows && j >= 0 && j < nCols) {
+    if (i >= 0 && i < data.length && j >= 0 && j < data[0].length) {
       onPointClick({ i, j });
     }
   };
@@ -125,8 +153,7 @@ const HeatmapChart = ({ data, maxValue = 1, onPointClick, fibrosisMap, fibrosisC
     <div className="heatmap-container">
       <canvas
         ref={canvasRef}
-        width="400"
-        height="400"
+        style={{ width: '400px', height: '400px', imageRendering: 'auto' }} 
         onMouseMove={handleMouseMove} // Tooltip
         onMouseLeave={handleMouseLeave} // Esconde o tooltip ao sair
         onClick={handleCanvasClick} // Ativa o clique

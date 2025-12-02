@@ -67,7 +67,8 @@ const Model2DPage = ({ onBack }) => {
   const [worker, setWorker] = useState(null); 
   const [loading, setLoading] = useState(false); 
   const [isPlaying, setIsPlaying] = useState(false); 
-  const [simulationSpeed, setSimulationSpeed] = useState(50); 
+  const [simulationSpeed, setSimulationSpeed] = useState(50);
+  const [progress, setProgress] = useState(0);
 
   // Parâmetros do modelo
   const [ms2dParams, setMs2dParams] = useState({
@@ -162,10 +163,17 @@ const Model2DPage = ({ onBack }) => {
 
     
     simulationWorker.onmessage = (e) => {
-      setSimulationData(e.data); 
-      setCurrentFrame(0); 
-      setLoading(false); 
-      setIsPlaying(true);
+      const { type, value, data } = e.data;
+      
+      if (type === 'progress') {
+        setProgress(value); // Atualiza a barra de progresso
+      } else if (type === 'result') {
+        setSimulationData(data); 
+        setCurrentFrame(0); 
+        setLoading(false); 
+        setIsPlaying(true);
+        setProgress(0); // Reseta o progresso
+      }
     };
 
     // Função de limpeza
@@ -212,6 +220,7 @@ const Model2DPage = ({ onBack }) => {
       setLoading(true);
       setSimulationData([]);
       setIsPlaying(false);
+      setProgress(0);
       
       // Envia todos os parâmetros para o worker
       worker.postMessage({
@@ -261,7 +270,7 @@ const Model2DPage = ({ onBack }) => {
         {Object.keys(ms2dParams).map((key) => (
           <Input 
             key={key} 
-            label={t(`params.${key}`)} 
+            label={t(`params.${key}`) || key} 
             value={ms2dParams[key]} 
             onChange={(e) => handleMs2dChange(e, key)} 
           />
@@ -323,6 +332,16 @@ const Model2DPage = ({ onBack }) => {
         <Button onClick={handleSimularClick} disabled={loading}>{loading ? t('common.simulating') : t('common.simulate')}</Button>
         <Button onClick={() => setIsPlaying(!isPlaying)} disabled={simulationData.length === 0}>{isPlaying ? t('common.pause') : t('common.resume')}</Button>
       </div>
+
+      {/*Barra de Progresso */}
+      {loading && (
+        <div className="progress-wrapper">
+          <p className="progress-text">{t('common.simulating')} {progress}%</p>
+          <div className="progress-bar-bg">
+            <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
+          </div>
+        </div>
+      )}
 
       <div className="chart-colorbar-wrapper">
         <HeatmapChart 

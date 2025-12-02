@@ -38,7 +38,7 @@ self.onmessage = (e) => {
     const s2 = s * s;
     const cs = c * s;
 
-    // Calcula os componentes Dxx, Dyy, Dxy do Tensor de Difusão
+    // Calcula os componentes base do Tensor de Difusão D
     const base_Dxx = sigma_l * c2 + sigma_t * s2;
     const base_Dyy = sigma_l * s2 + sigma_t * c2;
     const base_Dxy = (sigma_l - sigma_t) * cs;
@@ -94,7 +94,7 @@ self.onmessage = (e) => {
       const radiusSq = radiusInPixels * radiusInPixels;
 
       for (let r = 0; r < numRegions; r++) {
-        // Gera centros aleatórios dentro dos limites definidos
+        // Gera centros aleatórios
         const centerRow = random.nextInt(i_min, i_max);
         const centerCol = random.nextInt(j_min, j_max);
 
@@ -158,8 +158,17 @@ self.onmessage = (e) => {
     const inv_4dx2 = 1.0 / (4.0 * dx * dx);
     const inv_dx2 = 1.0 / (dx * dx);
 
+    // Intervalo da barra de progresso
+    const progressInterval = Math.max(1, Math.floor(steps / 100));
+
     // Loop da simulação
     for (let t = 0; t < steps; t++) {
+        // Envia atualização de progresso
+        if (t % progressInterval === 0) {
+            const progress = Math.round((t / steps) * 100);
+            self.postMessage({ type: 'progress', value: progress });
+        }
+
         // Guarda uma cópia dos valores do passo anterior
         const v_prev = new Float32Array(v);
         const h_prev = new Float32Array(h);
@@ -168,7 +177,7 @@ self.onmessage = (e) => {
         let stimulus_amplitude = 0;
         let current_stimulus_map = null;
 
-        // Verifica qual estímulo está ativo no tempo atual
+        // Verifica qual estímulo está ativo
         for(let i = 0; i < stimulus_timings.length; i++) {
           const timing = stimulus_timings[i];
           if(currentTime >= timing.startTime && currentTime < timing.endTime) {
@@ -178,7 +187,7 @@ self.onmessage = (e) => {
           }
         }
         
-        // Calcula os novos valores de v e h para cada célula
+        // Calcula os novos valores
         for (let i = 1; i < N - 1; i++) {
             for (let j = 1; j < N - 1; j++) {
                 const idx = i * N + j;
@@ -214,7 +223,7 @@ self.onmessage = (e) => {
                 // Euler para v com Tensor de Difusão
                 const d2v_dx2 = (v_prev[idx - 1] - 2 * vp + v_prev[idx + 1]) * inv_dx2;
                 const d2v_dy2 = (v_prev[idx - N] - 2 * vp + v_prev[idx + N]) * inv_dx2;
-              
+                
                 const v_dr = v_prev[idx + N + 1];
                 const v_dl = v_prev[idx + N - 1];
                 const v_ur = v_prev[idx - N + 1];
@@ -262,7 +271,5 @@ self.onmessage = (e) => {
             outputData.push({ time: (t * dt).toFixed(4), data: snapshot, fibrosisMap: fibrosisSnapshot });
         }
     }
-    // Retorna os dados
-    self.postMessage(outputData);
-
+    self.postMessage({ type: 'result', data: outputData });
 };
