@@ -71,8 +71,9 @@ const Model2DPage = ({ onBack }) => {
 
   // Parâmetros do modelo
   const [ms2dParams, setMs2dParams] = useState({
-    sigma_x: 0.004, 
-    sigma_y: 0.001, 
+    sigma_l: 0.004, 
+    sigma_t: 0.001, 
+    angle: 0,       
     Tau_in: 0.3,
     Tau_out: 6.0,
     Tau_open: 120.0,
@@ -258,7 +259,12 @@ const Model2DPage = ({ onBack }) => {
       <h2>{t('common.simulation_params')}</h2>
       <div className="params-container">
         {Object.keys(ms2dParams).map((key) => (
-          <Input key={key} label={t(`params.${key}`) || key} value={ms2dParams[key]} onChange={(e) => handleMs2dChange(e, key)} />
+          <Input 
+            key={key} 
+            label={t(`params.${key}`)} 
+            value={ms2dParams[key]} 
+            onChange={(e) => handleMs2dChange(e, key)} 
+          />
         ))}
       </div>
 
@@ -376,8 +382,9 @@ const Model2DPage = ({ onBack }) => {
 
           <h3>{t('modals.param_meaning')}</h3>
           <ul>
-            <li>{t('params.sigma_x')}</li>
-            <li>{t('params.sigma_y')}</li>
+            <li>{t('params.sigma_l')}</li>
+            <li>{t('params.sigma_t')}</li>
+            <li>{t('params.angle')}</li>
             <li>{t('params.Tau_in')}</li>
             <li>{t('params.Tau_out')}</li>
             <li>{t('params.Tau_open')}</li>

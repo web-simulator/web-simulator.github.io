@@ -23,29 +23,44 @@ self.onmessage = (e) => {
   const params = e.data; // Parâmetros enviados
   const { modelType } = params; // Tipo de modelo
 
-    // Parâmetros
-    const { sigma_x, sigma_y, Tau_in, Tau_out, Tau_open, Tau_close, gate, L, dx, totalTime, downsamplingFactor, stimuli, fibrosisParams } = params;
+    const { sigma_l, sigma_t, angle, Tau_in, Tau_out, Tau_open, Tau_close, gate, L, dx, totalTime, downsamplingFactor, stimuli, fibrosisParams } = params;
     let { dt } = params;
     
     // Calcula o tamanho da malha
     const N = Math.floor(L / dx);
     const dy = dx; // A malha é quadrada
 
-    // Condição de CFL para 2D anisotrópico
-    const max_sigma = Math.max(sigma_x, sigma_y);
-    const cfl_limit = (dx * dx) / (4 * max_sigma); 
+    // Converte ângulo para radianos e calcula seno e cosseno
+    const rad = (angle * Math.PI) / 180.0;
+    const c = Math.cos(rad);
+    const s = Math.sin(rad);
+    const c2 = c * c;
+    const s2 = s * s;
+    const cs = c * s;
+
+    // Calcula os componentes Dxx, Dyy, Dxy do Tensor de Difusão
+    const base_Dxx = sigma_l * c2 + sigma_t * s2;
+    const base_Dyy = sigma_l * s2 + sigma_t * c2;
+    const base_Dxy = (sigma_l - sigma_t) * cs;
+
+    // Calcula condição CFL e ajusta dt se necessário
+    const max_D = Math.max(base_Dxx, base_Dyy);
+    const cfl_denominator = 4 * max_D + 2 * Math.abs(base_Dxy);
+    const cfl_limit = (dx * dx) / (cfl_denominator || 1); // evita divisão por zero
+    
     if (dt > cfl_limit) dt = cfl_limit * 0.9;
 
     // Arrays para V e h
     let v = new Float32Array(N * N).fill(0.0);
     let h = new Float32Array(N * N).fill(1.0);
     
-    // Mapas de condutividade para X e Y separadamente
-    let sigma_x_map = new Float32Array(N * N).fill(sigma_x);
-    let sigma_y_map = new Float32Array(N * N).fill(sigma_y);
+    // Mapas do Tensor de Difusão
+    let Dxx_map = new Float32Array(N * N).fill(base_Dxx);
+    let Dyy_map = new Float32Array(N * N).fill(base_Dyy);
+    let Dxy_map = new Float32Array(N * N).fill(base_Dxy);
     
     // Mapa para renderizar a fibrose em preto
-    let visual_k_map = new Float32Array(N * N).fill(sigma_x);
+    let visual_k_map = new Float32Array(N * N).fill(sigma_l);
 
     if (fibrosisParams.enabled) {
       const { density, regionSize, seed, conductivity, type, regionParams } = fibrosisParams;
@@ -93,9 +108,9 @@ self.onmessage = (e) => {
             const distanceSq = (i - centerRow) ** 2 + (j - centerCol) ** 2;
             if (distanceSq <= radiusSq) {
               const idx = i * N + j;
-              // A condutividade da fibrose se sobrepõe a das outras direções
-              sigma_x_map[idx] = conductivity;
-              sigma_y_map[idx] = conductivity;
+              Dxx_map[idx] = conductivity;
+              Dyy_map[idx] = conductivity;
+              Dxy_map[idx] = 0.0; // Sem direção preferencial na fibrose
               visual_k_map[idx] = conductivity;
             }
           }
@@ -139,6 +154,10 @@ self.onmessage = (e) => {
     const steps = Math.floor(totalTime / dt);
     const outputData = []; // Resultados 
 
+    // Constante 1 / (4 * dx * dy)
+    const inv_4dx2 = 1.0 / (4.0 * dx * dx);
+    const inv_dx2 = 1.0 / (dx * dx);
+
     // Loop da simulação
     for (let t = 0; t < steps; t++) {
         // Guarda uma cópia dos valores do passo anterior
@@ -168,12 +187,12 @@ self.onmessage = (e) => {
                 const vp = v_prev[idx];
                 const hp = h_prev[idx];
                 
-                // Pega a condutividade local para X e Y separadamente
-                const local_sx = sigma_x_map[idx];
-                const local_sy = sigma_y_map[idx];
+                // Pega o tensor local
+                const Dxx = Dxx_map[idx];
+                const Dyy = Dyy_map[idx];
+                const Dxy = Dxy_map[idx];
                 
                 const stimulus = current_stimulus_map ? current_stimulus_map[idx] * stimulus_amplitude : 0;
-
 
                 // Rush-Larsen para h
                 let alpha_h, beta_h;
@@ -192,15 +211,19 @@ self.onmessage = (e) => {
                   h[idx] = h_inf + (hp - h_inf) * h_exp;
                 } 
 
-                // Euler para v
-          
-                // Difusão em X: sigma_x * d2v/dx2
-                const diff_x = local_sx * (v_prev[idx - 1] - 2 * vp + v_prev[idx + 1]) / (dx * dx);
+                // Euler para v com Tensor de Difusão
+                const d2v_dx2 = (v_prev[idx - 1] - 2 * vp + v_prev[idx + 1]) * inv_dx2;
+                const d2v_dy2 = (v_prev[idx - N] - 2 * vp + v_prev[idx + N]) * inv_dx2;
+              
+                const v_dr = v_prev[idx + N + 1];
+                const v_dl = v_prev[idx + N - 1];
+                const v_ur = v_prev[idx - N + 1];
+                const v_ul = v_prev[idx - N - 1];
                 
-                // Difusão em Y: sigma_y * d2v/dy2
-                const diff_y = local_sy * (v_prev[idx - N] - 2 * vp + v_prev[idx + N]) / (dy * dy);
-                
-                const lap_v_anisotropic = diff_x + diff_y;
+                const d2v_dxdy = (v_dr - v_dl - v_ur + v_ul) * inv_4dx2;
+
+                // Laplaciano
+                const lap_v_anisotropic = (Dxx * d2v_dx2) + (Dyy * d2v_dy2) + (2 * Dxy * d2v_dxdy);
                 
                 // Reação
                 const J_in = (hp * vp * vp * (1 - vp)) / Tau_in;

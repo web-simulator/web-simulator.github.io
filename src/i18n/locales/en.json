@@ -79,6 +79,9 @@
     "dx": "dx",
     "posição_do_estímulo": "Stimulus Position",
     "tamanho_do_estímulo": "Stimulus Size",
+    "sigma_l": "Longitudinal Conductivity",
+    "sigma_t": "Transverse Conductivity",
+    "angle": "Fiber Angle (°)",
     "sigma_x": "Conductivity X",
     "sigma_y": "Conductivity Y",
     "Tau_in": "Tau in",
@@ -186,10 +189,10 @@
       "method": "Space: 2nd Order Finite Differences. Time: Forward Euler for voltage (v) and Rush-Larsen for gate (h)."
     },
     "ms2d": {
-      "desc": "Simulates propagation in 2D tissue, incorporating preferential diffusion and heterogeneities.",
-      "eq": "∂v/∂t = σ_x * (∂²v/∂x²) + σ_y * (∂²v/∂y²) + ...",
+      "desc": "Simulates wave propagation in 2D tissue. Conduction depends on fiber orientation (angle), with different conductivities in longitudinal and transverse directions.",
+      "eq": "∂v/∂t = ∇ · (D ∇v) + I_ion. D is the diffusion tensor.",
       "fibrosis_title": "Fibrosis Simulation",
-      "fibrosis_desc": "Fibrosis is simulated by creating regions where conductivity is reduced or null. It can be Compact (random across domain) or Diffuse (restricted area).",
+      "fibrosis_desc": "Fibrosis is simulated by creating regions where conductivity is reduced isotropically. It can be Compact (random across domain) or Diffuse (restricted area).",
       "method": "Space: 2nd Order Finite Differences. Time: Forward Euler for voltage (v) and Rush-Larsen for gate (h)."
     }
   }

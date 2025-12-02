@@ -79,6 +79,9 @@
     "dx": "dx",
     "posição_do_estímulo": "Posição do Estímulo",
     "tamanho_do_estímulo": "Tamanho do Estímulo",
+    "sigma_l": "Condutividade Longitudinal",
+    "sigma_t": "Condutividade Transversal",
+    "angle": "Ângulo da Fibra (°)",
     "sigma_x": "Condutividade X",
     "sigma_y": "Condutividade Y",
     "Tau_in": "Tau in",
@@ -165,7 +168,7 @@
         "steps": [
           "A simulação começa com um BCL longo (CI1).",
           "A célula é estimulada 'nbeats' vezes nesse ritmo. O APD do último batimento é medido.",
-          "O BCL é encurtado (CIinc) e o processo se repete sem pausas longas.",
+          "O BCL é encurtado (CIinc), e o processo se repete sem pausas longas.",
           "Isso continua até que o BCL atinja o valor final (CI0)."
         ]
       }
@@ -186,10 +189,10 @@
       "method": "Espaço: Diferenças Finitas de 2ª Ordem. Tempo: Euler Explícito para potencial (v) e Rush-Larsen para gate (h)."
     },
     "ms2d": {
-      "desc": "Simula a propagação em tecido 2D, incorporando difusão preferencial.",
-      "eq": "∂v/∂t = σ_x * (∂²v/∂x²) + σ_y * (∂²v/∂y²) + ...",
+      "desc": "Simula a propagação em tecido 2D. A condução depende da orientação das fibras (ângulo), com condutividades diferentes nas direções longitudinal e transversal.",
+      "eq": "∂v/∂t = ∇ · (D ∇v) + I_ion. Onde D é o tensor de difusão.",
       "fibrosis_title": "Simulação de Fibrose",
-      "fibrosis_desc": "A fibrose é simulada criando regiões onde a condutividade é reduzida. Pode ser Compacta (aleatória em todo o domínio) ou Difusa (área restrita).",
+      "fibrosis_desc": "A fibrose é simulada criando regiões onde a condutividade é reduzida isotrópicamente. Pode ser Compacta (aleatória em todo o domínio) ou Difusa (área restrita).",
       "method": "Espaço: Diferenças Finitas de 2ª Ordem. Tempo: Euler Explícito para potencial (v) e Rush-Larsen para gate (h)."
     }
   }
