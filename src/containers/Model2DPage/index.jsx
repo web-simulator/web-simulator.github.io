@@ -115,11 +115,25 @@ const Model2DPage = ({ onBack }) => {
 
   const [fibrosisParams, setFibrosisParams] = useState({
     enabled: false, 
-    type: 'compacta', 
+    type: 'compacta',
     conductivity: 0.0, 
     density: 0.1, 
     regionSize: 0.2, 
-    seed: Date.now(), 
+    seed: Date.now(),
+    distribution: 'random', // fibrose vai ser aleatoria ou região definida
+    shape: 'rectangle',     // retângulo ou círculo
+    rectParams: {
+      x1: 2.0,
+      y1: 2.0,
+      x2: 8.0,
+      y2: 8.0,
+    },
+    circleParams: {
+      cx: 5.0,
+      cy: 5.0,
+      radius: 2.0
+    },
+    // Mantido para compatibilidade com o tipo 'difusa' existente, se necessário, ou migrado para o novo sistema
     regionParams: {
       x1: 2.0,
       y1: 2.0,
@@ -226,11 +240,11 @@ const Model2DPage = ({ onBack }) => {
   const handleMs2dChange = handleParamChange(setMs2dParams);
   const handleFibrosisChange = handleParamChange(setFibrosisParams);
 
-  const handleFibrosisRegionChange = useCallback((name, value) => {
+  const handleFibrosisNestedChange = useCallback((parentKey, name, value) => {
     setFibrosisParams(prev => ({
       ...prev,
-      regionParams: {
-        ...prev.regionParams,
+      [parentKey]: {
+        ...prev[parentKey],
         [name]: parseFloat(value)
       }
     }));
@@ -361,12 +375,56 @@ const Model2DPage = ({ onBack }) => {
                 </select>
               </div>
 
+              {/* Seletor de Distribuição*/}
+              {fibrosisParams.type === 'compacta' && (
+                <div className="input-container">
+                  <label>{t('common.distribution')}</label>
+                  <select value={fibrosisParams.distribution} onChange={(e) => handleFibrosisChange(e, 'distribution')}>
+                    <option value="random">{t('common.random')}</option>
+                    <option value="region">{t('common.region_defined')}</option>
+                  </select>
+                </div>
+              )}
+
               <Input label={t('params.conductivity')} value={fibrosisParams.conductivity} onChange={(e) => handleFibrosisChange(e, 'conductivity')} />
               <Input label={t('params.density')} value={fibrosisParams.density} onChange={(e) => handleFibrosisChange(e, 'density')} />
               <Input label={t('params.regionSize')} value={fibrosisParams.regionSize} onChange={(e) => handleFibrosisChange(e, 'regionSize')} />
               <Input label={t('params.seed')} value={fibrosisParams.seed} onChange={(e) => handleFibrosisChange(e, 'seed')} />
 
-              {/* Parâmetros Para Fibrose Difusa */}
+              {/* Parâmetros Para Fibrose Compacta com Região Definida */}
+              {fibrosisParams.type === 'compacta' && fibrosisParams.distribution === 'region' && (
+                <>
+                  <div className="input-container">
+                    <label>{t('common.shape')}</label>
+                    <select value={fibrosisParams.shape} onChange={(e) => handleFibrosisChange(e, 'shape')}>
+                      <option value="rectangle">{t('common.rectangle')}</option>
+                      <option value="circle">{t('common.circle')}</option>
+                    </select>
+                  </div>
+
+                  {fibrosisParams.shape === 'rectangle' ? (
+                    Object.keys(fibrosisParams.rectParams).map(key => (
+                      <Input 
+                        key={`rect-${key}`} 
+                        label={t(`params.${key}`) || key} 
+                        value={fibrosisParams.rectParams[key]} 
+                        onChange={(e) => handleFibrosisNestedChange('rectParams', key, e.target.value)} 
+                      />
+                    ))
+                  ) : (
+                    Object.keys(fibrosisParams.circleParams).map(key => (
+                      <Input 
+                        key={`circ-${key}`} 
+                        label={t(`params.${key}`) || key} 
+                        value={fibrosisParams.circleParams[key]} 
+                        onChange={(e) => handleFibrosisNestedChange('circleParams', key, e.target.value)} 
+                      />
+                    ))
+                  )}
+                </>
+              )}
+
+              {/* Parâmetros Para Fibrose Difusa*/}
               {fibrosisParams.type === 'difusa' && (
                 <>
                   {Object.keys(fibrosisParams.regionParams).map(key => (
@@ -374,7 +432,7 @@ const Model2DPage = ({ onBack }) => {
                       key={`fib-${key}`}
                       label={t(`params.${key}`) || key} 
                       value={fibrosisParams.regionParams[key]} 
-                      onChange={(e) => handleFibrosisRegionChange(key, e.target.value)} 
+                      onChange={(e) => handleFibrosisNestedChange('regionParams', key, e.target.value)} 
                     />
                   ))}
                 </>

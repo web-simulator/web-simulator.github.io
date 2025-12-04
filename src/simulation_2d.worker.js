@@ -59,41 +59,89 @@ self.onmessage = (e) => {
     let Dyy_map = new Float32Array(N * N).fill(base_Dyy);
     let Dxy_map = new Float32Array(N * N).fill(base_Dxy);
     
-    // Mapa para renderizar a fibrose em preto
-    let visual_k_map = new Float32Array(N * N).fill(sigma_l);
+    // Mapa de fibrose para visualização
+    let fibrosisMap = new Float32Array(N * N).fill(sigma_l); 
 
     if (fibrosisParams.enabled) {
-      const { density, regionSize, seed, conductivity, type, regionParams } = fibrosisParams;
+      const { density, regionSize, seed, conductivity, type, distribution, shape, rectParams, circleParams, regionParams } = fibrosisParams;
       const random = new SeededRandom(seed); 
       
       let numRegions, i_min, i_max, j_min, j_max;
+      let checkInsideRegion = () => true;
 
       if (type === 'difusa') {
-        // fibrose difusa 
+        // Fibrose difusa
         const { x1, y1, x2, y2 } = regionParams;
         // Converte coordenadas para índices da malha
         i_min = Math.floor(Math.min(y1, y2) / dy);
         i_max = Math.floor(Math.max(y1, y2) / dy);
         j_min = Math.floor(Math.min(x1, x2) / dx);
         j_max = Math.floor(Math.max(x1, x2) / dx);
-
-        // Calcula a área da região e o número de círculos de fibrose
         const regionArea = (Math.abs(x2 - x1) * Math.abs(y2 - y1));
         numRegions = Math.ceil((regionArea * density) / (Math.PI * regionSize * regionSize));
 
-      } else {
-        i_min = 0; i_max = N - 1;
-        j_min = 0; j_max = N - 1;
-        numRegions = Math.ceil(((L * L) * density) / (Math.PI * regionSize * regionSize));
+      } else { // Compacta
+        if (distribution === 'region') {
+          // Compacta em Região Definida
+          if (shape === 'rectangle') {
+            const { x1, y1, x2, y2 } = rectParams;
+            i_min = Math.floor(Math.min(y1, y2) / dy);
+            i_max = Math.floor(Math.max(y1, y2) / dy);
+            j_min = Math.floor(Math.min(x1, x2) / dx);
+            j_max = Math.floor(Math.max(x1, x2) / dx);
+            
+            const regionArea = (Math.abs(x2 - x1) * Math.abs(y2 - y1));
+            numRegions = Math.ceil((regionArea * density) / (Math.PI * regionSize * regionSize));
+          } else { // Círculo
+            const { cx, cy, radius } = circleParams;
+
+            i_min = Math.max(0, Math.floor((cy - radius) / dy));
+            i_max = Math.min(N - 1, Math.floor((cy + radius) / dy));
+            j_min = Math.max(0, Math.floor((cx - radius) / dx));
+            j_max = Math.min(N - 1, Math.floor((cx + radius) / dx));
+            
+            const regionArea = Math.PI * radius * radius;
+            numRegions = Math.ceil((regionArea * density) / (Math.PI * regionSize * regionSize));
+
+            // Função para garantir que o centro gerado esteja dentro do círculo
+            checkInsideRegion = (row, col) => {
+              const y = row * dy;
+              const x = col * dx;
+              return ((x - cx)**2 + (y - cy)**2) <= (radius * radius);
+            };
+          }
+        } else {
+          // Compacta Aleatória
+          i_min = 0; i_max = N - 1;
+          j_min = 0; j_max = N - 1;
+          numRegions = Math.ceil(((L * L) * density) / (Math.PI * regionSize * regionSize));
+        }
       }
+
+      // Garante limites dentro da matriz
+      i_min = Math.max(0, i_min); i_max = Math.min(N - 1, i_max);
+      j_min = Math.max(0, j_min); j_max = Math.min(N - 1, j_max);
 
       const radiusInPixels = regionSize / dx;
       const radiusSq = radiusInPixels * radiusInPixels;
 
-      for (let r = 0; r < numRegions; r++) {
+      let generated = 0;
+      let attempts = 0;
+      const maxAttempts = numRegions * 5; // Evita loop infinito
+
+      while (generated < numRegions && attempts < maxAttempts) {
+        attempts++;
+        
         // Gera centros aleatórios
         const centerRow = random.nextInt(i_min, i_max);
         const centerCol = random.nextInt(j_min, j_max);
+
+        // Verifica se o centro está dentro da região definida
+        if (!checkInsideRegion(centerRow, centerCol)) {
+          continue;
+        }
+
+        generated++;
 
         const i_start = Math.max(0, centerRow - Math.floor(radiusInPixels));
         const i_end = Math.min(N - 1, centerRow + Math.ceil(radiusInPixels));

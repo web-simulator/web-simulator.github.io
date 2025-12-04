@@ -43,8 +43,7 @@ const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fi
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     
     // Dimensões dos dados
-    const nRows = data.length;
-    const nCols = data[0].length;
+    const nRows = data.length / nCols;
     
     // Ajusta o tamanho interno do canvas para bater com os dados
     if (canvas.width !== nCols || canvas.height !== nRows) {
@@ -55,12 +54,11 @@ const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fi
     const imageData = ctx.createImageData(nCols, nRows);
     const pixels = imageData.data;
 
-    // Loop linear: muito mais rápido para arrays planos
+    // Loop linear
     for (let i = 0; i < data.length; i++) {
         const idx = i * 4; // Índice do pixel RGBA
 
-        // Checa fibrose (fibrosisMap agora também é plano)
-        if (fibrosisMap && fibrosisMap[i] === fibrosisConductivity) {
+        if (fibrosisMap && Math.abs(fibrosisMap[i] - fibrosisConductivity) < 1e-9) {
             pixels[idx] = 0;     // R
             pixels[idx + 1] = 0; // G
             pixels[idx + 2] = 0; // B
