@@ -63,103 +63,121 @@ self.onmessage = (e) => {
     let fibrosisMap = new Float32Array(N * N).fill(sigma_l); 
 
     if (fibrosisParams.enabled) {
-      const { density, regionSize, seed, conductivity, type, distribution, shape, rectParams, circleParams, regionParams } = fibrosisParams;
-      const random = new SeededRandom(seed); 
-      
-      let numRegions, i_min, i_max, j_min, j_max;
-      let checkInsideRegion = () => true;
+      const { conductivity, type, distribution, shape, rectParams, circleParams, regionParams } = fibrosisParams;
 
-      if (type === 'difusa') {
-        // Fibrose difusa
-        const { x1, y1, x2, y2 } = regionParams;
-        // Converte coordenadas para índices da malha
-        i_min = Math.floor(Math.min(y1, y2) / dy);
-        i_max = Math.floor(Math.max(y1, y2) / dy);
-        j_min = Math.floor(Math.min(x1, x2) / dx);
-        j_max = Math.floor(Math.max(x1, x2) / dx);
-        const regionArea = (Math.abs(x2 - x1) * Math.abs(y2 - y1));
-        numRegions = Math.ceil((regionArea * density) / (Math.PI * regionSize * regionSize));
-
-      } else { // Compacta
-        if (distribution === 'region') {
-          // Compacta em Região Definida
+      // Preenche todos os pontos dentro da forma geométrica
+      if (type === 'compacta' && distribution === 'region') {
           if (shape === 'rectangle') {
-            const { x1, y1, x2, y2 } = rectParams;
+              const { x1, y1, x2, y2 } = rectParams;
+              // Converte coordenadas físicas para índices
+              const i_start = Math.floor(Math.min(y1, y2) / dx);
+              const i_end = Math.floor(Math.max(y1, y2) / dx);
+              const j_start = Math.floor(Math.min(x1, x2) / dx);
+              const j_end = Math.floor(Math.max(x1, x2) / dx);
+
+              // Preenche o retângulo
+              for (let i = Math.max(0, i_start); i <= Math.min(N - 1, i_end); i++) {
+                  for (let j = Math.max(0, j_start); j <= Math.min(N - 1, j_end); j++) {
+                      const idx = i * N + j;
+                      Dxx_map[idx] = conductivity;
+                      Dyy_map[idx] = conductivity;
+                      Dxy_map[idx] = 0.0;
+                      fibrosisMap[idx] = conductivity;
+                  }
+              }
+          } else { // Circle
+              const { cx, cy, radius } = circleParams;
+              const radiusSq = radius * radius;
+              
+              // Otimização: percorre apenas o bounding box do círculo
+              const i_start = Math.max(0, Math.floor((cy - radius) / dx));
+              const i_end = Math.min(N - 1, Math.floor((cy + radius) / dx));
+              const j_start = Math.max(0, Math.floor((cx - radius) / dx));
+              const j_end = Math.min(N - 1, Math.floor((cx + radius) / dx));
+
+              for (let i = i_start; i <= i_end; i++) {
+                  for (let j = j_start; j <= j_end; j++) {
+                      const y = i * dx;
+                      const x = j * dx;
+                      // Verifica se o ponto está dentro do círculo
+                      if ((x - cx) ** 2 + (y - cy) ** 2 <= radiusSq) {
+                          const idx = i * N + j;
+                          Dxx_map[idx] = conductivity;
+                          Dyy_map[idx] = conductivity;
+                          Dxy_map[idx] = 0.0;
+                          fibrosisMap[idx] = conductivity;
+                      }
+                  }
+              }
+          }
+      } 
+      else {
+          const { density, regionSize, seed } = fibrosisParams;
+          const random = new SeededRandom(seed); 
+          
+          let numRegions, i_min, i_max, j_min, j_max;
+          let checkInsideRegion = () => true;
+
+          if (type === 'difusa') {
+            // Fibrose difusa
+            const { x1, y1, x2, y2 } = regionParams;
             i_min = Math.floor(Math.min(y1, y2) / dy);
             i_max = Math.floor(Math.max(y1, y2) / dy);
             j_min = Math.floor(Math.min(x1, x2) / dx);
             j_max = Math.floor(Math.max(x1, x2) / dx);
-            
             const regionArea = (Math.abs(x2 - x1) * Math.abs(y2 - y1));
             numRegions = Math.ceil((regionArea * density) / (Math.PI * regionSize * regionSize));
-          } else { // Círculo
-            const { cx, cy, radius } = circleParams;
 
-            i_min = Math.max(0, Math.floor((cy - radius) / dy));
-            i_max = Math.min(N - 1, Math.floor((cy + radius) / dy));
-            j_min = Math.max(0, Math.floor((cx - radius) / dx));
-            j_max = Math.min(N - 1, Math.floor((cx + radius) / dx));
-            
-            const regionArea = Math.PI * radius * radius;
-            numRegions = Math.ceil((regionArea * density) / (Math.PI * regionSize * regionSize));
-
-            // Função para garantir que o centro gerado esteja dentro do círculo
-            checkInsideRegion = (row, col) => {
-              const y = row * dy;
-              const x = col * dx;
-              return ((x - cx)**2 + (y - cy)**2) <= (radius * radius);
-            };
+          } else { 
+            // Compacta Aleatória
+            i_min = 0; i_max = N - 1;
+            j_min = 0; j_max = N - 1;
+            numRegions = Math.ceil(((L * L) * density) / (Math.PI * regionSize * regionSize));
           }
-        } else {
-          // Compacta Aleatória
-          i_min = 0; i_max = N - 1;
-          j_min = 0; j_max = N - 1;
-          numRegions = Math.ceil(((L * L) * density) / (Math.PI * regionSize * regionSize));
-        }
-      }
 
-      // Garante limites dentro da matriz
-      i_min = Math.max(0, i_min); i_max = Math.min(N - 1, i_max);
-      j_min = Math.max(0, j_min); j_max = Math.min(N - 1, j_max);
+          // Garante limites dentro da matriz
+          i_min = Math.max(0, i_min); i_max = Math.min(N - 1, i_max);
+          j_min = Math.max(0, j_min); j_max = Math.min(N - 1, j_max);
 
-      const radiusInPixels = regionSize / dx;
-      const radiusSq = radiusInPixels * radiusInPixels;
+          const radiusInPixels = regionSize / dx;
+          const radiusSq = radiusInPixels * radiusInPixels;
 
-      let generated = 0;
-      let attempts = 0;
-      const maxAttempts = numRegions * 5; // Evita loop infinito
+          let generated = 0;
+          let attempts = 0;
+          const maxAttempts = numRegions * 5; // Evita loop infinito
 
-      while (generated < numRegions && attempts < maxAttempts) {
-        attempts++;
-        
-        // Gera centros aleatórios
-        const centerRow = random.nextInt(i_min, i_max);
-        const centerCol = random.nextInt(j_min, j_max);
+          while (generated < numRegions && attempts < maxAttempts) {
+            attempts++;
+            
+            // Gera centros aleatórios para as manchas
+            const centerRow = random.nextInt(i_min, i_max);
+            const centerCol = random.nextInt(j_min, j_max);
 
-        // Verifica se o centro está dentro da região definida
-        if (!checkInsideRegion(centerRow, centerCol)) {
-          continue;
-        }
+            // Verifica se o centro está dentro da região definida 
+            if (!checkInsideRegion(centerRow, centerCol)) {
+              continue;
+            }
 
-        generated++;
+            generated++;
 
-        const i_start = Math.max(0, centerRow - Math.floor(radiusInPixels));
-        const i_end = Math.min(N - 1, centerRow + Math.ceil(radiusInPixels));
-        const j_start = Math.max(0, centerCol - Math.floor(radiusInPixels));
-        const j_end = Math.min(N - 1, centerCol + Math.ceil(radiusInPixels));
+            const i_start = Math.max(0, centerRow - Math.floor(radiusInPixels));
+            const i_end = Math.min(N - 1, centerRow + Math.ceil(radiusInPixels));
+            const j_start = Math.max(0, centerCol - Math.floor(radiusInPixels));
+            const j_end = Math.min(N - 1, centerCol + Math.ceil(radiusInPixels));
 
-        for (let i = i_start; i <= i_end; i++) {
-          for (let j = j_start; j <= j_end; j++) {
-            const distanceSq = (i - centerRow) ** 2 + (j - centerCol) ** 2;
-            if (distanceSq <= radiusSq) {
-              const idx = i * N + j;
-              Dxx_map[idx] = conductivity;
-              Dyy_map[idx] = conductivity;
-              Dxy_map[idx] = 0.0;
-              fibrosisMap[idx] = conductivity;
+            for (let i = i_start; i <= i_end; i++) {
+              for (let j = j_start; j <= j_end; j++) {
+                const distanceSq = (i - centerRow) ** 2 + (j - centerCol) ** 2;
+                if (distanceSq <= radiusSq) {
+                  const idx = i * N + j;
+                  Dxx_map[idx] = conductivity;
+                  Dyy_map[idx] = conductivity;
+                  Dxy_map[idx] = 0.0;
+                  fibrosisMap[idx] = conductivity;
+                }
+              }
             }
           }
-        }
       }
     }
 

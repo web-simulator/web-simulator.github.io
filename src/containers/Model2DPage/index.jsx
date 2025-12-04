@@ -387,9 +387,15 @@ const Model2DPage = ({ onBack }) => {
               )}
 
               <Input label={t('params.conductivity')} value={fibrosisParams.conductivity} onChange={(e) => handleFibrosisChange(e, 'conductivity')} />
-              <Input label={t('params.density')} value={fibrosisParams.density} onChange={(e) => handleFibrosisChange(e, 'density')} />
-              <Input label={t('params.regionSize')} value={fibrosisParams.regionSize} onChange={(e) => handleFibrosisChange(e, 'regionSize')} />
-              <Input label={t('params.seed')} value={fibrosisParams.seed} onChange={(e) => handleFibrosisChange(e, 'seed')} />
+              
+              {/* Oculta densidade, tamanho e seed se for Compacta com Região Definida */}
+              {!(fibrosisParams.type === 'compacta' && fibrosisParams.distribution === 'region') && (
+                <>
+                  <Input label={t('params.density')} value={fibrosisParams.density} onChange={(e) => handleFibrosisChange(e, 'density')} />
+                  <Input label={t('params.regionSize')} value={fibrosisParams.regionSize} onChange={(e) => handleFibrosisChange(e, 'regionSize')} />
+                  <Input label={t('params.seed')} value={fibrosisParams.seed} onChange={(e) => handleFibrosisChange(e, 'seed')} />
+                </>
+              )}
 
               {/* Parâmetros Para Fibrose Compacta com Região Definida */}
               {fibrosisParams.type === 'compacta' && fibrosisParams.distribution === 'region' && (
