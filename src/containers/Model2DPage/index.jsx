@@ -388,11 +388,10 @@ const Model2DPage = ({ onBack }) => {
 
               <Input label={t('params.conductivity')} value={fibrosisParams.conductivity} onChange={(e) => handleFibrosisChange(e, 'conductivity')} />
               
-              {/* Oculta densidade, tamanho e seed se for Compacta com Região Definida */}
+              {/* Oculta densidade e seed se for Compacta com Região Definida */}
               {!(fibrosisParams.type === 'compacta' && fibrosisParams.distribution === 'region') && (
                 <>
                   <Input label={t('params.density')} value={fibrosisParams.density} onChange={(e) => handleFibrosisChange(e, 'density')} />
-                  <Input label={t('params.regionSize')} value={fibrosisParams.regionSize} onChange={(e) => handleFibrosisChange(e, 'regionSize')} />
                   <Input label={t('params.seed')} value={fibrosisParams.seed} onChange={(e) => handleFibrosisChange(e, 'seed')} />
                 </>
               )}
@@ -544,7 +543,6 @@ const Model2DPage = ({ onBack }) => {
           <ul>
             <li>{t('params.conductivity')}</li>
             <li>{t('params.density')}</li>
-            <li>{t('params.regionSize')}</li>
             <li>{t('params.seed')}</li>
           </ul>
         </div>

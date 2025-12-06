@@ -89,7 +89,7 @@ self.onmessage = (e) => {
               const { cx, cy, radius } = circleParams;
               const radiusSq = radius * radius;
               
-              // Otimização: percorre apenas o bounding box do círculo
+              // Percorre apenas o bounding box do círculo
               const i_start = Math.max(0, Math.floor((cy - radius) / dx));
               const i_end = Math.min(N - 1, Math.floor((cy + radius) / dx));
               const j_start = Math.max(0, Math.floor((cx - radius) / dx));
@@ -112,11 +112,13 @@ self.onmessage = (e) => {
           }
       } 
       else {
-          const { density, regionSize, seed } = fibrosisParams;
+          const { density, seed } = fibrosisParams;
           const random = new SeededRandom(seed); 
           
           let numRegions, i_min, i_max, j_min, j_max;
           let checkInsideRegion = () => true;
+
+          const pixelArea = dx * dx; // Área de um único ponto
 
           if (type === 'difusa') {
             // Fibrose difusa
@@ -126,21 +128,18 @@ self.onmessage = (e) => {
             j_min = Math.floor(Math.min(x1, x2) / dx);
             j_max = Math.floor(Math.max(x1, x2) / dx);
             const regionArea = (Math.abs(x2 - x1) * Math.abs(y2 - y1));
-            numRegions = Math.ceil((regionArea * density) / (Math.PI * regionSize * regionSize));
+            numRegions = Math.ceil((regionArea * density) / pixelArea);
 
           } else { 
             // Compacta Aleatória
             i_min = 0; i_max = N - 1;
             j_min = 0; j_max = N - 1;
-            numRegions = Math.ceil(((L * L) * density) / (Math.PI * regionSize * regionSize));
+            numRegions = Math.ceil(((L * L) * density) / pixelArea);
           }
 
           // Garante limites dentro da matriz
           i_min = Math.max(0, i_min); i_max = Math.min(N - 1, i_max);
           j_min = Math.max(0, j_min); j_max = Math.min(N - 1, j_max);
-
-          const radiusInPixels = regionSize / dx;
-          const radiusSq = radiusInPixels * radiusInPixels;
 
           let generated = 0;
           let attempts = 0;
@@ -149,7 +148,7 @@ self.onmessage = (e) => {
           while (generated < numRegions && attempts < maxAttempts) {
             attempts++;
             
-            // Gera centros aleatórios para as manchas
+            // Gera centros aleatórios para os pontos
             const centerRow = random.nextInt(i_min, i_max);
             const centerCol = random.nextInt(j_min, j_max);
 
@@ -160,23 +159,12 @@ self.onmessage = (e) => {
 
             generated++;
 
-            const i_start = Math.max(0, centerRow - Math.floor(radiusInPixels));
-            const i_end = Math.min(N - 1, centerRow + Math.ceil(radiusInPixels));
-            const j_start = Math.max(0, centerCol - Math.floor(radiusInPixels));
-            const j_end = Math.min(N - 1, centerCol + Math.ceil(radiusInPixels));
-
-            for (let i = i_start; i <= i_end; i++) {
-              for (let j = j_start; j <= j_end; j++) {
-                const distanceSq = (i - centerRow) ** 2 + (j - centerCol) ** 2;
-                if (distanceSq <= radiusSq) {
-                  const idx = i * N + j;
-                  Dxx_map[idx] = conductivity;
-                  Dyy_map[idx] = conductivity;
-                  Dxy_map[idx] = 0.0;
-                  fibrosisMap[idx] = conductivity;
-                }
-              }
-            }
+            // Define a condutividade apenas no ponto selecionado
+            const idx = centerRow * N + centerCol;
+            Dxx_map[idx] = conductivity;
+            Dyy_map[idx] = conductivity;
+            Dxy_map[idx] = 0.0;
+            fibrosisMap[idx] = conductivity;
           }
       }
     }
