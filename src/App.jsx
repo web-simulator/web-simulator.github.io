@@ -8,6 +8,7 @@ import BistablePage from './containers/BistablePage';
 import FitzHughNagumoPage from './containers/FitzHughNagumoPage';
 import MitchellSchaeffer1DPage from './containers/MitchellSchaeffer1DPage';
 import Model2DPage from './containers/Model2DPage';
+import SourceSinkPage from './containers/SourceSinkPage';
 import './index.css';
 
 function App() {
@@ -44,6 +45,9 @@ function App() {
       case 'model_2d':
         // Modelo 2D
         return <Model2DPage onBack={() => navigateTo('home')} />;
+      case 'source_sink':
+        // Source-Sink Mismatch
+        return <SourceSinkPage onBack={() => navigateTo('home')} />;
       default:
         return <HomePage onNavigate={navigateTo} />;
     }

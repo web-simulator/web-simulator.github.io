@@ -15,7 +15,8 @@
       "bistable": { "title": "Bistable", "desc": "One-dimensional model exhibiting bistable behavior." },
       "fhn": { "title": "FitzHugh-Nagumo", "desc": "Simplified model of cardiac excitability in one dimension." },
       "ms_1d": { "title": "Mitchell-Schaeffer", "desc": "Mitchell-Schaeffer extended to a spatial dimension." },
-      "model_2d": { "title": "Mitchell-Schaeffer 2D Model", "desc": "Simulates 2D wave propagation, allowing S1-S2 protocols and fibrosis inclusion." }
+      "model_2d": { "title": "Mitchell-Schaeffer 2D Model", "desc": "Simulates 2D wave propagation, allowing S1-S2 protocols and fibrosis inclusion." },
+      "source_sink": { "title": "Source-Sink Mismatch", "desc": "Simulates propagation through a variable slit in an obstacle, investigating geometric conduction failure." }
     }
   },
   "common": {
@@ -50,7 +51,9 @@
     "show_stimuli": "Show Stimuli",
     "select_model": "Select Model",
     "simulation_params": "Simulation Parameters",
-    "stimuli": "Stimuli"
+    "stimuli": "Stimuli",
+    "geometry": "Tissue Geometry",
+    "obstacle": "Circle"
   },
   "params": {
     "despolarização": "Depolarization (tau_in)",
@@ -107,7 +110,12 @@
     "CI1": "Initial CI",
     "CI0": "Final CI",
     "CIinc": "CI Decrement",
-    "nbeats": "Beats"
+    "nbeats": "Beats",
+    "obstacleCx": "Circle Center X",
+    "obstacleCy": "Circle Center Y",
+    "obstacleRadius": "Circle Radius",
+    "slitWidthStart": "Top Slit Width",
+    "slitWidthEnd": "Bottom Slit Width"
   },
   "modals": {
     "math_model": "Mathematical Model",
@@ -197,6 +205,11 @@
       "fibrosis_title": "Fibrosis Simulation",
       "fibrosis_desc": "Fibrosis is simulated by creating regions where conductivity is reduced isotropically. It can be Compact (random across domain) or Diffuse (restricted area).",
       "method": "Space: 2nd Order Finite Differences. Time: Forward Euler for voltage (v) and Rush-Larsen for gate (h)."
+    },
+    "source_sink": {
+      "desc": "Investigates propagation failure through a narrow slit in an obstacle. The circular obstacle has a slit of varying width.",
+      "eq": "∂v/∂t = ∇ · (D ∇v) + I_ion.",
+      "geometry_desc": "The domain is conductive tissue except for a central circular insulating obstacle. Inside the circle, a conductive slit of variable width allows the wave to pass."
     }
   }
 }

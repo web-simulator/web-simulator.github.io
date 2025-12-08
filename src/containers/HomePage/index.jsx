@@ -54,6 +54,12 @@ const HomePage = ({ onNavigate }) => {
       title: 'home.models.model_2d.title',
       description: 'home.models.model_2d.desc',
       category: 'home.categories.2d'
+    },
+    { // Source-Sink Mismatch
+      id: 'source_sink',
+      title: 'home.models.source_sink.title',
+      description: 'home.models.source_sink.desc',
+      category: 'home.categories.2d'
     }
   ];
 

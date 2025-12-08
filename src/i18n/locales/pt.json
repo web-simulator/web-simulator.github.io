@@ -15,7 +15,8 @@
       "bistable": { "title": "Bistable", "desc": "Modelo unidimensional que exibe comportamento biestável." },
       "fhn": { "title": "FitzHugh-Nagumo", "desc": "Modelo simplificado da excitabilidade cardíaca em uma dimensão." },
       "ms_1d": { "title": "Mitchell-Schaeffer", "desc": "Mitchell-Schaeffer estendido para uma dimensão espacial." },
-      "model_2d": { "title": "Modelo Mitchell-Schaeffer 2D", "desc": "Simula a propagação de ondas 2D, permitindo protocolos S1-S2 e inclusão de fibrose." }
+      "model_2d": { "title": "Modelo Mitchell-Schaeffer 2D", "desc": "Simula a propagação de ondas 2D, permitindo protocolos S1-S2 e inclusão de fibrose." },
+      "source_sink": { "title": "Source-Sink Mismatch", "desc": "Simula a propagação através de uma fenda variável em um obstáculo, investigando a falha de condução geométrica." }
     }
   },
   "common": {
@@ -50,7 +51,9 @@
     "show_stimuli": "Mostrar estímulos",
     "select_model": "Selecione o Modelo",
     "simulation_params": "Parâmetros da Simulação",
-    "stimuli": "Estímulos"
+    "stimuli": "Estímulos",
+    "geometry": "Geometria do Tecido",
+    "obstacle": "Círculo"
   },
   "params": {
     "despolarização": "Despolarização (tau_in)",
@@ -107,7 +110,12 @@
     "CI1": "CI Inicial",
     "CI0": "CI Final",
     "CIinc": "Decremento CI",
-    "nbeats": "Batimentos"
+    "nbeats": "Batimentos",
+    "obstacleCx": "Centro X Círculo",
+    "obstacleCy": "Centro Y Círculo",
+    "obstacleRadius": "Raio do Círculo",
+    "slitWidthStart": "Fenda Superior",
+    "slitWidthEnd": "Fenda Inferior"
   },
   "modals": {
     "math_model": "Modelo Matemático",
@@ -197,6 +205,11 @@
       "fibrosis_title": "Simulação de Fibrose",
       "fibrosis_desc": "A fibrose é simulada criando regiões onde a condutividade é reduzida isotrópicamente. Pode ser Compacta (aleatória em todo o domínio) ou Difusa (área restrita).",
       "method": "Espaço: Diferenças Finitas de 2ª Ordem. Tempo: Euler Explícito para potencial (v) e Rush-Larsen para gate (h)."
+    },
+    "source_sink": {
+      "desc": "Investiga a falha de propagação ao passar por uma fenda estreita em um obstáculo. O obstáculo é circular e possui uma abertura que varia de tamanho.",
+      "eq": "∂v/∂t = ∇ · (D ∇v) + I_ion.",
+      "geometry_desc": "O domínio é tecido condutivo, exceto por um círculo central isolante. Dentro do círculo, existe uma fenda condutiva com largura variável, permitindo a passagem da onda."
     }
   }
 }
