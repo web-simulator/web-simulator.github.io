@@ -58,7 +58,11 @@ const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fi
     for (let i = 0; i < data.length; i++) {
         const idx = i * 4; // Índice do pixel RGBA
 
-        if (fibrosisMap && Math.abs(fibrosisMap[i] - fibrosisConductivity) < 1e-9) {
+        // Verifica se o ponto faz parte da fibrose
+        const isFibrosisRegion = fibrosisMap && Math.abs(fibrosisMap[i] - fibrosisConductivity) < 1e-9;
+        
+        // Só pinta de preto se for fibrose e a condutividade for zero
+        if (isFibrosisRegion && fibrosisConductivity < 1e-9) {
             pixels[idx] = 0;     // R
             pixels[idx + 1] = 0; // G
             pixels[idx + 2] = 0; // B
