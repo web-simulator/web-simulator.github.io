@@ -133,13 +133,22 @@ const Model2DPage = ({ onBack }) => {
       cy: 5.0,
       radius: 2.0
     },
-    // Mantido para compatibilidade com o tipo 'difusa' existente, se necessário, ou migrado para o novo sistema
     regionParams: {
       x1: 2.0,
       y1: 2.0,
       x2: 8.0,
       y2: 8.0,
     }
+  });
+
+  // Parâmetros Transmuralidade
+  const [transmuralityParams, setTransmuralityParams] = useState({
+    enabled: false,
+    endo_tau: 80.0,
+    mid_tau: 140.0,
+    epi_tau: 70.0,
+    mid_start: 30, 
+    epi_start: 60  
   });
 
   // Modal para o gráfico do ponto clicado
@@ -239,6 +248,7 @@ const Model2DPage = ({ onBack }) => {
   // parametrod do modelo e da fibrose
   const handleMs2dChange = handleParamChange(setMs2dParams);
   const handleFibrosisChange = handleParamChange(setFibrosisParams);
+  const handleTransmuralityChange = handleParamChange(setTransmuralityParams);
 
   const handleFibrosisNestedChange = useCallback((parentKey, name, value) => {
     setFibrosisParams(prev => ({
@@ -271,9 +281,10 @@ const Model2DPage = ({ onBack }) => {
         downsamplingFactor: finalDownsampling, 
         stimuli, 
         fibrosisParams,
+        transmuralityParams,
       });
     }
-  }, [worker, ms2dParams, stimuli, fibrosisParams]);
+  }, [worker, ms2dParams, stimuli, fibrosisParams, transmuralityParams]);
 
   // barra de tempo
   const handleSliderChange = (e) => {
@@ -358,14 +369,22 @@ const Model2DPage = ({ onBack }) => {
       ))}
       <Button onClick={addStimulus} style={{ marginTop: '10px' }}>{t('common.add_stimulus')}</Button>
 
-      <h2>{t('common.fibrosis')}</h2>
+      <h2>{t('common.fibrosis')} / {t('common.transmurality')}</h2>
       <div className="params-container">
-          <div className="input-container" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <label htmlFor="fibrosis-enabled">{t('common.enable_fibrosis')}</label>
-              <input type="checkbox" id="fibrosis-enabled" checked={fibrosisParams.enabled} onChange={(e) => setFibrosisParams(prev => ({...prev, enabled: e.target.checked}))} />
+          {/* Caixinha de Fibrose e Transmuralidade */}
+          <div className="input-container" style={{ gridColumn: '1 / -1', display: 'flex', gap: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <label htmlFor="fibrosis-enabled">{t('common.enable_fibrosis')}</label>
+                  <input type="checkbox" id="fibrosis-enabled" checked={fibrosisParams.enabled} onChange={(e) => setFibrosisParams(prev => ({...prev, enabled: e.target.checked}))} />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <label htmlFor="transmurality-enabled">{t('common.enable_transmurality')}</label>
+                  <input type="checkbox" id="transmurality-enabled" checked={transmuralityParams.enabled} onChange={(e) => setTransmuralityParams(prev => ({...prev, enabled: e.target.checked}))} />
+              </div>
           </div>
            
           {fibrosisParams.enabled && <>
+              <h3 style={{ gridColumn: '1 / -1', marginTop: '10px' }}>{t('common.fibrosis')}</h3>
               {/* Seletor do Tipo de Fibrose */}
               <div className="input-container">
                 <label>{t('common.fibrosis_type')}</label>
@@ -444,6 +463,18 @@ const Model2DPage = ({ onBack }) => {
               )}
           </>
           }
+
+          {/* Parâmetros de Transmuralidade */}
+          {transmuralityParams.enabled && (
+            <>
+              <h3 style={{ gridColumn: '1 / -1', marginTop: '10px', borderTop: '1px solid #ccc', paddingTop: '10px' }}>{t('common.transmurality')}</h3>
+              <Input label={t('params.endo_tau')} value={transmuralityParams.endo_tau} onChange={(e) => handleTransmuralityChange(e, 'endo_tau')} />
+              <Input label={t('params.mid_tau')} value={transmuralityParams.mid_tau} onChange={(e) => handleTransmuralityChange(e, 'mid_tau')} />
+              <Input label={t('params.epi_tau')} value={transmuralityParams.epi_tau} onChange={(e) => handleTransmuralityChange(e, 'epi_tau')} />
+              <Input label={t('params.mid_start')} value={transmuralityParams.mid_start} onChange={(e) => handleTransmuralityChange(e, 'mid_start')} />
+              <Input label={t('params.epi_start')} value={transmuralityParams.epi_start} onChange={(e) => handleTransmuralityChange(e, 'epi_start')} />
+            </>
+          )}
       </div>
 
       <div className="button-container">
@@ -544,6 +575,16 @@ const Model2DPage = ({ onBack }) => {
             <li>{t('params.conductivity')}</li>
             <li>{t('params.density')}</li>
             <li>{t('params.seed')}</li>
+          </ul>
+
+          <h3>{t('modals.ms2d.transmurality_title')}</h3>
+          <p>{t('modals.ms2d.transmurality_desc')}</p>
+          <ul>
+            <li>{t('params.endo_tau')}</li>
+            <li>{t('params.mid_tau')}</li>
+            <li>{t('params.epi_tau')}</li>
+            <li>{t('params.mid_start')}</li>
+            <li>{t('params.epi_start')}</li>
           </ul>
         </div>
       </Modal>

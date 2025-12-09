@@ -41,7 +41,9 @@
     "rectangle": "Retangular",
     "circle": "Circular",
     "fibrosis": "Parâmetros da Fibrose",
+    "transmurality": "Transmuralidade",
     "enable_fibrosis": "Habilitar Fibrose",
+    "enable_transmurality": "Habilitar Transmuralidade",
     "fibrosis_type": "Tipo de Fibrose",
     "compact": "Compacta",
     "diffuse": "Difusa",
@@ -115,7 +117,12 @@
     "obstacleCy": "Centro Y Círculo",
     "obstacleRadius": "Raio do Círculo",
     "slitWidthStart": "Fenda Superior",
-    "slitWidthEnd": "Fenda Inferior"
+    "slitWidthEnd": "Fenda Inferior",
+    "endo_tau": "Tau Close Endocárdio",
+    "mid_tau": "Tau Close Miocárdio-M",
+    "epi_tau": "Tau Close Epicárdio",
+    "mid_start": "Início Miocárdio-M (%)",
+    "epi_start": "Início Epicárdio (%)"
   },
   "modals": {
     "math_model": "Modelo Matemático",
@@ -204,7 +211,9 @@
       "eq": "∂v/∂t = ∇ · (D ∇v) + I_ion. Onde D é o tensor de difusão.",
       "fibrosis_title": "Simulação de Fibrose",
       "fibrosis_desc": "A fibrose é simulada criando regiões onde a condutividade é reduzida isotrópicamente. Pode ser Compacta (aleatória em todo o domínio) ou Difusa (área restrita).",
-      "method": "Espaço: Diferenças Finitas de 2ª Ordem. Tempo: Euler Explícito para potencial (v) e Rush-Larsen para gate (h)."
+      "method": "Espaço: Diferenças Finitas de 2ª Ordem. Tempo: Euler Explícito para potencial (v) e Rush-Larsen para gate (h).",
+      "transmurality_title": "Transmuralidade",
+      "transmurality_desc": "Simula a heterogeneidade das células ao longo da parede ventricular. O domínio é dividido em três camadas: Endocárdio, Miocárdio Médio (M-cells) e Epicárdio. Cada camada possui um parâmetro 'Tau close' diferente, resultando em diferentes durações de potencial de ação (APD). A posição das camadas é definida como uma porcentagem da largura total do tecido."
     },
     "source_sink": {
       "desc": "Investiga a falha de propagação ao passar por uma fenda estreita em um obstáculo. O obstáculo é circular e possui uma abertura que varia de tamanho.",

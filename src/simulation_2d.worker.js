@@ -23,7 +23,7 @@ self.onmessage = (e) => {
   const params = e.data; // Parâmetros enviados
   const { modelType } = params; // Tipo de modelo
 
-    const { sigma_l, sigma_t, angle, Tau_in, Tau_out, Tau_open, Tau_close, gate, L, dx, totalTime, downsamplingFactor, stimuli, fibrosisParams } = params;
+    const { sigma_l, sigma_t, angle, Tau_in, Tau_out, Tau_open, Tau_close, gate, L, dx, totalTime, downsamplingFactor, stimuli, fibrosisParams, transmuralityParams } = params;
     let { dt } = params;
     
     // Calcula o tamanho da malha
@@ -265,6 +265,24 @@ self.onmessage = (e) => {
                 
                 const stimulus = current_stimulus_map ? current_stimulus_map[idx] * stimulus_amplitude : 0;
 
+                // Define Tau_close baseado na Transmuralidade
+                let local_Tau_close = Tau_close;
+
+                if (transmuralityParams && transmuralityParams.enabled) {
+                    const ratio = j / N; // Posição relativa em X
+                    const midStart = transmuralityParams.mid_start / 100.0;
+                    const epiStart = transmuralityParams.epi_start / 100.0;
+                    
+                    // Definição das camadas: Endo, Mid, Epi
+                    if (ratio < midStart) {
+                        local_Tau_close = transmuralityParams.endo_tau;
+                    } else if (ratio < epiStart) {
+                        local_Tau_close = transmuralityParams.mid_tau;
+                    } else {
+                        local_Tau_close = transmuralityParams.epi_tau;
+                    }
+                }
+
                 // Rush-Larsen para h
                 let alpha_h, beta_h;
                 if (vp < gate) {
@@ -272,7 +290,7 @@ self.onmessage = (e) => {
                   beta_h = 0.0;
                 } else {
                   alpha_h = 0.0;
-                  beta_h = 1.0 / Tau_close;
+                  beta_h = 1.0 / local_Tau_close;
                 }
                 
                 const sum_ab = alpha_h + beta_h;

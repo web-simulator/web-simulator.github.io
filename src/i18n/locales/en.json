@@ -41,7 +41,9 @@
     "rectangle": "Rectangle",
     "circle": "Circle",
     "fibrosis": "Fibrosis Parameters",
+    "transmurality": "Transmurality",
     "enable_fibrosis": "Enable Fibrosis",
+    "enable_transmurality": "Enable Transmurality",
     "fibrosis_type": "Fibrosis Type",
     "compact": "Compact",
     "diffuse": "Diffuse",
@@ -115,7 +117,12 @@
     "obstacleCy": "Circle Center Y",
     "obstacleRadius": "Circle Radius",
     "slitWidthStart": "Top Slit Width",
-    "slitWidthEnd": "Bottom Slit Width"
+    "slitWidthEnd": "Bottom Slit Width",
+    "endo_tau": "Endocardium Tau Close",
+    "mid_tau": "Midmyocardium Tau Close",
+    "epi_tau": "Epicardium Tau Close",
+    "mid_start": "Midmyocardium Start (%)",
+    "epi_start": "Epicardium Start (%)"
   },
   "modals": {
     "math_model": "Mathematical Model",
@@ -204,7 +211,9 @@
       "eq": "∂v/∂t = ∇ · (D ∇v) + I_ion. D is the diffusion tensor.",
       "fibrosis_title": "Fibrosis Simulation",
       "fibrosis_desc": "Fibrosis is simulated by creating regions where conductivity is reduced isotropically. It can be Compact (random across domain) or Diffuse (restricted area).",
-      "method": "Space: 2nd Order Finite Differences. Time: Forward Euler for voltage (v) and Rush-Larsen for gate (h)."
+      "method": "Space: 2nd Order Finite Differences. Time: Forward Euler for voltage (v) and Rush-Larsen for gate (h).",
+      "transmurality_title": "Transmurality",
+      "transmurality_desc": "Simulates cell heterogeneity along the ventricular wall. The domain is divided into three layers: Endocardium, Midmyocardium (M-cells), and Epicardium. Each layer has a different 'Tau close' parameter, resulting in varying Action Potential Durations (APD). The layer positions are defined as a percentage of the total tissue width."
     },
     "source_sink": {
       "desc": "Investigates propagation failure through a narrow slit in an obstacle. The circular obstacle has a slit of varying width.",
