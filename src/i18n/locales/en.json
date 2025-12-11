@@ -123,7 +123,11 @@
     "epi_tau": "Epicardium Tau Close",
     "mid_start": "Midmyocardium Start (%)",
     "epi_start": "Epicardium Start (%)",
-    "border_zone": "Border Zone Size"
+    "border_zone": "Border Zone Size",
+    "cellType": "Cell Type",
+    "epi": "Epicardium",
+    "endo": "Endocardium",
+    "myo": "Midmyocardium (M-Cell)"
   },
   "modals": {
     "math_model": "Mathematical Model",
@@ -190,6 +194,17 @@
           "The BCL is shortened (CIinc), and the process repeats without long pauses.",
           "This continues until BCL reaches the final value (CI0)."
         ]
+      },
+      "minimal": {
+        "title": "Minimal Model",
+        "desc": "A 4-variable model that reproduces restitution properties and action potential shapes of human ventricular cell types.",
+        "eq_v": "∂u/∂t = ∇(D∇u) - (J_fi + J_so + J_si)",
+        "eq_h": "Gate variables: v (fast), w (slow), s (slow). Control currents J_fi (inward), J_so (slow outward) and J_si (slow inward).",
+        "method": "Forward Euler for voltage (u) and Rush-Larsen for gate variables (v, w, s).",
+        "steps": [
+          "Select the cell type (Epicardium, Endocardium, or Midmyocardium).",
+          "The S1-S2 protocol is applied to generate the restitution curve for that specific cell type."
+        ]
       }
     },
     "bistable": {
@@ -211,7 +226,7 @@
       "desc": "Simulates wave propagation in 2D tissue. Conduction depends on fiber orientation (angle), with different conductivities in longitudinal and transverse directions.",
       "eq": "∂v/∂t = ∇ · (D ∇v) + I_ion. D is the diffusion tensor.",
       "fibrosis_title": "Fibrosis Simulation",
-      "fibrosis_desc": "Fibrosis is simulated by creating regions where conductivity is reduced isotropically. It can be Compact (random across domain or defined size) or Diffuse (restricted area). When using a Defined Region, you can set a 'Border Zone' where conductivity increases linearly from the fibrosis value to the normal tissue value.",
+      "fibrosis_desc": "Fibrosis is simulated by creating regions where conductivity is reduced isotropically. It can be Compact (random across domain) or Diffuse (restricted area). When using a Defined Region, you can set a 'Border Zone' where conductivity increases linearly from the fibrosis value to the normal tissue value.",
       "method": "Space: 2nd Order Finite Differences. Time: Forward Euler for voltage (v) and Rush-Larsen for gate (h).",
       "transmurality_title": "Transmurality",
       "transmurality_desc": "Simulates cell heterogeneity along the ventricular wall. The domain is divided into three layers: Endocardium, Midmyocardium (M-cells), and Epicardium. Each layer has a different 'Tau close' parameter, resulting in varying Action Potential Durations (APD). The layer positions are defined as a percentage of the total tissue width."

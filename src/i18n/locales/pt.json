@@ -123,7 +123,11 @@
     "epi_tau": "Tau Close Epicárdio",
     "mid_start": "Início Miocárdio-M (%)",
     "epi_start": "Início Epicárdio (%)",
-    "border_zone": "Tamanho da Zona de Borda"
+    "border_zone": "Tamanho da Zona de Borda",
+    "cellType": "Tipo de Célula",
+    "epi": "Epicárdio",
+    "endo": "Endocárdio",
+    "myo": "Miocárdio (M-Cell)"
   },
   "modals": {
     "math_model": "Modelo Matemático",
@@ -190,6 +194,17 @@
           "O BCL é encurtado (CIinc), e o processo se repete sem pausas longas.",
           "Isso continua até que o BCL atinja o valor final (CI0)."
         ]
+      },
+      "minimal": {
+        "title": "Minimal Model",
+        "desc": "Um modelo de 4 variáveis que reproduz as propriedades de restituição e a forma do potencial de ação de diferentes tipos de células ventriculares humanas.",
+        "eq_v": "∂u/∂t = ∇(D∇u) - (J_fi + J_so + J_si)",
+        "eq_h": "Variáveis de gate: v (rápido), w (lento), s (lento). Controlam as correntes J_fi (inward), J_so (slow outward) e J_si (slow inward).",
+        "method": "Euler Explícito para voltagem (u) e Rush-Larsen para as variáveis de gate (v, w, s).",
+        "steps": [
+          "Selecione o tipo de célula (Epicárdio, Endocárdio ou Miocárdio).",
+          "O protocolo S1-S2 é aplicado para gerar a curva de restituição específica para esse tipo celular."
+        ]
       }
     },
     "bistable": {
@@ -211,7 +226,7 @@
       "desc": "Simula a propagação em tecido 2D. A condução depende da orientação das fibras (ângulo), com condutividades diferentes nas direções longitudinal e transversal.",
       "eq": "∂v/∂t = ∇ · (D ∇v) + I_ion. Onde D é o tensor de difusão.",
       "fibrosis_title": "Simulação de Fibrose",
-      "fibrosis_desc": "A fibrose é simulada criando regiões onde a condutividade é reduzida. Pode ser Compacta (aleatória em todo o domínio ou de tamanho definido) ou Difusa (área restrita). Ao usar uma Região Definida, você pode configurar uma 'Zona de Borda' onde a condutividade aumenta linearmente do valor da fibrose até o valor normal do tecido.",
+      "fibrosis_desc": "A fibrose é simulada criando regiões onde a condutividade é reduzida isotrópicamente. Pode ser Compacta (aleatória em todo o domínio) ou Difusa (área restrita). Ao usar uma Região Definida, você pode configurar uma 'Zona de Borda' onde a condutividade aumenta linearmente do valor da fibrose até o valor normal do tecido.",
       "method": "Espaço: Diferenças Finitas de 2ª Ordem. Tempo: Euler Explícito para potencial (v) e Rush-Larsen para gate (h).",
       "transmurality_title": "Transmuralidade",
       "transmurality_desc": "Simula a heterogeneidade das células ao longo da parede ventricular. O domínio é dividido em três camadas: Endocárdio, Miocárdio Médio (M-cells) e Epicárdio. Cada camada possui um parâmetro 'Tau close' diferente, resultando em diferentes durações de potencial de ação (APD). A posição das camadas é definida como uma porcentagem da largura total do tecido."

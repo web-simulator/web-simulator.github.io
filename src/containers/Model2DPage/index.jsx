@@ -80,12 +80,12 @@ const Model2DPage = ({ onBack }) => {
     Tau_in: 0.3,
     Tau_out: 6.0,
     Tau_open: 120.0,
-    Tau_close: 80.0,
+    Tau_close: 140.0,
     gate: 0.13,
     L: 10,
-    dt: 0.05,
-    dx: 0.2,
-    totalTime: 3000,
+    dt: 0.1,
+    dx: 0.1,
+    totalTime: 5000,
     downsamplingFactor: 10,
   });
 
@@ -104,11 +104,11 @@ const Model2DPage = ({ onBack }) => {
     {
       id: 2,
       startTime: 0, 
-      interval: 275, 
+      interval: 320, 
       duration: 2,
       amplitude: 1.0,
       shape: 'rectangle',
-      rectParams: { x1: 6.0, y1: 2.0, x2: 8, y2: 7.0 }, 
+      rectParams: { x1: 0.0, y1: 5.0, x2: 5.0, y2: 10.0 }, 
       circleParams: { cx: 8.0, cy: 3.0, radius: 1 } 
     }
   ]);

@@ -7,6 +7,7 @@ import Modal from '../../components/Modal';
 import RestitutionWorker from '../../simulation_restitution.worker.js?worker';
 import MMSWorker from '../../simulation_mms_restitution_alt.worker.js?worker';
 import DynamicWorker from '../../simulation_dynamic_protocol1.worker.js?worker';
+import MinimalWorker from '../../simulation_minimal_restitution.worker.js?worker';
 import { useTranslation } from 'react-i18next';
 import './styles.css';
 
@@ -18,7 +19,7 @@ const RestitutionCurvePage = ({ onBack }) => {
   const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showTimeSeries, setShowTimeSeries] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('mms'); 
+  const [selectedModel, setSelectedModel] = useState('minimal');
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false); 
 
   // Parâmetros editáveis para cada modelo
@@ -81,6 +82,20 @@ const RestitutionCurvePage = ({ onBack }) => {
       v_inicial: 0.0,
       h_inicial: 1.0,
       downsamplingFactor: 50,
+    },
+    // Parâmetros para o Minimal Model
+    minimal: {
+      cellType: 'epi',
+      BCL_S1: 600,
+      BCL_S2_inicial: 500,
+      BCL_S2_final: 200,
+      delta_CL: 10,
+      inicio: 10.0,
+      duracao: 1.0,
+      amplitude: 1.0,
+      dt: 0.1,
+      num_estimulos_s1: 8,
+      downsamplingFactor: 100
     }
   });
 
@@ -88,6 +103,11 @@ const RestitutionCurvePage = ({ onBack }) => {
   const calculateAnalyticalCurve = useCallback((simulatedData) => {
     if (!simulatedData || simulatedData.length === 0) {
       setAnalyticalData([]);
+      return;
+    }
+
+    if (selectedModel === 'minimal') {
+      setAnalyticalData([]); // Sem solução analítica simples para o minimal
       return;
     }
 
@@ -137,6 +157,8 @@ const RestitutionCurvePage = ({ onBack }) => {
       simulationWorker = new RestitutionWorker(); 
     } else if (selectedModel === 'mms') {
       simulationWorker = new MMSWorker();
+    } else if (selectedModel === 'minimal') {
+      simulationWorker = new MinimalWorker();
     } else {
       simulationWorker = new DynamicWorker();
     }
@@ -163,7 +185,7 @@ const RestitutionCurvePage = ({ onBack }) => {
 
   //  função para lidar com mudanças nos inputs
   const handleChange = useCallback((e, name) => {
-    const value = parseFloat(e.target.value);
+    const value = name === 'cellType' ? e.target.value : parseFloat(e.target.value);
     setEditableParams((prev) => ({
       ...prev,
       [selectedModel]: {
@@ -186,7 +208,7 @@ const RestitutionCurvePage = ({ onBack }) => {
 
   // Função para renderizar o conteúdo do modal de informações
   const renderInfoModalContent = () => {
-    const modelKey = selectedModel; // 's1s2', 'mms', ou 'dynamic'
+    const modelKey = selectedModel; // seletor do modelo
     const steps = t(`modals.restitution.${modelKey}.steps`, { returnObjects: true });
     
     // Lista de parâmetros relevantes para exibir no modal
@@ -249,6 +271,7 @@ const RestitutionCurvePage = ({ onBack }) => {
         <div className="input-container">
           <label>{t('common.select_model')}</label>
           <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}>
+            <option value="minimal">{t('modals.restitution.minimal.title')}</option>
             <option value="s1s2">{t('modals.restitution.s1s2.title')}</option>
             <option value="mms">{t('modals.restitution.mms.title')}</option>
             <option value="dynamic">{t('modals.restitution.dynamic.title')}</option>
@@ -258,7 +281,22 @@ const RestitutionCurvePage = ({ onBack }) => {
       
       <h2>{t('common.simulation_params')}</h2>
       <div className="params-container">
-        {Object.keys(currentParams).map((key) => (
+        {selectedModel === 'minimal' && (
+          <div className="input-container">
+            <label>{t('params.cellType')}</label>
+            <select 
+              value={currentParams.cellType} 
+              onChange={(e) => handleChange(e, 'cellType')}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            >
+              <option value="epi">{t('params.epi')}</option>
+              <option value="endo">{t('params.endo')}</option>
+              <option value="myo">{t('params.myo')}</option>
+            </select>
+          </div>
+        )}
+
+        {Object.keys(currentParams).filter(key => key !== 'cellType').map((key) => (
           <Input
             key={key}
             label={t(`params.${key}`)}

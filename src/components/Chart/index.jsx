@@ -1,5 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,Brush } from 'recharts';
-
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from 'recharts';
 
 const Chart = ({ data }) => {
   return (
@@ -40,7 +39,7 @@ const Chart = ({ data }) => {
 
         {/* Barra de navegação para zoom e seleção */}
         <Brush
-          dataKey="bcl"
+          dataKey="tempo"
           height={30}
           stroke="#8884d8"
           travellerWidth={10}
@@ -48,11 +47,12 @@ const Chart = ({ data }) => {
         
         {/* Curva da voltagem */}
         <Line 
-          type="monotone"       // Tipo de curva (monotônica)
-          dataKey="v"           // Chave do objeto de dados a ser usada
-          stroke="#8884d8"      // Cor da linha
-          dot={false}           // Remove os pontos visíveis nos dados
-          isAnimationActive={false} // Desativa animação ao renderizar
+          type="monotone"       
+          dataKey="v"           
+          stroke="#8884d8"      
+          name="Voltagem"
+          dot={false}           
+          isAnimationActive={false} 
           strokeWidth={2.2}
         />
         
@@ -61,10 +61,41 @@ const Chart = ({ data }) => {
           type="monotone" 
           dataKey="h" 
           stroke="#82ca9d" 
+          name="Gate h"
           dot={false} 
           isAnimationActive={false} 
           strokeWidth={2.2}
         />
+
+        {/* Curvas específicas do Minimal Model */}
+        <Line 
+          type="monotone" 
+          dataKey="gate_v" 
+          stroke="#ff7300" 
+          name="Gate v"
+          dot={false} 
+          isAnimationActive={false} 
+          strokeWidth={2.0}
+        />
+        <Line 
+          type="monotone" 
+          dataKey="gate_w" 
+          stroke="#ff0000" 
+          name="Gate w"
+          dot={false} 
+          isAnimationActive={false} 
+          strokeWidth={2.0}
+        />
+        <Line 
+          type="monotone" 
+          dataKey="gate_s" 
+          stroke="#00bfff" 
+          name="Gate s"
+          dot={false} 
+          isAnimationActive={false} 
+          strokeWidth={2.0}
+        />
+
       </LineChart>
     </ResponsiveContainer>
   );
