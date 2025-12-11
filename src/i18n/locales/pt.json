@@ -122,7 +122,8 @@
     "mid_tau": "Tau Close Miocárdio-M",
     "epi_tau": "Tau Close Epicárdio",
     "mid_start": "Início Miocárdio-M (%)",
-    "epi_start": "Início Epicárdio (%)"
+    "epi_start": "Início Epicárdio (%)",
+    "border_zone": "Tamanho da Zona de Borda"
   },
   "modals": {
     "math_model": "Modelo Matemático",
@@ -210,7 +211,7 @@
       "desc": "Simula a propagação em tecido 2D. A condução depende da orientação das fibras (ângulo), com condutividades diferentes nas direções longitudinal e transversal.",
       "eq": "∂v/∂t = ∇ · (D ∇v) + I_ion. Onde D é o tensor de difusão.",
       "fibrosis_title": "Simulação de Fibrose",
-      "fibrosis_desc": "A fibrose é simulada criando regiões onde a condutividade é reduzida isotrópicamente. Pode ser Compacta (aleatória em todo o domínio) ou Difusa (área restrita).",
+      "fibrosis_desc": "A fibrose é simulada criando regiões onde a condutividade é reduzida. Pode ser Compacta (aleatória em todo o domínio ou de tamanho definido) ou Difusa (área restrita). Ao usar uma Região Definida, você pode configurar uma 'Zona de Borda' onde a condutividade aumenta linearmente do valor da fibrose até o valor normal do tecido.",
       "method": "Espaço: Diferenças Finitas de 2ª Ordem. Tempo: Euler Explícito para potencial (v) e Rush-Larsen para gate (h).",
       "transmurality_title": "Transmuralidade",
       "transmurality_desc": "Simula a heterogeneidade das células ao longo da parede ventricular. O domínio é dividido em três camadas: Endocárdio, Miocárdio Médio (M-cells) e Epicárdio. Cada camada possui um parâmetro 'Tau close' diferente, resultando em diferentes durações de potencial de ação (APD). A posição das camadas é definida como uma porcentagem da largura total do tecido."

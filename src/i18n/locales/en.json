@@ -122,7 +122,8 @@
     "mid_tau": "Midmyocardium Tau Close",
     "epi_tau": "Epicardium Tau Close",
     "mid_start": "Midmyocardium Start (%)",
-    "epi_start": "Epicardium Start (%)"
+    "epi_start": "Epicardium Start (%)",
+    "border_zone": "Border Zone Size"
   },
   "modals": {
     "math_model": "Mathematical Model",
@@ -210,7 +211,7 @@
       "desc": "Simulates wave propagation in 2D tissue. Conduction depends on fiber orientation (angle), with different conductivities in longitudinal and transverse directions.",
       "eq": "∂v/∂t = ∇ · (D ∇v) + I_ion. D is the diffusion tensor.",
       "fibrosis_title": "Fibrosis Simulation",
-      "fibrosis_desc": "Fibrosis is simulated by creating regions where conductivity is reduced isotropically. It can be Compact (random across domain) or Diffuse (restricted area).",
+      "fibrosis_desc": "Fibrosis is simulated by creating regions where conductivity is reduced isotropically. It can be Compact (random across domain or defined size) or Diffuse (restricted area). When using a Defined Region, you can set a 'Border Zone' where conductivity increases linearly from the fibrosis value to the normal tissue value.",
       "method": "Space: 2nd Order Finite Differences. Time: Forward Euler for voltage (v) and Rush-Larsen for gate (h).",
       "transmurality_title": "Transmurality",
       "transmurality_desc": "Simulates cell heterogeneity along the ventricular wall. The domain is divided into three layers: Endocardium, Midmyocardium (M-cells), and Epicardium. Each layer has a different 'Tau close' parameter, resulting in varying Action Potential Durations (APD). The layer positions are defined as a percentage of the total tissue width."

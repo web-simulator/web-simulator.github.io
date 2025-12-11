@@ -63,49 +63,97 @@ self.onmessage = (e) => {
     let fibrosisMap = new Float32Array(N * N).fill(sigma_l); 
 
     if (fibrosisParams.enabled) {
-      const { conductivity, type, distribution, shape, rectParams, circleParams, regionParams } = fibrosisParams;
+      const { conductivity, type, distribution, shape, rectParams, circleParams, regionParams, borderZone = 0 } = fibrosisParams;
 
       // Preenche todos os pontos dentro da forma geométrica
       if (type === 'compacta' && distribution === 'region') {
+          const lerp = (start, end, t) => start * (1 - t) + end * t;
+
           if (shape === 'rectangle') {
               const { x1, y1, x2, y2 } = rectParams;
-              // Converte coordenadas físicas para índices
-              const i_start = Math.floor(Math.min(y1, y2) / dx);
-              const i_end = Math.floor(Math.max(y1, y2) / dx);
-              const j_start = Math.floor(Math.min(x1, x2) / dx);
-              const j_end = Math.floor(Math.max(x1, x2) / dx);
-
-              // Preenche o retângulo
-              for (let i = Math.max(0, i_start); i <= Math.min(N - 1, i_end); i++) {
-                  for (let j = Math.max(0, j_start); j <= Math.min(N - 1, j_end); j++) {
-                      const idx = i * N + j;
-                      Dxx_map[idx] = conductivity;
-                      Dyy_map[idx] = conductivity;
-                      Dxy_map[idx] = 0.0;
-                      fibrosisMap[idx] = conductivity;
-                  }
-              }
-          } else { // Circle
-              const { cx, cy, radius } = circleParams;
-              const radiusSq = radius * radius;
               
-              // Percorre apenas o bounding box do círculo
-              const i_start = Math.max(0, Math.floor((cy - radius) / dx));
-              const i_end = Math.min(N - 1, Math.floor((cy + radius) / dx));
-              const j_start = Math.max(0, Math.floor((cx - radius) / dx));
-              const j_end = Math.min(N - 1, Math.floor((cx + radius) / dx));
+              // Define os limites do retângulo principal
+              const rx_min = Math.min(x1, x2);
+              const rx_max = Math.max(x1, x2);
+              const ry_min = Math.min(y1, y2);
+              const ry_max = Math.max(y1, y2);
+
+              // Constrói a area com base na borderZone
+              const search_min_x = rx_min - borderZone;
+              const search_max_x = rx_max + borderZone;
+              const search_min_y = ry_min - borderZone;
+              const search_max_y = ry_max + borderZone;
+
+              // Converte para índices
+              const i_start = Math.max(0, Math.floor(search_min_y / dx));
+              const i_end = Math.min(N - 1, Math.floor(search_max_y / dx));
+              const j_start = Math.max(0, Math.floor(search_min_x / dx));
+              const j_end = Math.min(N - 1, Math.floor(search_max_x / dx));
 
               for (let i = i_start; i <= i_end; i++) {
                   for (let j = j_start; j <= j_end; j++) {
                       const y = i * dx;
                       const x = j * dx;
-                      // Verifica se o ponto está dentro do círculo
-                      if ((x - cx) ** 2 + (y - cy) ** 2 <= radiusSq) {
-                          const idx = i * N + j;
+                      const idx = i * N + j;
+
+                      // calcula a distância do ponto até o retângulo
+                      const dx_dist = Math.max(rx_min - x, 0, x - rx_max);
+                      const dy_dist = Math.max(ry_min - y, 0, y - ry_max);
+                      
+                      // Distância até a borda do retângulo
+                      const distance = Math.sqrt(dx_dist * dx_dist + dy_dist * dy_dist);
+
+                      if (distance === 0) {
+                          // dentro da fibrose
                           Dxx_map[idx] = conductivity;
                           Dyy_map[idx] = conductivity;
                           Dxy_map[idx] = 0.0;
                           fibrosisMap[idx] = conductivity;
+                      } else if (distance <= borderZone) {
+                          // dentro da borderZone
+                          const t = distance / borderZone; // inclinação da reta
+                          
+                          Dxx_map[idx] = lerp(conductivity, base_Dxx, t);
+                          Dyy_map[idx] = lerp(conductivity, base_Dyy, t);
+                          Dxy_map[idx] = lerp(0.0, base_Dxy, t);
+                          fibrosisMap[idx] = lerp(conductivity, sigma_l, t);
+                      }
+                  }
+              }
+
+          } else { // Circle
+              const { cx, cy, radius } = circleParams;
+              
+              // Define os limites da área do circulo com borderZone
+              const totalRadius = radius + borderZone;
+              const i_start = Math.max(0, Math.floor((cy - totalRadius) / dx));
+              const i_end = Math.min(N - 1, Math.floor((cy + totalRadius) / dx));
+              const j_start = Math.max(0, Math.floor((cx - totalRadius) / dx));
+              const j_end = Math.min(N - 1, Math.floor((cx + totalRadius) / dx));
+
+              for (let i = i_start; i <= i_end; i++) {
+                  for (let j = j_start; j <= j_end; j++) {
+                      const y = i * dx;
+                      const x = j * dx;
+                      const idx = i * N + j;
+                      
+                      const distSq = (x - cx) ** 2 + (y - cy) ** 2;
+                      const dist = Math.sqrt(distSq);
+
+                      if (dist <= radius) {
+                          // dentro da fibrose
+                          Dxx_map[idx] = conductivity;
+                          Dyy_map[idx] = conductivity;
+                          Dxy_map[idx] = 0.0;
+                          fibrosisMap[idx] = conductivity;
+                      } else if (dist <= totalRadius) {
+                          // dentro da borderZone
+                          const t = (dist - radius) / borderZone; // inclinação da reta
+                          
+                          Dxx_map[idx] = lerp(conductivity, base_Dxx, t);
+                          Dyy_map[idx] = lerp(conductivity, base_Dyy, t);
+                          Dxy_map[idx] = lerp(0.0, base_Dxy, t);
+                          fibrosisMap[idx] = lerp(conductivity, sigma_l, t);
                       }
                   }
               }

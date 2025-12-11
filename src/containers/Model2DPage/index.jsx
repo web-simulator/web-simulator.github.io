@@ -138,7 +138,8 @@ const Model2DPage = ({ onBack }) => {
       y1: 2.0,
       x2: 8.0,
       y2: 8.0,
-    }
+    },
+    borderZone: 0.0
   });
 
   // Parâmetros Transmuralidade
@@ -426,6 +427,9 @@ const Model2DPage = ({ onBack }) => {
                     </select>
                   </div>
 
+                  {/* Input para Border Zone */}
+                  <Input label={t('params.border_zone')} value={fibrosisParams.borderZone} onChange={(e) => handleFibrosisChange(e, 'borderZone')} />
+
                   {fibrosisParams.shape === 'rectangle' ? (
                     Object.keys(fibrosisParams.rectParams).map(key => (
                       <Input 
@@ -575,6 +579,7 @@ const Model2DPage = ({ onBack }) => {
             <li>{t('params.conductivity')}</li>
             <li>{t('params.density')}</li>
             <li>{t('params.seed')}</li>
+            <li>{t('params.border_zone')}</li>
           </ul>
 
           <h3>{t('modals.ms2d.transmurality_title')}</h3>
