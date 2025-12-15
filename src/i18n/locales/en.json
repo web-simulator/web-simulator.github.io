@@ -15,7 +15,7 @@
       "bistable": { "title": "Bistable", "desc": "One-dimensional model exhibiting bistable behavior." },
       "fhn": { "title": "FitzHugh-Nagumo", "desc": "Simplified model of cardiac excitability in one dimension." },
       "ms_1d": { "title": "Mitchell-Schaeffer", "desc": "Mitchell-Schaeffer extended to a spatial dimension." },
-      "model_2d": { "title": "Mitchell-Schaeffer 2D Model", "desc": "Simulates 2D wave propagation, allowing S1-S2 protocols and fibrosis inclusion." },
+      "model_2d": { "title": "2D Tissue Model", "desc": "Simulates 2D wave propagation using Mitchell-Schaeffer or Minimal Model." },
       "source_sink": { "title": "Source-Sink Mismatch", "desc": "Simulates propagation through a variable slit in an obstacle, investigating geometric conduction failure." }
     }
   },
@@ -197,9 +197,13 @@
       },
       "minimal": {
         "title": "Minimal Model",
-        "desc": "A 4-variable model that reproduces restitution properties and action potential shapes of human ventricular cell types.",
-        "eq_v": "∂u/∂t = ∇(D∇u) - (J_fi + J_so + J_si)",
-        "eq_h": "Gate variables: v (fast), w (slow), s (slow). Control currents J_fi (inward), J_so (slow outward) and J_si (slow inward).",
+        "desc": "A 4-variable model that reproduces restitution properties and action potential shapes of human ventricular cell types (Epi, Endo, Mid).",
+        "eq_u": "∂u/∂t = ∇(D∇u) - (J_fi + J_so + J_si) + J_stim",
+        "eq_v": "dv/dt = (1 - H(u - θ_v))(v_inf - v)/τ_v_minus - H(u - θ_v)v/τ_v_plus",
+        "eq_w": "dw/dt = (1 - H(u - θ_w))(w_inf - w)/τ_w_minus - H(u - θ_w)w/τ_w_plus",
+        "eq_s": "ds/dt = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
+        "vars": "Variables: u (Voltage), v (Fast Gate), w (Slow Gate), s (Slow Gate).",
+        "currents": "Currents: J_fi (Fast Inward), J_so (Slow Outward), J_si (Slow Inward). H(x) is the Heaviside function.",
         "method": "Forward Euler for voltage (u) and Rush-Larsen for gate variables (v, w, s).",
         "steps": [
           "Select the cell type (Epicardium, Endocardium, or Midmyocardium).",
@@ -223,13 +227,21 @@
       "method": "Space: 2nd Order Finite Differences. Time: Forward Euler for voltage (v) and Rush-Larsen for gate (h)."
     },
     "ms2d": {
-      "desc": "Simulates wave propagation in 2D tissue. Conduction depends on fiber orientation (angle), with different conductivities in longitudinal and transverse directions.",
+      "desc": "Simulates wave propagation in 2D tissue. Supports Mitchell-Schaeffer and Minimal Model.",
       "eq": "∂v/∂t = ∇ · (D ∇v) + I_ion. D is the diffusion tensor.",
       "fibrosis_title": "Fibrosis Simulation",
       "fibrosis_desc": "Fibrosis is simulated by creating regions where conductivity is reduced isotropically. It can be Compact (random across domain) or Diffuse (restricted area). When using a Defined Region, you can set a 'Border Zone' where conductivity increases linearly from the fibrosis value to the normal tissue value.",
-      "method": "Space: 2nd Order Finite Differences. Time: Forward Euler for voltage (v) and Rush-Larsen for gate (h).",
+      "method": "Space: 2nd Order Finite Differences. Time: Forward Euler for voltage (v) and Rush-Larsen for gates.",
       "transmurality_title": "Transmurality",
       "transmurality_desc": "Simulates cell heterogeneity along the ventricular wall. The domain is divided into three layers: Endocardium, Midmyocardium (M-cells), and Epicardium. Each layer has a different 'Tau close' parameter, resulting in varying Action Potential Durations (APD). The layer positions are defined as a percentage of the total tissue width."
+    },
+    "minimal2d": {
+      "desc": "The Minimal Model is a model with 4 variables (u, v, w, s) capable of reproducing human ventricular action potentials.",
+      "eq_u": "∂u/∂t = ∇ · (D ∇u) - (J_fi + J_so + J_si)",
+      "eq_v": "dv/dt = (1 - H(u - θ_v))(v_inf - v)/τ_v_minus - H(u - θ_v)v/τ_v_plus",
+      "eq_w": "dw/dt = (1 - H(u - θ_w))(w_inf - w)/τ_w_minus - H(u - θ_w)w/τ_w_plus",
+      "eq_s": "ds/dt = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
+      "currents": "J_fi, J_so, and J_si are the fast inward, slow outward, and slow inward currents, respectively."
     },
     "source_sink": {
       "desc": "Investigates propagation failure through a narrow slit in an obstacle. The circular obstacle has a slit of varying width.",

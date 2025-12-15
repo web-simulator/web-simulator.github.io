@@ -5,9 +5,35 @@ import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal';
 import Chart from '../../components/Chart';
-import SimulationWorker from '../../simulation_2d.worker.js?worker';
+import MS2DWorker from '../../simulation_2d.worker.js?worker';
+import Minimal2DWorker from '../../simulation_minimal_2d.worker.js?worker';
 import { useTranslation } from 'react-i18next';
 import './styles.css';
+
+// Valores padrão do Minimal Model
+const DEFAULT_MINIMAL_PARAMS = {
+  endo: { // Endocárdio
+    u_u: 1.56, theta_vminus: 0.2, theta_o: 0.006, tau_v1minus: 75.0, tau_v2minus: 10.0,
+    tau_w1minus: 6.0, tau_w2minus: 140.0, k_wminus: 200.0, u_wminus: 0.016,
+    tau_wplus: 280.0, tau_fi: 0.15, tau_o1: 470.0, tau_o2: 6.0, tau_so1: 40.0,
+    tau_so2: 1.2, k_so: 2.0, u_so: 0.65, tau_s2: 2.0, tau_si: 2.9013,
+    tau_winf: 0.0273, w_infstar: 0.78
+  },
+  myo: { // Miócardio
+    u_u: 1.61, theta_vminus: 0.1, theta_o: 0.005, tau_v1minus: 80.0, tau_v2minus: 1.4506,
+    tau_w1minus: 70.0, tau_w2minus: 8.0, k_wminus: 200.0, u_wminus: 0.016,
+    tau_wplus: 280.0, tau_fi: 0.117, tau_o1: 410.0, tau_o2: 7.0, tau_so1: 91.0,
+    tau_so2: 0.8, k_so: 2.1, u_so: 0.6, tau_s2: 4.0, tau_si: 3.3849,
+    tau_winf: 0.01, w_infstar: 0.5
+  },
+  epi: { // Epicardio
+    u_u: 1.55, theta_vminus: 0.006, theta_o: 0.006, tau_v1minus: 60.0, tau_v2minus: 1150.0,
+    tau_w1minus: 60.0, tau_w2minus: 15.0, k_wminus: 65.0, u_wminus: 0.03,
+    tau_wplus: 200.0, tau_fi: 0.165, tau_o1: 400.0, tau_o2: 6.0, tau_so1: 30.0181,
+    tau_so2: 0.9957, k_so: 2.0458, u_so: 0.65, tau_s2: 16.0, tau_si: 1.8875,
+    tau_winf: 0.07, w_infstar: 0.94
+  }
+};
 
 const StimulusEditor = ({ stimulus, onUpdate, onRemove, index }) => {
   const { t } = useTranslation();
@@ -62,7 +88,6 @@ const StimulusEditor = ({ stimulus, onUpdate, onRemove, index }) => {
 // Pagina principal
 const Model2DPage = ({ onBack }) => {
   const { t } = useTranslation();
-  // Estado agora guarda o objeto completo do buffer (frames, times, fibrosis, N)
   const [simulationResult, setSimulationResult] = useState(null);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [worker, setWorker] = useState(null); 
@@ -70,9 +95,13 @@ const Model2DPage = ({ onBack }) => {
   const [isPlaying, setIsPlaying] = useState(false); 
   const [simulationSpeed, setSimulationSpeed] = useState(50);
   const [progress, setProgress] = useState(0);
-  const [remainingTime, setRemainingTime] = useState(null); // Estado para o tempo restante
+  const [remainingTime, setRemainingTime] = useState(null);
+  const [selectedModel, setSelectedModel] = useState('ms2d'); 
 
-  // Parâmetros do modelo
+  // Edição de parâmetros do Minimal
+  const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
+  const [editingCellType, setEditingCellType] = useState('epi');
+
   const [ms2dParams, setMs2dParams] = useState({
     sigma_l: 0.004, 
     sigma_t: 0.001, 
@@ -89,7 +118,18 @@ const Model2DPage = ({ onBack }) => {
     downsamplingFactor: 10,
   });
 
-  // Lista de estímulos
+  const [minimalParams, setMinimalParams] = useState({
+    cellType: 'epi',
+    sigma_l: 0.004, 
+    sigma_t: 0.001, 
+    angle: 0,       
+    L: 10,
+    dt: 0.1,
+    dx: 0.1,
+    totalTime: 2000,
+    downsamplingFactor: 10,
+  });
+
   const [stimuli, setStimuli] = useState([
     {
       id: 1, 
@@ -120,25 +160,11 @@ const Model2DPage = ({ onBack }) => {
     density: 0.1, 
     regionSize: 0.2, 
     seed: Date.now(),
-    distribution: 'random', // fibrose vai ser aleatoria ou região definida
-    shape: 'rectangle',     // retângulo ou círculo
-    rectParams: {
-      x1: 2.0,
-      y1: 2.0,
-      x2: 8.0,
-      y2: 8.0,
-    },
-    circleParams: {
-      cx: 5.0,
-      cy: 5.0,
-      radius: 2.0
-    },
-    regionParams: {
-      x1: 2.0,
-      y1: 2.0,
-      x2: 8.0,
-      y2: 8.0,
-    },
+    distribution: 'random',
+    shape: 'rectangle',
+    rectParams: { x1: 2.0, y1: 2.0, x2: 8.0, y2: 8.0 },
+    circleParams: { cx: 5.0, cy: 5.0, radius: 2.0 },
+    regionParams: { x1: 2.0, y1: 2.0, x2: 8.0, y2: 8.0 },
     borderZone: 0.0
   });
 
@@ -184,10 +210,15 @@ const Model2DPage = ({ onBack }) => {
   
   // Configura o worker
   useEffect(() => {
-    const simulationWorker = new SimulationWorker();
+    let simulationWorker;
+    if (selectedModel === 'minimal') {
+      simulationWorker = new Minimal2DWorker();
+    } else {
+      simulationWorker = new MS2DWorker();
+    }
+    
     setWorker(simulationWorker);
 
-    
     simulationWorker.onmessage = (e) => {
       const { type, value, remaining, frames, times, fibrosis, N, totalFrames } = e.data;
       
@@ -195,7 +226,6 @@ const Model2DPage = ({ onBack }) => {
         setProgress(value); 
         if (remaining !== undefined) setRemainingTime(remaining);
       } else if (type === 'result') {
-        // Agora recebemos os buffers diretos, muito mais eficiente
         setSimulationResult({ frames, times, fibrosis, N, totalFrames });
         setCurrentFrame(0); 
         setLoading(false); 
@@ -209,7 +239,7 @@ const Model2DPage = ({ onBack }) => {
     return () => {
       simulationWorker.terminate();
     };
-  }, []);
+  }, [selectedModel]);
 
   // Simulação em um loop com velocidade ajustável
   useEffect(() => {
@@ -248,6 +278,7 @@ const Model2DPage = ({ onBack }) => {
   
   // parametrod do modelo e da fibrose
   const handleMs2dChange = handleParamChange(setMs2dParams);
+  const handleMinimalChange = handleParamChange(setMinimalParams);
   const handleFibrosisChange = handleParamChange(setFibrosisParams);
   const handleTransmuralityChange = handleParamChange(setTransmuralityParams);
 
@@ -261,7 +292,16 @@ const Model2DPage = ({ onBack }) => {
     }));
   }, []);
 
-  // Quando clica em simular
+  const handleMinimalCustomChange = (param, value) => {
+    setMinimalCustomParams(prev => ({
+      ...prev,
+      [editingCellType]: {
+        ...prev[editingCellType],
+        [param]: parseFloat(value)
+      }
+    }));
+  };
+
   const handleSimularClick = useCallback(() => {
     if (worker) {
       setLoading(true);
@@ -270,22 +310,23 @@ const Model2DPage = ({ onBack }) => {
       setProgress(0); 
       setRemainingTime(null);
       
-      // Evita travamento de memória
-      const totalSteps = ms2dParams.totalTime / ms2dParams.dt;
+      const params = selectedModel === 'ms2d' ? ms2dParams : minimalParams;
+      const totalSteps = params.totalTime / params.dt;
       const maxFrames = 1000;
       const safeDownsampling = Math.ceil(totalSteps / maxFrames);
-      const finalDownsampling = Math.max(ms2dParams.downsamplingFactor, safeDownsampling);
+      const finalDownsampling = Math.max(params.downsamplingFactor, safeDownsampling);
 
       worker.postMessage({
-        modelType: 'ms2d',
-        ...ms2dParams,
+        modelType: selectedModel,
+        ...params,
         downsamplingFactor: finalDownsampling, 
         stimuli, 
         fibrosisParams,
         transmuralityParams,
+        minimalCellParams: minimalCustomParams
       });
     }
-  }, [worker, ms2dParams, stimuli, fibrosisParams, transmuralityParams]);
+  }, [worker, selectedModel, ms2dParams, minimalParams, stimuli, fibrosisParams, transmuralityParams, minimalCustomParams]);
 
   // barra de tempo
   const handleSliderChange = (e) => {
@@ -346,17 +387,75 @@ const Model2DPage = ({ onBack }) => {
       <Button onClick={onBack}>{t('common.back')}</Button>
       <h1>{t('home.models.model_2d.title')}</h1>
       
+      <div className="params-container">
+        <div className="input-container">
+          <label>{t('common.select_model')}</label>
+          <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}>
+            <option value="ms2d">Mitchell-Schaeffer</option>
+            <option value="minimal">Minimal Model</option>
+          </select>
+        </div>
+      </div>
+
       <h2>{t('common.simulation_params')}</h2>
       <div className="params-container">
-        {Object.keys(ms2dParams).map((key) => (
-          <Input 
-            key={key} 
-            label={t(`params.${key}`) || key} 
-            value={ms2dParams[key]} 
-            onChange={(e) => handleMs2dChange(e, key)} 
-          />
-        ))}
+        {selectedModel === 'ms2d' ? (
+          Object.keys(ms2dParams).map((key) => (
+            <Input 
+              key={key} 
+              label={t(`params.${key}`) || key} 
+              value={ms2dParams[key]} 
+              onChange={(e) => handleMs2dChange(e, key)} 
+            />
+          ))
+        ) : (
+          <>
+            {!transmuralityParams.enabled && (
+                <div className="input-container">
+                <label>{t('params.cellType')}</label>
+                <select value={minimalParams.cellType} onChange={(e) => handleMinimalChange(e, 'cellType')}>
+                    <option value="epi">{t('params.epi')}</option>
+                    <option value="endo">{t('params.endo')}</option>
+                    <option value="myo">{t('params.myo')}</option>
+                </select>
+                </div>
+            )}
+            {Object.keys(minimalParams).filter(k => k !== 'cellType').map((key) => (
+              <Input 
+                key={key} 
+                label={t(`params.${key}`) || key} 
+                value={minimalParams[key]} 
+                onChange={(e) => handleMinimalChange(e, key)} 
+              />
+            ))}
+          </>
+        )}
       </div>
+
+      {/* Parâmetros de célula */}
+      {selectedModel === 'minimal' && (
+        <div className="params-section">
+            <h3 style={{marginTop: '10px'}}>Parâmetros da Célula ({t(`params.${editingCellType}`)})</h3>
+            <div className="input-container">
+                <label>Editar Tipo:</label>
+                <select value={editingCellType} onChange={(e) => setEditingCellType(e.target.value)}>
+                    <option value="epi">{t('params.epi')}</option>
+                    <option value="endo">{t('params.endo')}</option>
+                    <option value="myo">{t('params.myo')}</option>
+                </select>
+            </div>
+            <div className="params-container">
+                {Object.keys(minimalCustomParams[editingCellType]).map(key => (
+                    <Input 
+                        key={key}
+                        label={key}
+                        value={minimalCustomParams[editingCellType][key]}
+                        onChange={(e) => handleMinimalCustomChange(key, e.target.value)}
+                    />
+                ))}
+            </div>
+        </div>
+      )}
 
       <h2>{t('modals.multiple.protocol_title')}</h2>
       {stimuli.map((stim, index) => (
@@ -472,9 +571,13 @@ const Model2DPage = ({ onBack }) => {
           {transmuralityParams.enabled && (
             <>
               <h3 style={{ gridColumn: '1 / -1', marginTop: '10px', borderTop: '1px solid #ccc', paddingTop: '10px' }}>{t('common.transmurality')}</h3>
-              <Input label={t('params.endo_tau')} value={transmuralityParams.endo_tau} onChange={(e) => handleTransmuralityChange(e, 'endo_tau')} />
-              <Input label={t('params.mid_tau')} value={transmuralityParams.mid_tau} onChange={(e) => handleTransmuralityChange(e, 'mid_tau')} />
-              <Input label={t('params.epi_tau')} value={transmuralityParams.epi_tau} onChange={(e) => handleTransmuralityChange(e, 'epi_tau')} />
+              {selectedModel === 'ms2d' ? (
+                  <>
+                    <Input label={t('params.endo_tau')} value={transmuralityParams.endo_tau} onChange={(e) => handleTransmuralityChange(e, 'endo_tau')} />
+                    <Input label={t('params.mid_tau')} value={transmuralityParams.mid_tau} onChange={(e) => handleTransmuralityChange(e, 'mid_tau')} />
+                    <Input label={t('params.epi_tau')} value={transmuralityParams.epi_tau} onChange={(e) => handleTransmuralityChange(e, 'epi_tau')} />
+                  </>
+              ) : ("")}
               <Input label={t('params.mid_start')} value={transmuralityParams.mid_start} onChange={(e) => handleTransmuralityChange(e, 'mid_start')} />
               <Input label={t('params.epi_start')} value={transmuralityParams.epi_start} onChange={(e) => handleTransmuralityChange(e, 'epi_start')} />
             </>
@@ -503,12 +606,12 @@ const Model2DPage = ({ onBack }) => {
         <HeatmapChart 
             data={currentChartData} 
             nCols={N_dimension} 
-            maxValue={1.0} 
+            maxValue={selectedModel === 'minimal' ? 2.0 : 1.0} 
             onPointClick={handlePointClick}
             fibrosisMap={currentFibrosisMap} 
             fibrosisConductivity={fibrosisParams.conductivity}
         />
-        {simulationResult && <Colorbar maxValue={1.0} minValue={0} />}
+        {simulationResult && <Colorbar maxValue={selectedModel === 'minimal' ? 2.0 : 1.0} minValue={0} />}
       </div>
 
       {simulationResult && (
@@ -534,7 +637,7 @@ const Model2DPage = ({ onBack }) => {
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <h2>
           Potencial no Ponto (
-            {selectedPoint ? `x: ${(selectedPoint.j * ms2dParams.dx).toFixed(2)}, y: ${(selectedPoint.i * ms2dParams.dx).toFixed(2)}` : ''}
+            {selectedPoint ? `x: ${(selectedPoint.j * (selectedModel === 'ms2d' ? ms2dParams.dx : minimalParams.dx)).toFixed(2)}, y: ${(selectedPoint.i * (selectedModel === 'ms2d' ? ms2dParams.dx : minimalParams.dx)).toFixed(2)}` : ''}
           )
         </h2>
         <Chart data={timeseriesData} />
@@ -545,33 +648,51 @@ const Model2DPage = ({ onBack }) => {
         <div className="info-modal-content">
           <h2>{t('home.models.model_2d.title')}</h2>
           
-          <h3>{t('modals.math_model')}</h3>
-          <p>{t('modals.ms2d.desc')}</p>
-          <ul>
-            <li><code>{t('modals.ms2d.eq')}</code></li>
-            <li><code>{t('modals.single.eq_h1')}</code></li>
-            <li><code>{t('modals.single.eq_h2')}</code></li>
-          </ul>
+          {selectedModel === 'ms2d' ? (
+            <>
+              <h3>{t('modals.math_model')} (Mitchell-Schaeffer)</h3>
+              <p>{t('modals.ms2d.desc')}</p>
+              <ul>
+                <li><code>{t('modals.ms2d.eq')}</code></li>
+                <li><code>{t('modals.single.eq_h1')}</code></li>
+                <li><code>{t('modals.single.eq_h2')}</code></li>
+              </ul>
+              <h3>{t('modals.param_meaning')}</h3>
+              <ul>
+                <li>{t('params.sigma_l')}</li>
+                <li>{t('params.sigma_t')}</li>
+                <li>{t('params.angle')}</li>
+                <li>{t('params.Tau_in')}</li>
+                <li>{t('params.Tau_out')}</li>
+                <li>{t('params.Tau_open')}</li>
+                <li>{t('params.Tau_close')}</li>
+                <li>{t('params.gate')}</li>
+              </ul>
+            </>
+          ) : (
+            <>
+              <h3>{t('modals.math_model')} (Minimal Model)</h3>
+              <p>{t('modals.minimal2d.desc')}</p>
+              <ul>
+                <li><code>{t('modals.minimal2d.eq_u')}</code></li>
+                <li><code>{t('modals.minimal2d.eq_v')}</code></li>
+                <li><code>{t('modals.minimal2d.eq_w')}</code></li>
+                <li><code>{t('modals.minimal2d.eq_s')}</code></li>
+              </ul>
+              <p>{t('modals.minimal2d.currents')}</p>
+
+              <h3>{t('modals.param_meaning')}</h3>
+              <ul>
+                <li>{t('params.sigma_l')}</li>
+                <li>{t('params.sigma_t')}</li>
+                <li>{t('params.angle')}</li>
+                <li>{t('params.cellType')}</li>
+              </ul>
+            </>
+          )}
           
           <h3>{t('modals.numerical_method')}</h3>
           <p>{t('modals.ms2d.method')}</p>
-
-          <h3>{t('modals.param_meaning')}</h3>
-          <ul>
-            <li>{t('params.sigma_l')}</li>
-            <li>{t('params.sigma_t')}</li>
-            <li>{t('params.angle')}</li>
-            <li>{t('params.Tau_in')}</li>
-            <li>{t('params.Tau_out')}</li>
-            <li>{t('params.Tau_open')}</li>
-            <li>{t('params.Tau_close')}</li>
-            <li>{t('params.gate')}</li>
-            <li>{t('params.inicio')}</li>
-            <li>{t('params.intervalo')}</li>
-            <li>{t('params.duração')}</li>
-            <li>{t('params.amplitude')}</li>
-            <li>{t('params.dx')} / {t('params.dt')}</li>
-          </ul>
 
           <h3>{t('modals.ms2d.fibrosis_title')}</h3>
           <p>{t('modals.ms2d.fibrosis_desc')}</p>
@@ -582,15 +703,19 @@ const Model2DPage = ({ onBack }) => {
             <li>{t('params.border_zone')}</li>
           </ul>
 
-          <h3>{t('modals.ms2d.transmurality_title')}</h3>
-          <p>{t('modals.ms2d.transmurality_desc')}</p>
-          <ul>
-            <li>{t('params.endo_tau')}</li>
-            <li>{t('params.mid_tau')}</li>
-            <li>{t('params.epi_tau')}</li>
-            <li>{t('params.mid_start')}</li>
-            <li>{t('params.epi_start')}</li>
-          </ul>
+          {selectedModel === 'ms2d' && (
+            <>
+              <h3>{t('modals.ms2d.transmurality_title')}</h3>
+              <p>{t('modals.ms2d.transmurality_desc')}</p>
+              <ul>
+                <li>{t('params.endo_tau')}</li>
+                <li>{t('params.mid_tau')}</li>
+                <li>{t('params.epi_tau')}</li>
+                <li>{t('params.mid_start')}</li>
+                <li>{t('params.epi_start')}</li>
+              </ul>
+            </>
+          )}
         </div>
       </Modal>
     </div>

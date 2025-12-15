@@ -15,7 +15,7 @@
       "bistable": { "title": "Bistable", "desc": "Modelo unidimensional que exibe comportamento biestável." },
       "fhn": { "title": "FitzHugh-Nagumo", "desc": "Modelo simplificado da excitabilidade cardíaca em uma dimensão." },
       "ms_1d": { "title": "Mitchell-Schaeffer", "desc": "Mitchell-Schaeffer estendido para uma dimensão espacial." },
-      "model_2d": { "title": "Modelo Mitchell-Schaeffer 2D", "desc": "Simula a propagação de ondas 2D, permitindo protocolos S1-S2 e inclusão de fibrose." },
+      "model_2d": { "title": "Modelo de Tecido 2D", "desc": "Simula a propagação de ondas 2D usando Mitchell-Schaeffer ou Minimal Model." },
       "source_sink": { "title": "Source-Sink Mismatch", "desc": "Simula a propagação através de uma fenda variável em um obstáculo, investigando a falha de condução geométrica." }
     }
   },
@@ -197,9 +197,13 @@
       },
       "minimal": {
         "title": "Minimal Model",
-        "desc": "Um modelo de 4 variáveis que reproduz as propriedades de restituição e a forma do potencial de ação de diferentes tipos de células ventriculares humanas.",
-        "eq_v": "∂u/∂t = ∇(D∇u) - (J_fi + J_so + J_si)",
-        "eq_h": "Variáveis de gate: v (rápido), w (lento), s (lento). Controlam as correntes J_fi (inward), J_so (slow outward) e J_si (slow inward).",
+        "desc": "Um modelo de 4 variáveis que reproduz as propriedades de restituição e a forma do potencial de ação de diferentes tipos de células ventriculares humanas (Epicárdio, Endocárdio e Miocárdio-M).",
+        "eq_u": "∂u/∂t = ∇(D∇u) - (J_fi + J_so + J_si) + J_stim",
+        "eq_v": "dv/dt = (1 - H(u - θ_v))(v_inf - v)/τ_v_minus - H(u - θ_v)v/τ_v_plus",
+        "eq_w": "dw/dt = (1 - H(u - θ_w))(w_inf - w)/τ_w_minus - H(u - θ_w)w/τ_w_plus",
+        "eq_s": "ds/dt = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
+        "vars": "Variáveis: u (Voltagem Adimensional), v (Gate Rápido), w (Gate Lento), s (Gate Lento).",
+        "currents": "Correntes: J_fi (Entrada Rápida), J_so (Saída Lenta), J_si (Entrada Lenta). H(x) é a função Heaviside.",
         "method": "Euler Explícito para voltagem (u) e Rush-Larsen para as variáveis de gate (v, w, s).",
         "steps": [
           "Selecione o tipo de célula (Epicárdio, Endocárdio ou Miocárdio).",
@@ -223,13 +227,21 @@
       "method": "Espaço: Diferenças Finitas de 2ª Ordem. Tempo: Euler Explícito para potencial (v) e Rush-Larsen para gate (h)."
     },
     "ms2d": {
-      "desc": "Simula a propagação em tecido 2D. A condução depende da orientação das fibras (ângulo), com condutividades diferentes nas direções longitudinal e transversal.",
+      "desc": "Simula a propagação em tecido 2D. Utilozando os modelos Mitchell-Schaeffer e Minimal Model.",
       "eq": "∂v/∂t = ∇ · (D ∇v) + I_ion. Onde D é o tensor de difusão.",
       "fibrosis_title": "Simulação de Fibrose",
       "fibrosis_desc": "A fibrose é simulada criando regiões onde a condutividade é reduzida isotrópicamente. Pode ser Compacta (aleatória em todo o domínio) ou Difusa (área restrita). Ao usar uma Região Definida, você pode configurar uma 'Zona de Borda' onde a condutividade aumenta linearmente do valor da fibrose até o valor normal do tecido.",
       "method": "Espaço: Diferenças Finitas de 2ª Ordem. Tempo: Euler Explícito para potencial (v) e Rush-Larsen para gate (h).",
       "transmurality_title": "Transmuralidade",
       "transmurality_desc": "Simula a heterogeneidade das células ao longo da parede ventricular. O domínio é dividido em três camadas: Endocárdio, Miocárdio Médio (M-cells) e Epicárdio. Cada camada possui um parâmetro 'Tau close' diferente, resultando em diferentes durações de potencial de ação (APD). A posição das camadas é definida como uma porcentagem da largura total do tecido."
+    },
+    "minimal2d": {
+      "desc": "O Minimal Model é um modelo de 4 variáveis capaz de reproduzir formas de onda ventriculares humanas complexas com alta eficiência computacional.",
+      "eq_u": "∂u/∂t = ∇ · (D ∇u) - (J_fi + J_so + J_si)",
+      "eq_v": "dv/dt = (1 - H(u - θ_v))(v_inf - v)/τ_v_minus - H(u - θ_v)v/τ_v_plus",
+      "eq_w": "dw/dt = (1 - H(u - θ_w))(w_inf - w)/τ_w_minus - H(u - θ_w)w/τ_w_plus",
+      "eq_s": "ds/dt = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
+      "currents": "Onde J_fi, J_so e J_si são as correntes de entrada rápida, saída lenta e entrada lenta, respectivamente."
     },
     "source_sink": {
       "desc": "Investiga a falha de propagação ao passar por uma fenda estreita em um obstáculo. O obstáculo é circular e possui uma abertura que varia de tamanho.",

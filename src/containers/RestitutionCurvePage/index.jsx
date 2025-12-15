@@ -218,7 +218,7 @@ const RestitutionCurvePage = ({ onBack }) => {
       <div className="info-modal-content">
         <h2>{t(`modals.restitution.${modelKey}.title`)}</h2>
         
-        {/* Seção Geral: O que é a curva */}
+        {/*O que é a curva */}
         <h3>{t('modals.restitution.what_is')}</h3>
         <p>{t('modals.restitution.what_is_desc')}</p>
         
@@ -237,12 +237,29 @@ const RestitutionCurvePage = ({ onBack }) => {
         </ol>
 
         <h3>{t('modals.math_model')}</h3>
-        <p>
-          <code>{t(`modals.restitution.${modelKey}.eq_v`)}</code>
-        </p>
-        <p>
-          {t(`modals.restitution.${modelKey}.eq_h`)}
-        </p>
+        
+        {/* Para o minimal model */}
+        {selectedModel === 'minimal' ? (
+          <>
+            <ul>
+              <li><code>{t('modals.restitution.minimal.eq_u')}</code></li>
+              <li><code>{t('modals.restitution.minimal.eq_v')}</code></li>
+              <li><code>{t('modals.restitution.minimal.eq_w')}</code></li>
+              <li><code>{t('modals.restitution.minimal.eq_s')}</code></li>
+            </ul>
+            <p><strong>{t('modals.restitution.minimal.vars')}</strong></p>
+            <p>{t('modals.restitution.minimal.currents')}</p>
+          </>
+        ) : (
+          <>
+            <p>
+              <code>{t(`modals.restitution.${modelKey}.eq_v`)}</code>
+            </p>
+            <p>
+              {t(`modals.restitution.${modelKey}.eq_h`)}
+            </p>
+          </>
+        )}
 
         <h3>{t('modals.numerical_method')}</h3>
         <p>{t(`modals.restitution.${modelKey}.method`)}</p>
