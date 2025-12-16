@@ -100,7 +100,6 @@ const Model2DPage = ({ onBack }) => {
 
   // Edição de parâmetros do Minimal
   const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
-  const [editingCellType, setEditingCellType] = useState('epi');
 
   const [ms2dParams, setMs2dParams] = useState({
     sigma_l: 0.004, 
@@ -293,10 +292,11 @@ const Model2DPage = ({ onBack }) => {
   }, []);
 
   const handleMinimalCustomChange = (param, value) => {
+    const activeType = minimalParams.cellType;
     setMinimalCustomParams(prev => ({
       ...prev,
-      [editingCellType]: {
-        ...prev[editingCellType],
+      [activeType]: {
+        ...prev[activeType],
         [param]: parseFloat(value)
       }
     }));
@@ -435,21 +435,13 @@ const Model2DPage = ({ onBack }) => {
       {/* Parâmetros de célula */}
       {selectedModel === 'minimal' && (
         <div className="params-section">
-            <h3 style={{marginTop: '10px'}}>Parâmetros da Célula ({t(`params.${editingCellType}`)})</h3>
-            <div className="input-container">
-                <label>Editar Tipo:</label>
-                <select value={editingCellType} onChange={(e) => setEditingCellType(e.target.value)}>
-                    <option value="epi">{t('params.epi')}</option>
-                    <option value="endo">{t('params.endo')}</option>
-                    <option value="myo">{t('params.myo')}</option>
-                </select>
-            </div>
+            <h3 style={{marginTop: '10px'}}>Parâmetros da Célula ({t(`params.${minimalParams.cellType}`)})</h3>
             <div className="params-container">
-                {Object.keys(minimalCustomParams[editingCellType]).map(key => (
+                {Object.keys(minimalCustomParams[minimalParams.cellType]).map(key => (
                     <Input 
                         key={key}
                         label={key}
-                        value={minimalCustomParams[editingCellType][key]}
+                        value={minimalCustomParams[minimalParams.cellType][key]}
                         onChange={(e) => handleMinimalCustomChange(key, e.target.value)}
                     />
                 ))}
