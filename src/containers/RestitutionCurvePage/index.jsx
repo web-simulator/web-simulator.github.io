@@ -11,6 +11,34 @@ import MinimalWorker from '../../simulation_minimal_restitution.worker.js?worker
 import { useTranslation } from 'react-i18next';
 import './styles.css';
 
+// Valores padrão iniciais do Minimal Model
+const DEFAULT_MINIMAL_PARAMS = {
+  endo: {
+    u_o: 0.0, u_u: 1.56, theta_v: 0.3, theta_w: 0.13, theta_vminus: 0.2, theta_o: 0.006,
+    tau_v1minus: 75.0, tau_v2minus: 10.0, tau_vplus: 1.4506,
+    tau_w1minus: 6.0, tau_w2minus: 140.0, k_wminus: 200.0, u_wminus: 0.016, tau_wplus: 280.0,
+    tau_fi: 0.15, tau_o1: 470.0, tau_o2: 6.0, tau_so1: 40.0, tau_so2: 1.2,
+    k_so: 2.0, u_so: 0.65, tau_s1: 2.7342, tau_s2: 2.0, k_s: 2.0994, u_s: 0.9087, tau_si: 2.9013,
+    tau_winf: 0.0273, w_infstar: 0.78
+  },
+  myo: {
+    u_o: 0.0, u_u: 1.61, theta_v: 0.3, theta_w: 0.13, theta_vminus: 0.1, theta_o: 0.005,
+    tau_v1minus: 80.0, tau_v2minus: 1.4506, tau_vplus: 1.4506,
+    tau_w1minus: 70.0, tau_w2minus: 8.0, k_wminus: 200.0, u_wminus: 0.016, tau_wplus: 280.0,
+    tau_fi: 0.117, tau_o1: 410.0, tau_o2: 7.0, tau_so1: 91.0, tau_so2: 0.8,
+    k_so: 2.1, u_so: 0.6, tau_s1: 2.7342, tau_s2: 4.0, k_s: 2.0994, u_s: 0.9087, tau_si: 3.3849,
+    tau_winf: 0.01, w_infstar: 0.5
+  },
+  epi: {
+    u_o: 0.0, u_u: 1.55, theta_v: 0.3, theta_w: 0.13, theta_vminus: 0.006, theta_o: 0.006,
+    tau_v1minus: 60.0, tau_v2minus: 1150.0, tau_vplus: 1.4506,
+    tau_w1minus: 60.0, tau_w2minus: 15.0, k_wminus: 65.0, u_wminus: 0.03, tau_wplus: 200.0,
+    tau_fi: 0.165, tau_o1: 400.0, tau_o2: 6.0, tau_so1: 30.0181, tau_so2: 0.9957,
+    k_so: 2.0458, u_so: 0.65, tau_s1: 2.7342, tau_s2: 16.0, k_s: 2.0994, u_s: 0.9087, tau_si: 1.8875,
+    tau_winf: 0.07, w_infstar: 0.94
+  }
+};
+
 const RestitutionCurvePage = ({ onBack }) => {
   const { t } = useTranslation();
   const [data, setData] = useState([]);
@@ -21,6 +49,7 @@ const RestitutionCurvePage = ({ onBack }) => {
   const [showTimeSeries, setShowTimeSeries] = useState(false);
   const [selectedModel, setSelectedModel] = useState('minimal');
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false); 
+  const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
 
   // Parâmetros editáveis para cada modelo
   const [editableParams, setEditableParams] = useState({
@@ -195,6 +224,18 @@ const RestitutionCurvePage = ({ onBack }) => {
     }));
   }, [selectedModel]);
 
+  // Função para lidar com mudanças nos parâmetros de celula
+  const handleMinimalCustomChange = (param, value) => {
+    const activeType = editableParams.minimal.cellType;
+    setMinimalCustomParams(prev => ({
+      ...prev,
+      [activeType]: {
+        ...prev[activeType],
+        [param]: parseFloat(value)
+      }
+    }));
+  };
+
   // Função para iniciar a simulação
   const handleSimularClick = useCallback(() => {
     if (worker) {
@@ -202,9 +243,15 @@ const RestitutionCurvePage = ({ onBack }) => {
       setData([]);
       setRestitutionData([]);
       setAnalyticalData([]);
-      worker.postMessage(editableParams[selectedModel]);
+      
+      const payload = { ...editableParams[selectedModel] };
+      if (selectedModel === 'minimal') {
+        payload.minimalCellParams = minimalCustomParams;
+      }
+      
+      worker.postMessage(payload);
     }
-  }, [worker, editableParams, selectedModel]);
+  }, [worker, editableParams, selectedModel, minimalCustomParams]);
 
   // Função para renderizar o conteúdo do modal de informações
   const renderInfoModalContent = () => {
@@ -322,6 +369,23 @@ const RestitutionCurvePage = ({ onBack }) => {
           />
         ))}
       </div>
+
+      {/*Parâmetros de celula*/}
+      {selectedModel === 'minimal' && (
+        <div className="params-section">
+            <h3 style={{marginTop: '20px'}}>Parâmetros da Célula ({t(`params.${currentParams.cellType}`)})</h3>
+            <div className="params-container">
+                {Object.keys(minimalCustomParams[currentParams.cellType]).map(key => (
+                    <Input 
+                        key={key}
+                        label={key}
+                        value={minimalCustomParams[currentParams.cellType][key]}
+                        onChange={(e) => handleMinimalCustomChange(key, e.target.value)}
+                    />
+                ))}
+            </div>
+        </div>
+      )}
 
       <div className="button-container">
         <Button onClick={handleSimularClick} disabled={loading}>

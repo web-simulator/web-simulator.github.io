@@ -36,7 +36,7 @@ function calculateAPD90(v, dt, u_rest, u_amp) {
   return (repolarizacaoIdx - despolarizacaoIdx) * dt;
 }
 
-// Definição dos parâmetros para cada tipo de célula
+// Parâmetros padrão para os tipos de célula
 const CELL_PARAMS = {
   endo: {
     u_o: 0.0, u_u: 1.56, theta_v: 0.3, theta_w: 0.13, theta_vminus: 0.2, theta_o: 0.006,
@@ -195,10 +195,15 @@ function runSingleCycle(simParams, modelParams) {
 self.onmessage = (e) => {
   const params = e.data;
   const {
-    BCL_S2_inicial, BCL_S2_final, delta_CL, downsamplingFactor, cellType = 'epi', dt
+    BCL_S2_inicial, BCL_S2_final, delta_CL, downsamplingFactor, cellType = 'epi', dt, minimalCellParams
   } = params;
 
-  const modelParams = CELL_PARAMS[cellType] || CELL_PARAMS['epi'];
+  let modelParams;
+  if (minimalCellParams && minimalCellParams[cellType]) {
+    modelParams = minimalCellParams[cellType];
+  } else {
+    modelParams = CELL_PARAMS[cellType] || CELL_PARAMS['epi'];
+  }
 
   const num_ciclos = Math.floor((BCL_S2_inicial - BCL_S2_final) / delta_CL) + 1;
   const restitutionData = [];
