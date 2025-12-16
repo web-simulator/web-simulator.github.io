@@ -8,8 +8,8 @@
       "2d": "Modelos 2D"
     },
     "models": {
-      "single_stimulus": { "title": "Mitchell-Schaeffer (1 Estímulo)", "desc": "Simula a resposta de um único estímulo elétrico em uma célula cardíaca." },
-      "multiple_stimuli": { "title": "Mitchell-Schaeffer (8 Estímulos)", "desc": "Observa a resposta celular a uma série de estímulos com intervalo fixo." },
+      "single_stimulus": { "title": "1 Estímulo", "desc": "Simula a resposta de um único estímulo elétrico em uma célula cardíaca." },
+      "multiple_stimuli": { "title": "8 Estímulos", "desc": "Observa a resposta celular a uma série de estímulos com intervalo fixo." },
       "s1_s2": { "title": "Protocolo S1-S2", "desc": "Protocolo padrão para investigar a refratariedade e a vulnerabilidade do tecido cardíaco." },
       "restitution_curve": { "title": "Curva de Restituição", "desc": "Analisa a relação entre o intervalo de acoplamento e a duração do potencial de ação, utilizando diferentes protocolos." },
       "bistable": { "title": "Bistable", "desc": "Modelo unidimensional que exibe comportamento biestável." },
@@ -127,27 +127,65 @@
     "cellType": "Tipo de Célula",
     "epi": "Epicárdio",
     "endo": "Endocárdio",
-    "myo": "Miocárdio (M-Cell)"
+    "myo": "Miocárdio (M-Cell)",
+    "u_o": "u_o", "u_u": "u_u", "theta_v": "theta_v", "theta_w": "theta_w", 
+    "theta_vminus": "theta_vminus", "theta_o": "theta_o", 
+    "tau_v1minus": "tau_v1minus", "tau_v2minus": "tau_v2minus", "tau_vplus": "tau_vplus", 
+    "tau_w1minus": "tau_w1minus", "tau_w2minus": "tau_w2minus", "k_wminus": "k_wminus", 
+    "u_wminus": "u_wminus", "tau_wplus": "tau_wplus", 
+    "tau_fi": "tau_fi", "tau_o1": "tau_o1", "tau_o2": "tau_o2", 
+    "tau_so1": "tau_so1", "tau_so2": "tau_so2", "k_so": "k_so", "u_so": "u_so", 
+    "tau_s1": "tau_s1", "tau_s2": "tau_s2", "k_s": "k_s", "u_s": "u_s", 
+    "tau_si": "tau_si", "tau_winf": "tau_winf", "w_infstar": "w_infstar"
   },
   "modals": {
     "math_model": "Modelo Matemático",
     "numerical_method": "Método Numérico",
     "param_meaning": "Significado dos Parâmetros",
     "protocol": "Protocolo",
+    "ms_desc_base": "O modelo Mitchell-Schaeffer é um modelo simplificado que descreve o potencial de ação cardíaco utilizando duas variáveis de estado.",
+    "minimal_desc_base": "O Minimal Model é um modelo de 4 variáveis projetado para reproduzir formas de onda complexas e propriedades de restituição de células ventriculares humanas.",
+    "eq_u_minimal": "∂u/∂t = ∇(D∇u) - (J_fi + J_so + J_si) + J_stim",
+    "eq_v_minimal": "dv/dt = (1 - H(u - θ_v))(v_inf - v)/τ_v_minus - H(u - θ_v)v/τ_v_plus",
+    "eq_w_minimal": "dw/dt = (1 - H(u - θ_w))(w_inf - w)/τ_w_minus - H(u - θ_w)w/τ_w_plus",
+    "eq_s_minimal": "ds/dt = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
     "single": {
-      "desc": "Esta simulação usa o modelo Mitchell-Schaeffer para descrever o potencial de ação cardíaco. É um modelo de duas variáveis, simulando o comportamento de uma única célula.",
-      "eq_v": "dv/dt = (h * v² * (1 - v)) / τ_in - v / τ_out + I_stim",
-      "eq_h1": "dh/dt = (1 - h) / τ_open (se v < v_gate)",
-      "eq_h2": "dh/dt = -h / τ_close (se v ≥ v_gate)",
-      "method": "As equações são resolvidas usando o método de Euler Explícito para o potencial (v) e Rush-Larsen para a variável de portão (h)."
+      "ms": {
+        "title": "Mitchell-Schaeffer - 1 Estímulo",
+        "desc": "Nesta simulação, aplicamos um único estímulo elétrico externo a uma célula cardíaca modelada pelo Mitchell-Schaeffer. Isso permite observar a dinâmica básica de despolarização (início do potencial de ação) e repolarização (retorno ao repouso).",
+        "eq_v": "dv/dt = (h * v² * (1 - v)) / τ_in - v / τ_out + I_stim",
+        "eq_h1": "dh/dt = (1 - h) / τ_open (se v < v_gate)",
+        "eq_h2": "dh/dt = -h / τ_close (se v ≥ v_gate)"
+      },
+      "minimal": {
+        "title": "Minimal Model - 1 Estímulo",
+        "desc": "Esta simulação aplica um único estímulo a uma célula modelada pelo Minimal Model. Diferente do Mitchell-Schaeffer, este modelo possui 4 variáveis (u, v, w, s) e três correntes (J_fi, J_so, J_si), permitindo modelar com precisão o Epicárdio, Endocárdio e Miocárdio Médio.",
+        "vars": "Variáveis: u (Voltagem), v (Gate Rápido), w (Gate Lento), s (Gate Lento).",
+        "currents": "Correntes: J_fi (Entrada Rápida de Na+), J_so (Saída Lenta de K+), J_si (Entrada Lenta de Ca2+)."
+      },
+      "method": "As equações diferenciais são resolvidas numericamente. A voltagem (v ou u) utiliza o método de Euler Explícito, enquanto as variáveis de portão (h, v, w, s) utilizam o método de Rush-Larsen para maior estabilidade."
     },
     "multiple": {
       "protocol_title": "Protocolo de Estimulação",
-      "protocol_desc": "Em vez de um único pulso, uma sequência de estímulos é aplicada. O parâmetro BCL (Basic Cycle Length) define o intervalo de tempo entre o início de um estímulo e o próximo."
+      "ms": {
+        "title": "Mitchell-Schaeffer - Múltiplos Estímulos",
+        "desc": "Neste cenário, a célula é submetida a um trem de pulsos periódicos. O parâmetro BCL (Basic Cycle Length) define o intervalo entre os estímulos. Este protocolo é útil para observar a adaptação da duração do potencial de ação (APD) ao ritmo de estimulação e verificar se a célula consegue repolarizar completamente antes do próximo estímulo."
+      },
+      "minimal": {
+        "title": "Minimal Model - Múltiplos Estímulos",
+        "desc": "Utilizando o Minimal Model, aplicamos uma série de 8 estímulos. Devido à complexidade das correntes (especialmente J_si), o Minimal Model exibe uma dinâmica de adaptação de APD mais rica, capturando efeitos de memória cardíaca que modelos mais simples podem perder. É possível observar a alternância de APD em frequências altas."
+      }
     },
     "s1s2": {
-      "protocol_title": "Protocolo de Estimulação",
-      "protocol_desc": "O protocolo S1-S2 é um método padrão em eletrofisiologia para medir o período refratário.",
+      "protocol_title": "Protocolo S1-S2",
+      "ms": {
+        "title": "Mitchell-Schaeffer - Protocolo S1-S2",
+        "desc": "O protocolo S1-S2 é usado para determinar o período refratário e a curva de restituição. Uma série de estímulos S1 (ritmo base) é aplicada para estabilizar a célula, seguida por um único estímulo prematuro S2. Variando o intervalo de S2, observamos quando a célula volta a ser excitável."
+      },
+      "minimal": {
+        "title": "Minimal Model - Protocolo S1-S2",
+        "desc": "No Minimal Model, o protocolo S1-S2 permite uma análise detalhada da refratariedade dependente dos tipos celulares (Epi, Endo, Myo). O estímulo S2 prematuro interage com as variáveis de recuperação lenta (w e s), o que pode resultar em bloqueios de condução ou potenciais de ação de amplitude reduzida, cruciais para o entendimento de arritmias."
+      },
       "s1_desc": "S1: Sequência de estímulos para levar a célula ao estado estacionário.",
       "s2_desc": "S2: Um único estímulo prematuro aplicado após o último S1."
     },
@@ -227,7 +265,7 @@
       "method": "Espaço: Diferenças Finitas de 2ª Ordem. Tempo: Euler Explícito para potencial (v) e Rush-Larsen para gate (h)."
     },
     "ms2d": {
-      "desc": "Simula a propagação em tecido 2D. Utilozando os modelos Mitchell-Schaeffer e Minimal Model.",
+      "desc": "Simula a propagação em tecido 2D. Utiliza o modelo Mitchell-Schaeffer padrão.",
       "eq": "∂v/∂t = ∇ · (D ∇v) + I_ion. Onde D é o tensor de difusão.",
       "fibrosis_title": "Simulação de Fibrose",
       "fibrosis_desc": "A fibrose é simulada criando regiões onde a condutividade é reduzida isotrópicamente. Pode ser Compacta (aleatória em todo o domínio) ou Difusa (área restrita). Ao usar uma Região Definida, você pode configurar uma 'Zona de Borda' onde a condutividade aumenta linearmente do valor da fibrose até o valor normal do tecido.",

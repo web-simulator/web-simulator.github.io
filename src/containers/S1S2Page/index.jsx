@@ -4,8 +4,36 @@ import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal'; 
 import SimulationWorker from '../../simulation_s1_s2.worker.js?worker';
+import MinimalWorker from '../../simulation_minimal_0d.worker.js?worker';
 import { useTranslation } from 'react-i18next';
 import './styles.css';
+
+const DEFAULT_MINIMAL_PARAMS = {
+  endo: {
+    u_o: 0.0, u_u: 1.56, theta_v: 0.3, theta_w: 0.13, theta_vminus: 0.2, theta_o: 0.006,
+    tau_v1minus: 75.0, tau_v2minus: 10.0, tau_vplus: 1.4506,
+    tau_w1minus: 6.0, tau_w2minus: 140.0, k_wminus: 200.0, u_wminus: 0.016, tau_wplus: 280.0,
+    tau_fi: 0.15, tau_o1: 470.0, tau_o2: 6.0, tau_so1: 40.0, tau_so2: 1.2,
+    k_so: 2.0, u_so: 0.65, tau_s1: 2.7342, tau_s2: 2.0, k_s: 2.0994, u_s: 0.9087, tau_si: 2.9013,
+    tau_winf: 0.0273, w_infstar: 0.78
+  },
+  myo: {
+    u_o: 0.0, u_u: 1.61, theta_v: 0.3, theta_w: 0.13, theta_vminus: 0.1, theta_o: 0.005,
+    tau_v1minus: 80.0, tau_v2minus: 1.4506, tau_vplus: 1.4506,
+    tau_w1minus: 70.0, tau_w2minus: 8.0, k_wminus: 200.0, u_wminus: 0.016, tau_wplus: 280.0,
+    tau_fi: 0.117, tau_o1: 410.0, tau_o2: 7.0, tau_so1: 91.0, tau_so2: 0.8,
+    k_so: 2.1, u_so: 0.6, tau_s1: 2.7342, tau_s2: 4.0, k_s: 2.0994, u_s: 0.9087, tau_si: 3.3849,
+    tau_winf: 0.01, w_infstar: 0.5
+  },
+  epi: {
+    u_o: 0.0, u_u: 1.55, theta_v: 0.3, theta_w: 0.13, theta_vminus: 0.006, theta_o: 0.006,
+    tau_v1minus: 60.0, tau_v2minus: 1150.0, tau_vplus: 1.4506,
+    tau_w1minus: 60.0, tau_w2minus: 15.0, k_wminus: 65.0, u_wminus: 0.03, tau_wplus: 200.0,
+    tau_fi: 0.165, tau_o1: 400.0, tau_o2: 6.0, tau_so1: 30.0181, tau_so2: 0.9957,
+    k_so: 2.0458, u_so: 0.65, tau_s1: 2.7342, tau_s2: 16.0, k_s: 2.0994, u_s: 0.9087, tau_si: 1.8875,
+    tau_winf: 0.07, w_infstar: 0.94
+  }
+};
 
 const S1S2Page = ({ onBack }) => {
   const { t } = useTranslation();
@@ -14,28 +42,48 @@ const S1S2Page = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
-  // Estado unificado com todos os parâmetros editáveis
+  const [selectedModel, setSelectedModel] = useState('ms');
+  const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
+
   const [editableParams, setEditableParams] = useState({
-    BCL_S1: 250,
-    intervalo_S2: 180,
-    despolarização: 0.3,
-    repolarização: 6.0,
-    recuperação: 120.0,
-    inativação: 80.0,
-    gate: 0.13,
-    inicio: 5.0,
-    duração: 1.0,
-    amplitude: 1.0,
-    dt: 0.01,
-    v_inicial: 0.0,
-    h_inicial: 1.0,
-    num_estimulos_s1: 8,
-    downsamplingFactor: 100,
+    ms: {
+        BCL_S1: 250,
+        intervalo_S2: 180,
+        despolarização: 0.3,
+        repolarização: 6.0,
+        recuperação: 120.0,
+        inativação: 80.0,
+        gate: 0.13,
+        inicio: 5.0,
+        duração: 1.0,
+        amplitude: 1.0,
+        dt: 0.01,
+        v_inicial: 0.0,
+        h_inicial: 1.0,
+        num_estimulos_s1: 8,
+        downsamplingFactor: 100,
+    },
+    minimal: {
+        cellType: 'epi',
+        BCL_S1: 400,
+        intervalo_S2: 300,
+        inicio: 10.0,
+        duração: 1.0,
+        amplitude: 1.0,
+        dt: 0.1,
+        num_estimulos_s1: 5,
+        downsamplingFactor: 50,
+    }
   });
 
 
   useEffect(() => {
-    const simulationWorker = new SimulationWorker();
+    let simulationWorker;
+    if (selectedModel === 'minimal') {
+      simulationWorker = new MinimalWorker();
+    } else {
+      simulationWorker = new SimulationWorker();
+    }
     setWorker(simulationWorker);
 
     simulationWorker.onmessage = (e) => {
@@ -46,41 +94,102 @@ const S1S2Page = ({ onBack }) => {
     return () => {
       simulationWorker.terminate();
     };
-  }, []);
+  }, [selectedModel]);
 
   // Função única para atualizar qualquer parâmetro (VERSÃO ATUAL)
   const handleChange = useCallback((e, name) => {
+    const value = name === 'cellType' ? e.target.value : parseFloat(e.target.value);
     setEditableParams((prevParams) => ({
       ...prevParams,
-      [name]: parseFloat(e.target.value)
+      [selectedModel]: {
+        ...prevParams[selectedModel],
+        [name]: value
+      }
     }));
-  }, []);
+  }, [selectedModel]);
 
-  // Envia o estado unificado para o worker
+  const handleMinimalCustomChange = (param, value) => {
+    const activeType = editableParams.minimal.cellType;
+    setMinimalCustomParams(prev => ({
+      ...prev,
+      [activeType]: {
+        ...prev[activeType],
+        [param]: parseFloat(value)
+      }
+    }));
+  };
+
   const handleSimularClick = useCallback(() => {
     if (worker) {
       setLoading(true);
-      worker.postMessage(editableParams);
+      const payload = { ...editableParams[selectedModel] };
+      if (selectedModel === 'minimal') {
+        payload.protocol = 's1s2';
+        payload.minimalCellParams = minimalCustomParams;
+      }
+      worker.postMessage(payload);
     }
-  }, [worker, editableParams]);
+  }, [worker, editableParams, selectedModel, minimalCustomParams]);
+
+  const currentParams = editableParams[selectedModel];
 
   return (
     <div className="page-container">
       <Button onClick={onBack}>{t('common.back')}</Button>
       <h1>{t('home.models.s1_s2.title')}</h1>
       
-      {/* Inputs */}
+      <div className="params-container">
+        <div className="input-container">
+          <label>{t('common.select_model')}</label>
+          <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}>
+            <option value="ms">Mitchell-Schaeffer</option>
+            <option value="minimal">{t('modals.restitution.minimal.title')}</option>
+          </select>
+        </div>
+      </div>
+
       <h2>{t('common.simulation_params')}</h2>
       <div className="params-container">
-        {Object.keys(editableParams).map((key) => (
+        {selectedModel === 'minimal' && (
+          <div className="input-container">
+            <label>{t('params.cellType')}</label>
+            <select 
+              value={currentParams.cellType} 
+              onChange={(e) => handleChange(e, 'cellType')}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            >
+              <option value="epi">{t('params.epi')}</option>
+              <option value="endo">{t('params.endo')}</option>
+              <option value="myo">{t('params.myo')}</option>
+            </select>
+          </div>
+        )}
+
+        {Object.keys(currentParams).filter(key => key !== 'cellType').map((key) => (
           <Input
             key={key}
-            label={t(`params.${key}`)}
-            value={editableParams[key]}
+            label={t(`params.${key}`) || key}
+            value={currentParams[key]}
             onChange={(e) => handleChange(e, key)}
           />
         ))}
       </div>
+
+      {selectedModel === 'minimal' && (
+        <div className="params-section">
+            <h3 style={{marginTop: '20px'}}>Parâmetros da Célula ({t(`params.${currentParams.cellType}`)})</h3>
+            <div className="params-container">
+                {Object.keys(minimalCustomParams[currentParams.cellType]).map(key => (
+                    <Input 
+                        key={key}
+                        label={t(`params.${key}`) || key}
+                        value={minimalCustomParams[currentParams.cellType][key]}
+                        onChange={(e) => handleMinimalCustomChange(key, e.target.value)}
+                    />
+                ))}
+            </div>
+        </div>
+      )}
 
       <Button onClick={handleSimularClick} disabled={loading}>
         {loading ? t('common.simulating') : t('common.simulate')}
@@ -100,40 +209,47 @@ const S1S2Page = ({ onBack }) => {
           <h2>{t('home.models.s1_s2.title')}</h2>
           
           <h3>{t('modals.s1s2.protocol_title')}</h3>
-          <p>{t('modals.s1s2.protocol_desc')}</p>
-          <ul>
-            <li><strong>S1:</strong> {t('modals.s1s2.s1_desc')}</li>
-            <li><strong>S2:</strong> {t('modals.s1s2.s2_desc')}</li>
-          </ul>
-          <p>
-            Ao variar o <code>intervalo_S2</code>, pode-se encontrar o menor intervalo que ainda consegue gerar um potencial de ação, definindo assim o período refratário da célula.
-          </p>
-          
-          <h3>{t('modals.math_model')}</h3>
-          <p>O modelo celular é o Mitchell-Schaeffer:</p>
-          <ul>
-            <li><code>{t('modals.single.eq_v')}</code></li>
-            <li><code>{t('modals.single.eq_h1')}</code></li>
-            <li><code>{t('modals.single.eq_h2')}</code></li>
-          </ul>
+          {selectedModel === 'ms' ? (
+            <>
+              <p>{t('modals.s1s2.ms.desc')}</p>
+              <ul>
+                <li><strong>S1:</strong> {t('modals.s1s2.s1_desc')}</li>
+                <li><strong>S2:</strong> {t('modals.s1s2.s2_desc')}</li>
+              </ul>
+              <h3>{t('modals.math_model')}</h3>
+              <p>{t('modals.ms_desc_base')}</p>
+              <ul>
+                <li><code>{t('modals.single.ms.eq_v')}</code></li>
+                <li><code>{t('modals.single.ms.eq_h1')}</code></li>
+                <li><code>{t('modals.single.ms.eq_h2')}</code></li>
+              </ul>
+            </>
+          ) : (
+            <>
+              <p>{t('modals.s1s2.minimal.desc')}</p>
+              <ul>
+                <li><strong>S1:</strong> {t('modals.s1s2.s1_desc')}</li>
+                <li><strong>S2:</strong> {t('modals.s1s2.s2_desc')}</li>
+              </ul>
+              <h3>{t('modals.math_model')}</h3>
+              <p>{t('modals.minimal_desc_base')}</p>
+              <ul>
+                <li><code>{t('modals.eq_u_minimal')}</code></li>
+                <li><code>{t('modals.eq_v_minimal')}</code></li>
+                <li><code>{t('modals.eq_w_minimal')}</code></li>
+                <li><code>{t('modals.eq_s_minimal')}</code></li>
+              </ul>
+            </>
+          )}
 
           <h3>{t('modals.numerical_method')}</h3>
           <p>{t('modals.single.method')}</p>
 
           <h3>{t('modals.param_meaning')}</h3>
           <ul>
-            <li>{t('params.BCL_S1')}</li>
-            <li>{t('params.intervalo_S2')}</li>
-            <li>{t('params.num_estimulos_s1')}</li>
-            <li>{t('params.despolarização')}</li>
-            <li>{t('params.repolarização')}</li>
-            <li>{t('params.recuperação')}</li>
-            <li>{t('params.inativação')}</li>
-            <li>{t('params.gate')}</li>
-            <li>{t('params.inicio')}</li>
-            <li>{t('params.duração')}</li>
-            <li>{t('params.amplitude')}</li>
-            <li>{t('params.dt')}</li>
+            {Object.keys(currentParams).map(key => (
+               <li key={key}><strong>{t(`params.${key}`) || key}:</strong> {key}</li>
+            ))}
           </ul>
         </div>
       </Modal>

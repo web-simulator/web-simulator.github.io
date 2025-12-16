@@ -1,7 +1,6 @@
 import Button from '../../components/Button';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
-import './styles.css';
 
 const HomePage = ({ onNavigate }) => {
   const { t } = useTranslation();
@@ -73,24 +72,62 @@ const HomePage = ({ onNavigate }) => {
 
   // Renderiza a página inicial com seções para cada categoria de modelo
   return (
-    <div className="homepage-container">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-10">
       <LanguageSwitcher />
-      <header className="homepage-header">
-        <h1>{t('home.title')}</h1>
+      
+      {/* parte de cima */}
+      <header className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-16 px-4 shadow-lg mb-10">
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-3xl md:text-5xl font-extrabold mb-4 tracking-tight">
+            {t('home.title')}
+          </h1>
+          <p className="text-base md:text-xl text-emerald-100 max-w-2xl mx-auto font-light">
+            Explore modelos matemáticos avançados de eletrofisiologia cardíaca em um ambiente interativo.
+          </p>
+        </div>
       </header>
       
-      <main className="models-sections">
+      {/* Conteúdo principal */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         {Object.keys(modelsByCategory).map(categoryKey => (
-          <section key={categoryKey} className="models-section">
-            <h2>{t(categoryKey)}</h2>
-            <div className="models-grid">
+          <section key={categoryKey} className="animate-fade-in-up">
+            <div className="flex items-center mb-6 border-b border-slate-200 pb-2">
+              <h2 className="text-xl md:text-2xl font-bold text-slate-800 uppercase tracking-wide">
+                {t(categoryKey)}
+              </h2>
+              <div className="ml-4 h-1 flex-grow bg-gradient-to-r from-emerald-500 to-transparent rounded-full opacity-30"></div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {modelsByCategory[categoryKey].map(model => (
-                <div key={model.id} className="model-card">
-                  <h3>{t(model.title)}</h3>
-                  <p>{t(model.description)}</p>
-                  <Button onClick={() => onNavigate(model.id)} className="launch-button">
-                    {t('home.btn_start')}
-                  </Button>
+                <div 
+                  key={model.id} 
+                  className="bg-white rounded-xl shadow hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border border-slate-100 overflow-hidden flex flex-col group h-full"
+                >
+                  <div className="p-6 flex-grow flex flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300">
+                        <i class="bi bi-lightning-charge"></i>
+                      </div>
+                    </div>
+                    
+                    <h3 className="text-lg font-semibold text-slate-900 mb-2 group-hover:text-emerald-700 transition-colors">
+                      {t(model.title)}
+                    </h3>
+                    <p className="text-slate-500 text-sm leading-relaxed mb-6 flex-grow">
+                      {t(model.description)}
+                    </p>
+                    
+                    <div className="mt-auto pt-4 border-t border-slate-50 w-full">
+                      <Button 
+                        onClick={() => onNavigate(model.id)} 
+                        className="w-full justify-center bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-medium py-2 rounded-lg shadow-sm transition-all duration-200 flex items-center gap-2"
+                      >
+                        {t('home.btn_start')}
+                        <i class="bi bi-arrow-right"></i>
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

@@ -1,10 +1,16 @@
 import './styles.css';
 
-//Componente de botão 
-const Button = ({ children, onClick, disabled, className }) => {
+const Button = ({ children, onClick, disabled, className = '', style }) => {
+  const isTailwind = className.includes('bg-');
+  
   return (
-    <button className={`custom-button ${className}`} onClick={onClick} disabled={disabled}>
-      {children} {/* Renderiza o conteúdo do botão*/}
+    <button 
+      className={`${isTailwind ? '' : 'custom-button'} ${className}`} 
+      onClick={onClick} 
+      disabled={disabled}
+      style={style}
+    >
+      {children}
     </button>
   );
 };
