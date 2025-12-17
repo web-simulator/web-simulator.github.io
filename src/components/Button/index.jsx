@@ -1,5 +1,3 @@
-import './styles.css';
-
 const Button = ({ children, onClick, disabled, className = '', style }) => {
   const isTailwind = className.includes('bg-');
   

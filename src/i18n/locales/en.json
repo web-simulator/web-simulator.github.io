@@ -11,84 +11,66 @@
       "single_stimulus": { "title": "1 Stimulus", "desc": "Simulates the response of a single electrical stimulus in a cardiac cell." },
       "multiple_stimuli": { "title": "8 Stimuli", "desc": "Observes cellular response to a series of stimuli with a fixed interval." },
       "s1_s2": { "title": "S1-S2 Protocol", "desc": "Standard protocol to investigate cardiac tissue refractoriness and vulnerability." },
-      "restitution_curve": { "title": "Restitution Curve", "desc": "Analyzes the relationship between coupling interval and action potential duration using different protocols." },
+      "restitution_curve": { "title": "Restitution Curve", "desc": "Analyzes the relationship between coupling interval and action potential duration." },
       "bistable": { "title": "Bistable", "desc": "One-dimensional model exhibiting bistable behavior." },
       "fhn": { "title": "FitzHugh-Nagumo", "desc": "Simplified model of cardiac excitability in one dimension." },
-      "ms_1d": { "title": "Mitchell-Schaeffer", "desc": "Mitchell-Schaeffer extended to a spatial dimension." },
-      "model_2d": { "title": "2D Tissue Model", "desc": "Simulates 2D wave propagation using Mitchell-Schaeffer or Minimal Model." },
-      "source_sink": { "title": "Source-Sink Mismatch", "desc": "Simulates propagation through a variable slit in an obstacle, investigating geometric conduction failure." }
+      "ms_1d": { "title": "Mitchell-Schaeffer 1D", "desc": "Mitchell-Schaeffer extended to a spatial dimension." },
+      "model_2d": { "title": "2D Tissue Model", "desc": "Simulates 2D wave propagation using Mitchell-Schaeffer or Minimal Model, with fibrosis and anisotropy." },
+      "source_sink": { "title": "Source-Sink Mismatch", "desc": "Simulates propagation through a variable slit in an obstacle." }
     }
   },
   "common": {
-    "back": "Back to Home",
+    "back": "Back",
     "simulate": "Simulate",
+    "resimulate": "Resimulate",
     "simulating": "Simulating...",
+    "calculating": "Calculating...",
+    "ready": "Ready to simulate",
     "pause": "Pause",
     "resume": "Resume",
-    "line_chart": "Line Chart",
-    "color_chart": "Color Chart",
-    "time": "Time",
-    "speed": "Animation Speed",
+    "stop": "Stop",
     "more_info": "Learn more about this simulation",
-    "loading": "Waiting for simulation...",
-    "initial_condition": "Initial Condition",
-    "left_pulse": "Edge Pulse",
-    "reentry": "Reentry Simulation",
+    "select_model": "Select Model",
+    "configuration": "Configuration",
+    "simulation_params": "Simulation Parameters",
+    "geometry": "Geometry",
+    "stimuli": "Stimuli",
     "stimulus": "Stimulus",
-    "remove": "Remove",
-    "add_stimulus": "Add Stimulus",
-    "shape": "Shape",
-    "rectangle": "Rectangle",
-    "circle": "Circle",
-    "fibrosis": "Fibrosis Parameters",
+    "fibrosis": "Fibrosis",
     "transmurality": "Transmurality",
     "enable_fibrosis": "Enable Fibrosis",
     "enable_transmurality": "Enable Transmurality",
-    "fibrosis_type": "Fibrosis Type",
+    "tissue_properties": "Tissue Properties",
+    "heterogeneity": "Heterogeneity",
+    "ms_model": "Mitchell-Schaeffer Model",
+    "minimal_model": "Minimal Model",
+    "fibrosis_type": "Type",
     "compact": "Compact",
     "diffuse": "Diffuse",
     "distribution": "Distribution",
     "random": "Random",
     "region_defined": "Defined Region",
-    "show_stimuli": "Show Stimuli",
-    "select_model": "Select Model",
-    "simulation_params": "Simulation Parameters",
-    "stimuli": "Stimuli",
-    "geometry": "Tissue Geometry",
-    "obstacle": "Circle"
+    "fibrosis_area": "Fibrosis Area",
+    "rectangle": "Rectangle",
+    "circle": "Circle",
+    "shape": "Shape",
+    "region_shape": "Region Shape",
+    "add_stimulus": "Add",
+    "remove": "Remove",
+    "speed": "Speed",
+    "save_stride": "Downsampling",
+    "cell_type": "Cell Type",
+    "custom_params": "Custom",
+    "action_potential": "Action Potential",
+    "remaining": "remaining"
   },
   "params": {
-    "despolarização": "Depolarization (tau_in)",
-    "repolarização": "Repolarization (tau_out)",
-    "recuperação": "Recovery (tau_open)",
-    "inativação": "Inactivation (tau_close)",
-    "gate": "Gate (v_gate)",
-    "inicio": "Start",
-    "duração": "Duration",
-    "duracao": "Duration",
-    "amplitude": "Amplitude",
-    "dt": "Dt",
-    "tempo_total": "Total Time",
-    "totalTime": "Total Time",
-    "v_inicial": "V Initial",
-    "h_inicial": "H Initial",
-    "downsamplingFactor": "Downsampling Factor",
-    "BCL": "BCL",
-    "num_estimulos": "Num Stimuli",
-    "BCL_S1": "BCL S1",
-    "intervalo_S2": "S2 Interval",
-    "num_estimulos_s1": "Num Stimuli S1",
-    "k": "Diffusion (k)",
-    "A": "Amplitude (A)",
-    "alpha": "Alpha",
-    "epsilon": "Epsilon",
-    "gamma": "Gamma",
-    "L": "Length (L)",
-    "dx": "dx",
-    "posição_do_estímulo": "Stimulus Position",
-    "tamanho_do_estímulo": "Stimulus Size",
-    "sigma_l": "Longitudinal Conductivity",
-    "sigma_t": "Transverse Conductivity",
+    "L": "Size L",
+    "N": "Resolution (N)",
+    "dt": "Time Step (ms)",
+    "tempo_total": "Total Time (ms)",
+    "sigma_l": "Longitudinal Conductivity (σ_l)",
+    "sigma_t": "Transversal Conductivity (σ_t)",
     "angle": "Fiber Angle (°)",
     "sigma_x": "Conductivity X",
     "sigma_y": "Conductivity Y",
@@ -96,7 +78,10 @@
     "Tau_out": "Tau out",
     "Tau_open": "Tau open",
     "Tau_close": "Tau close",
-    "startTime": "Start (ms)",
+    "gate": "V Gate",
+    "inicio": "Start (ms)",
+    "duracao": "Duration (ms)",
+    "amplitude": "Amplitude",
     "intervalo": "Interval (ms)",
     "radius": "Radius",
     "cx": "Center X",
@@ -121,170 +106,45 @@
     "endo_tau": "Endocardium Tau Close",
     "mid_tau": "Midmyocardium Tau Close",
     "epi_tau": "Epicardium Tau Close",
-    "mid_start": "Midmyocardium Start (%)",
-    "epi_start": "Epicardium Start (%)",
-    "border_zone": "Border Zone Size",
-    "cellType": "Cell Type",
     "epi": "Epicardium",
     "endo": "Endocardium",
-    "myo": "Midmyocardium (M-Cell)",
-    "u_o": "u_o", "u_u": "u_u", "theta_v": "theta_v", "theta_w": "theta_w", 
-    "theta_vminus": "theta_vminus", "theta_o": "theta_o", 
-    "tau_v1minus": "tau_v1minus", "tau_v2minus": "tau_v2minus", "tau_vplus": "tau_vplus", 
-    "tau_w1minus": "tau_w1minus", "tau_w2minus": "tau_w2minus", "k_wminus": "k_wminus", 
-    "u_wminus": "u_wminus", "tau_wplus": "tau_wplus", 
-    "tau_fi": "tau_fi", "tau_o1": "tau_o1", "tau_o2": "tau_o2", 
-    "tau_so1": "tau_so1", "tau_so2": "tau_so2", "k_so": "k_so", "u_so": "u_so", 
-    "tau_s1": "tau_s1", "tau_s2": "tau_s2", "k_s": "k_s", "u_s": "u_s", 
-    "tau_si": "tau_si", "tau_winf": "tau_winf", "w_infstar": "w_infstar"
+    "myo": "Mid-Myocardium",
+    "u_o": "u_o", "u_u": "u_u", "theta_v": "theta_v", "theta_w": "theta_w",
+    "cellType": "Cell Type",
+    "densidade": "Density (%)",
+    "condutividade": "Conductivity",
+    "semente": "Seed",
+    "zona_borda": "Border Zone",
+    "mid_start": "Mid Start (%)",
+    "epi_start": "Epi Start (%)",
+    "tau_endo": "Tau Endo",
+    "tau_mid": "Tau Mid",
+    "tau_epi": "Tau Epi"
   },
   "modals": {
     "math_model": "Mathematical Model",
-    "numerical_method": "Numerical Method",
-    "param_meaning": "Parameter Meaning",
-    "protocol": "Protocol",
-    "ms_desc_base": "The Mitchell-Schaeffer model is a simplified model describing the cardiac action potential using two state variables.",
-    "minimal_desc_base": "The Minimal Model is a 4-variable model designed to reproduce complex waveforms and restitution properties of human ventricular cells.",
-    "eq_u_minimal": "∂u/∂t = ∇(D∇u) - (J_fi + J_so + J_si) + J_stim",
-    "eq_v_minimal": "dv/dt = (1 - H(u - θ_v))(v_inf - v)/τ_v_minus - H(u - θ_v)v/τ_v_plus",
-    "eq_w_minimal": "dw/dt = (1 - H(u - θ_w))(w_inf - w)/τ_w_minus - H(u - θ_w)w/τ_w_plus",
-    "eq_s_minimal": "ds/dt = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
+    "numerical_method": "Numerical Methods",
+    "advanced_features": "Advanced Features",
+    "param_meaning": "Parameter Glossary",
+    "how_to_use": "How to use",
+    "model_2d": {
+      "desc": "This tool simulates electrical propagation in a 2D cardiac tissue using reaction-diffusion mathematical models. It allows investigating phenomena such as spiral wave formation, reentry, and conduction blocks caused by heterogeneities.",
+      "steps": {
+        "1": "Configure geometry and tissue parameters in the sidebar.",
+        "2": "Add stimuli and position them.",
+        "3": "Configure fibrosis (optional) to create obstacles.",
+        "4": "Click **Simulate**.",
+        "5": "Use the player to watch the result.",
+        "6": "Click on the chart to view the action potential at that point."
+      }
+    },
     "single": {
-      "ms": {
-        "title": "Mitchell-Schaeffer - 1 Stimulus",
-        "desc": "In this simulation, a single external electrical stimulus is applied to a cardiac cell modeled by Mitchell-Schaeffer. This allows observing the basic dynamics of depolarization (start of action potential) and repolarization (return to rest).",
-        "eq_v": "dv/dt = (h * v² * (1 - v)) / τ_in - v / τ_out + I_stim",
-        "eq_h1": "dh/dt = (1 - h) / τ_open (if v < v_gate)",
-        "eq_h2": "dh/dt = -h / τ_close (if v ≥ v_gate)"
-      },
-      "minimal": {
-        "title": "Minimal Model - 1 Stimulus",
-        "desc": "This simulation applies a single stimulus to a cell modeled by the Minimal Model. Unlike Mitchell-Schaeffer, this model has 4 variables (u, v, w, s) and three ionic currents (J_fi, J_so, J_si), allowing accurate modeling of Epicardium, Endocardium, and Midmyocardium.",
-        "vars": "Variables: u (Voltage), v (Fast Gate), w (Slow Gate), s (Slow Gate).",
-        "currents": "Currents: J_fi (Fast Inward Na+), J_so (Slow Outward K+), J_si (Slow Inward Ca2+)."
-      },
-      "method": "Differential equations are solved numerically. Voltage (v or u) uses the Forward Euler method, while gate variables (h, v, w, s) use the Rush-Larsen method for stability."
+      "ms": { "title": "Mitchell-Schaeffer", "desc": "Single cell simulation (MS).", "eq_v": "dv/dt = (h v² (1-v))/τ_in - v/τ_out", "eq_h1": "dh/dt = (1-h)/τ_open", "eq_h2": "dh/dt = -h/τ_close" },
+      "minimal": { "title": "Minimal Model", "desc": "Single cell simulation (Minimal).", "vars": "Variables u, v, w, s", "currents": "Currents J_fi, J_so, J_si" },
+      "method": "Explicit Euler and Rush-Larsen methods."
     },
-    "multiple": {
-      "protocol_title": "Stimulation Protocol",
-      "ms": {
-        "title": "Mitchell-Schaeffer - Multiple Stimuli",
-        "desc": "In this scenario, the cell undergoes a train of periodic pulses. The BCL (Basic Cycle Length) parameter defines the interval between stimuli. This protocol is useful for observing the adaptation of action potential duration (APD) to the pacing rate and verifying if the cell can fully repolarize before the next stimulus."
-      },
-      "minimal": {
-        "title": "Minimal Model - Multiple Stimuli",
-        "desc": "Using the Minimal Model, we apply a series of 8 stimuli. Due to the complexity of currents (especially J_si), the Minimal Model exhibits richer APD adaptation dynamics, capturing cardiac memory effects that simpler models might miss. High-frequency APD alternans can be observed."
-      }
-    },
-    "s1s2": {
-      "protocol_title": "S1-S2 Protocol",
-      "ms": {
-        "title": "Mitchell-Schaeffer - S1-S2 Protocol",
-        "desc": "The S1-S2 protocol is used to determine the refractory period and restitution curve. A series of S1 stimuli (base rhythm) is applied to stabilize the cell, followed by a single premature S2 stimulus. By varying the S2 interval, we observe when the cell becomes excitable again."
-      },
-      "minimal": {
-        "title": "Minimal Model - S1-S2 Protocol",
-        "desc": "In the Minimal Model, the S1-S2 protocol allows detailed analysis of refractoriness depending on cell types (Epi, Endo, Myo). The premature S2 stimulus interacts with slow recovery variables (w and s), which can result in conduction blocks or reduced amplitude action potentials, crucial for understanding arrhythmias."
-      },
-      "s1_desc": "S1: A sequence of stimuli to drive the cell to a steady state.",
-      "s2_desc": "S2: A single premature stimulus applied after the last S1."
-    },
-    "restitution": {
-      "what_is": "What is the Restitution Curve?",
-      "what_is_desc": "It describes the relationship between the Action Potential Duration (APD) and the preceding Diastolic Interval (DI). The slope of this curve is crucial for predicting arrhythmias.",
-      "measuring": "Measuring APD and DI",
-      "apd_def": "APD: Time for voltage to repolarize 90% (APD90).",
-      "di_def": "DI: Calculated as BCL - APD_previous.",
-      "s1s2": {
-        "title": "Mitchell-Schaeffer",
-        "desc": "Uses the original Mitchell-Schaeffer model with the S1-S2 protocol. The inward current is proportional to voltage squared.",
-        "eq_v": "J_in = (h * v² * (1 - v)) / τ_in",
-        "eq_h": "dh/dt depends on τ_open and τ_close via Rush-Larsen",
-        "method": "Forward Euler (v) and Rush-Larsen (h).",
-        "steps": [
-          "The cell is stimulated with an S1 sequence at a fixed BCL to reach steady state.",
-          "An S2 pulse is applied with a variable interval after the last S1.",
-          "APD of S2 and corresponding DI are measured.",
-          "The process repeats, reducing the S2 interval."
-        ]
-      },
-      "mms": {
-        "title": "Modified Mitchell-Schaeffer (MMS)",
-        "desc": "The MMS model alters the inward current equation (J_in) to enable robust mathematical analysis and calculation of an analytical curve.",
-        "eq_v": "J_in = (h * v * (v - v_gate) * (1 - v)) / τ_in",
-        "eq_h": "dh/dt depends on τ_open and τ_close via Rush-Larsen",
-        "method": "Forward Euler (v) and Rush-Larsen (h).",
-        "steps": [
-          "Uses the same S1-S2 protocol described previously.",
-          "The main difference lies in the cellular model equation.",
-          "Allows direct comparison with a theoretical analytical curve."
-        ]
-      },
-      "dynamic": {
-        "title": "Dynamic Protocol",
-        "desc": "Uses the standard Mitchell-Schaeffer model but with a continuous stimulation protocol (Dynamic Pacing), which is more physiologically relevant as it includes cardiac memory.",
-        "eq_v": "J_in = (h * v² * (1 - v)) / τ_in",
-        "eq_h": "dh/dt depends on τ_open and τ_close via Rush-Larsen",
-        "method": "Forward Euler (v) and Rush-Larsen (h).",
-        "steps": [
-          "Simulation starts with a long BCL (CI1).",
-          "The cell is stimulated 'nbeats' times at this rate. The APD of the last beat is measured.",
-          "The BCL is shortened (CIinc), and the process repeats without long pauses.",
-          "This continues until BCL reaches the final value (CI0)."
-        ]
-      },
-      "minimal": {
-        "title": "Minimal Model",
-        "desc": "A 4-variable model that reproduces restitution properties and action potential shapes of human ventricular cell types (Epi, Endo, Mid).",
-        "eq_u": "∂u/∂t = ∇(D∇u) - (J_fi + J_so + J_si) + J_stim",
-        "eq_v": "dv/dt = (1 - H(u - θ_v))(v_inf - v)/τ_v_minus - H(u - θ_v)v/τ_v_plus",
-        "eq_w": "dw/dt = (1 - H(u - θ_w))(w_inf - w)/τ_w_minus - H(u - θ_w)w/τ_w_plus",
-        "eq_s": "ds/dt = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
-        "vars": "Variables: u (Voltage), v (Fast Gate), w (Slow Gate), s (Slow Gate).",
-        "currents": "Currents: J_fi (Fast Inward), J_so (Slow Outward), J_si (Slow Inward). H(x) is the Heaviside function.",
-        "method": "Forward Euler for voltage (u) and Rush-Larsen for gate variables (v, w, s).",
-        "steps": [
-          "Select the cell type (Epicardium, Endocardium, or Midmyocardium).",
-          "The S1-S2 protocol is applied to generate the restitution curve for that specific cell type."
-        ]
-      }
-    },
-    "bistable": {
-      "desc": "A single-variable reaction-diffusion model used to demonstrate wavefront formation and bistable behavior (two stable states: v=0 and v=1).",
-      "eq": "∂v/∂t = k * (∂²v/∂x²) + A * v * (1 - v) * (v - α)",
-      "method": "Space: 2nd Order Finite Differences. Time: 4th Order Runge-Kutta (RK4)."
-    },
-    "fhn": {
-      "desc": "Two-variable model (v and w) simplifying action potential dynamics. v is potential, w is recovery.",
-      "reentry": "Reentry simulation creates a broken/spiral wave that propagates in a self-sustaining manner.",
-      "method": "Space: 2nd Order Finite Differences. Time: 4th Order Runge-Kutta (RK4)."
-    },
-    "ms1d": {
-      "desc": "1D version of the Mitchell-Schaeffer model. Adds a spatial diffusion term to allow wave propagation.",
-      "eq": "∂v/∂t = k * (∂²v/∂x²) + (h * v² * (1 - v)) / τ_in - v / τ_out + I_stim",
-      "method": "Space: 2nd Order Finite Differences. Time: Forward Euler for voltage (v) and Rush-Larsen for gate (h)."
-    },
-    "ms2d": {
-      "desc": "Simulates wave propagation in 2D tissue. Supports Mitchell-Schaeffer and Minimal Model.",
-      "eq": "∂v/∂t = ∇ · (D ∇v) + I_ion. D is the diffusion tensor.",
-      "fibrosis_title": "Fibrosis Simulation",
-      "fibrosis_desc": "Fibrosis is simulated by creating regions where conductivity is reduced isotropically. It can be Compact (random across domain) or Diffuse (restricted area). When using a Defined Region, you can set a 'Border Zone' where conductivity increases linearly from the fibrosis value to the normal tissue value.",
-      "method": "Space: 2nd Order Finite Differences. Time: Forward Euler for voltage (v) and Rush-Larsen for gates.",
-      "transmurality_title": "Transmurality",
-      "transmurality_desc": "Simulates cell heterogeneity along the ventricular wall. The domain is divided into three layers: Endocardium, Midmyocardium (M-cells), and Epicardium. Each layer has a different 'Tau close' parameter, resulting in varying Action Potential Durations (APD). The layer positions are defined as a percentage of the total tissue width."
-    },
-    "minimal2d": {
-      "desc": "The Minimal Model is a model with 4 variables (u, v, w, s) capable of reproducing human ventricular action potentials.",
-      "eq_u": "∂u/∂t = ∇ · (D ∇u) - (J_fi + J_so + J_si)",
-      "eq_v": "dv/dt = (1 - H(u - θ_v))(v_inf - v)/τ_v_minus - H(u - θ_v)v/τ_v_plus",
-      "eq_w": "dw/dt = (1 - H(u - θ_w))(w_inf - w)/τ_w_minus - H(u - θ_w)w/τ_w_plus",
-      "eq_s": "ds/dt = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
-      "currents": "J_fi, J_so, and J_si are the fast inward, slow outward, and slow inward currents, respectively."
-    },
-    "source_sink": {
-      "desc": "Investigates propagation failure through a narrow slit in an obstacle. The circular obstacle has a slit of varying width.",
-      "eq": "∂v/∂t = ∇ · (D ∇v) + I_ion.",
-      "geometry_desc": "The domain is conductive tissue except for a central circular insulating obstacle. Inside the circle, a conductive slit of variable width allows the wave to pass."
-    }
+    "multiple": { "protocol_title": "Protocol", "ms": { "desc": "Pulse train (8 stimuli)." }, "minimal": { "desc": "Pulse train with Minimal Model." } },
+    "s1s2": { "protocol_title": "S1-S2 Protocol", "ms": { "desc": "S1 (basic) followed by S2 (premature)."}, "minimal": { "desc": "S1-S2 in Minimal Model to study refractoriness." }, "s1_desc": "S1: Stabilization", "s2_desc": "S2: Coupling test" },
+    "restitution": { "desc": "APD vs DI Restitution Curves", "minimal": { "desc": "Generates restitution curve using Minimal Model.", "eq_u": "Minimal Model Equations" } }
   }
 }

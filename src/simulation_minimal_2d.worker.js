@@ -1,4 +1,3 @@
-// Classe para gerar números aleatórios com seed
 class SeededRandom {
   constructor(seed = Date.now()) {
     this.seed = seed % 2147483647;
@@ -29,7 +28,9 @@ self.onmessage = (e) => {
   const params = e.data;
   
   const { 
-    sigma_l, sigma_t, angle, L, dx, totalTime, downsamplingFactor, 
+    sigma_l, sigma_t, angle, 
+    L, N,
+    totalTime, downsamplingFactor, 
     stimuli, fibrosisParams, transmuralityParams,
     cellType,
     minimalCellParams
@@ -37,10 +38,9 @@ self.onmessage = (e) => {
   
   let { dt } = params;
 
-  // Tamanho da malha
-  const N = Math.floor(L / dx);
-  const size = N * N;
+  const dx = L / N;
   const dy = dx;
+  const size = N * N;
 
   // Configuração do Tensor de Difusão
   const rad = (angle * Math.PI) / 180.0;
@@ -76,27 +76,26 @@ self.onmessage = (e) => {
 
   // Geração da Fibrose
   if (fibrosisParams && fibrosisParams.enabled) {
-    const { conductivity, type, distribution, shape, rectParams, circleParams, regionParams, borderZone = 0 } = fibrosisParams;
+    const { conductivity, type, distribution, shape, rectParams, circleParams, regionParams, borderZone = 0, seed, density } = fibrosisParams;
+    const lerp = (start, end, t) => start * (1 - t) + end * t;
 
-    if (type === 'compacta' && distribution === 'region') {
-      const lerp = (start, end, t) => start * (1 - t) + end * t;
-
+    if (type === 'compact' && distribution === 'region') {
       if (shape === 'rectangle') {
         const { x1, y1, x2, y2 } = rectParams;
-        const rx_min = Math.min(x1, x2); const rx_max = Math.max(x1, x2);
-        const ry_min = Math.min(y1, y2); const ry_max = Math.max(y1, y2);
+        const rx_min = Math.min(x1, x2), rx_max = Math.max(x1, x2);
+        const ry_min = Math.min(y1, y2), ry_max = Math.max(y1, y2);
         
-        const search_min_x = rx_min - borderZone; const search_max_x = rx_max + borderZone;
-        const search_min_y = ry_min - borderZone; const search_max_y = ry_max + borderZone;
+        const search_min_x = rx_min - borderZone, search_max_x = rx_max + borderZone;
+        const search_min_y = ry_min - borderZone, search_max_y = ry_max + borderZone;
 
-        const i_start = Math.max(0, Math.floor(search_min_y / dx));
-        const i_end = Math.min(N - 1, Math.floor(search_max_y / dx));
+        const i_start = Math.max(0, Math.floor(search_min_y / dy));
+        const i_end = Math.min(N - 1, Math.floor(search_max_y / dy));
         const j_start = Math.max(0, Math.floor(search_min_x / dx));
         const j_end = Math.min(N - 1, Math.floor(search_max_x / dx));
 
         for (let i = i_start; i <= i_end; i++) {
           for (let j = j_start; j <= j_end; j++) {
-            const y = i * dx; const x = j * dx;
+            const y = i * dy; const x = j * dx;
             const idx = i * N + j;
             
             const dx_dist = Math.max(rx_min - x, 0, x - rx_max);
@@ -115,17 +114,17 @@ self.onmessage = (e) => {
             }
           }
         }
-      } else { // Circle
+      } else {
         const { cx, cy, radius } = circleParams;
         const totalRadius = radius + borderZone;
-        const i_start = Math.max(0, Math.floor((cy - totalRadius) / dx));
-        const i_end = Math.min(N - 1, Math.floor((cy + totalRadius) / dx));
+        const i_start = Math.max(0, Math.floor((cy - totalRadius) / dy));
+        const i_end = Math.min(N - 1, Math.floor((cy + totalRadius) / dy));
         const j_start = Math.max(0, Math.floor((cx - totalRadius) / dx));
         const j_end = Math.min(N - 1, Math.floor((cx + totalRadius) / dx));
 
         for (let i = i_start; i <= i_end; i++) {
           for (let j = j_start; j <= j_end; j++) {
-            const y = i * dx; const x = j * dx;
+            const y = i * dy; const x = j * dx;
             const idx = i * N + j;
             const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
 
@@ -142,14 +141,12 @@ self.onmessage = (e) => {
           }
         }
       }
-    } else { // Difusa ou Compacta
-      const { density, seed } = fibrosisParams;
+    } else { 
       const random = new SeededRandom(seed);
       let numRegions, i_min, i_max, j_min, j_max;
-      let checkInsideRegion = () => true;
-      const pixelArea = dx * dx;
+      const pixelArea = dx * dy;
 
-      if (type === 'difusa') {
+      if (type === 'diffuse' && regionParams) {
         const { x1, y1, x2, y2 } = regionParams;
         i_min = Math.floor(Math.min(y1, y2) / dy);
         i_max = Math.floor(Math.max(y1, y2) / dy);
@@ -170,12 +167,10 @@ self.onmessage = (e) => {
         attempts++;
         const centerRow = random.nextInt(i_min, i_max);
         const centerCol = random.nextInt(j_min, j_max);
-        if (!checkInsideRegion(centerRow, centerCol)) continue;
-        
-        generated++;
         const idx = centerRow * N + centerCol;
         Dxx_map[idx] = conductivity; Dyy_map[idx] = conductivity; Dxy_map[idx] = 0.0;
         fibrosisMap[idx] = conductivity;
+        generated++;
       }
     }
   }
@@ -236,8 +231,7 @@ self.onmessage = (e) => {
       let remaining = 0;
       if (t > 0) {
         const elapsed = performance.now() - startTimeReal;
-        const remainingSteps = steps - t;
-        remaining = remainingSteps * (elapsed / t);
+        remaining = (steps - t) * (elapsed / t);
       }
       self.postMessage({ type: 'progress', value: progress, remaining });
     }
@@ -272,14 +266,9 @@ self.onmessage = (e) => {
             const ratio = j / N; 
             const midStart = transmuralityParams.mid_start / 100.0;
             const epiStart = transmuralityParams.epi_start / 100.0;
-            
-            if (ratio < midStart) {
-                p = minimalCellParams.endo;
-            } else if (ratio < epiStart) {
-                p = minimalCellParams.myo;
-            } else {
-                p = minimalCellParams.epi;
-            }
+            if (ratio < midStart) p = minimalCellParams.endo;
+            else if (ratio < epiStart) p = minimalCellParams.myo;
+            else p = minimalCellParams.epi;
         } else {
             p = singleCellParams;
         }
@@ -297,12 +286,7 @@ self.onmessage = (e) => {
 
         const d2u_dx2 = (u_prev[idx - 1] - 2 * val_u + u_prev[idx + 1]) * inv_dx2;
         const d2u_dy2 = (u_prev[idx - N] - 2 * val_u + u_prev[idx + N]) * inv_dx2;
-        
-        const u_dr = u_prev[idx + N + 1];
-        const u_dl = u_prev[idx + N - 1];
-        const u_ur = u_prev[idx - N + 1];
-        const u_ul = u_prev[idx - N - 1];
-        const d2u_dxdy = (u_dr - u_dl - u_ur + u_ul) * inv_4dx2;
+        const d2u_dxdy = (u_prev[idx+N+1] - u_prev[idx+N-1] - u_prev[idx-N+1] + u_prev[idx-N-1]) * inv_4dx2;
 
         const lap_u = (Dxx * d2u_dx2) + (Dyy * d2u_dy2) + (2 * Dxy * d2u_dxdy);
         const stimulus = stim_map ? stim_map[idx] * stim_amp : 0;
@@ -334,7 +318,7 @@ self.onmessage = (e) => {
         if (tau_v_rl > 1e-10) {
             v_gate[idx] = v_inf_rl + (val_v - v_inf_rl) * Math.exp(-dt / tau_v_rl);
         } else {
-            v_gate[idx] = val_v + dt * ((1.0 - H_u_thv) * (v_inf - val_v) / tau_vminus - H_u_thv * val_v / tau_vplus);
+            v_gate[idx] = val_v;
         }
 
         // Rush-Larsen para w
@@ -345,7 +329,7 @@ self.onmessage = (e) => {
         if (tau_w_rl > 1e-10) {
             w_gate[idx] = w_inf_rl + (val_w - w_inf_rl) * Math.exp(-dt / tau_w_rl);
         } else {
-            w_gate[idx] = val_w + dt * ((1.0 - H_u_thw) * (w_inf - val_w) / tau_wminus - H_u_thw * val_w / p.tau_wplus);
+            w_gate[idx] = val_w;
         }
 
         // Rush-Larsen para s
@@ -353,14 +337,12 @@ self.onmessage = (e) => {
         if (tau_s > 1e-10) {
             s_gate[idx] = s_inf_rl + (val_s - s_inf_rl) * Math.exp(-dt / tau_s);
         } else {
-            s_gate[idx] = val_s + dt * ((s_inf_rl - val_s) / tau_s);
+            s_gate[idx] = val_s;
         }
 
-        // Limita valores
-        u[idx] = Math.max(0.0, Math.min(2.0, u[idx]));
-        v_gate[idx] = Math.max(0.0, Math.min(1.0, v_gate[idx]));
-        w_gate[idx] = Math.max(0.0, Math.min(1.0, w_gate[idx]));
-        s_gate[idx] = Math.max(0.0, Math.min(1.0, s_gate[idx]));
+        // Limita u entre 0 e 2
+        if (u[idx] < 0) u[idx] = 0;
+        if (u[idx] > 2.0) u[idx] = 2.0;
       }
     }
 
