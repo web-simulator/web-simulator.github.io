@@ -1,52 +1,19 @@
-.page-container {
-  padding: 20px;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.params-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 15px;
-  margin: 20px 0;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #eee;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.charts-grid-container {
-  margin-top: 30px;
-  display: grid;
-  gap: 40px;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 20px;
 }
 
-.chart-container {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 15px;
-}
-
-.chart-container h3 {
-  text-align: center;
-  margin-bottom: 15px;
-  font-size: 1.2em;
-}
-
-.info-modal-content h2 {
-  font-size: 1.5em;
-  font-weight: bold;
-  margin-bottom: 15px;
-}
-
-.info-modal-content h3 {
-  font-size: 1.25em;
-  font-weight: bold;
-  margin-top: 15px;
-  margin-bottom: 10px;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 5px;
-}
-
-.info-modal-content p {
-  margin-bottom: 10px;
-  line-height: 1.6;
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
 }
 
 .info-modal-content ul, .info-modal-content ol {
@@ -60,9 +27,11 @@
 }
 
 .info-modal-content code {
-  background-color: #f4f4f4;
-  padding: 2px 5px;
+  background-color: #f1f5f9;
+  color: #0f172a;
+  padding: 2px 6px;
   border-radius: 4px;
-  font-family: monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9em;
   word-wrap: break-word;
 }

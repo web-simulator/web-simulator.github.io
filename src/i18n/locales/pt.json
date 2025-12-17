@@ -10,6 +10,7 @@
     "models": {
       "single_stimulus": { "title": "1 Estímulo", "desc": "Simula a resposta de um único estímulo elétrico em uma célula cardíaca." },
       "multiple_stimuli": { "title": "8 Estímulos", "desc": "Observa a resposta celular a uma série de estímulos com intervalo fixo." },
+      "s1s2": { "title": "Protocolo S1-S2", "desc": "Protocolo padrão para investigar a refratariedade e a vulnerabilidade do tecido cardíaco." },
       "s1_s2": { "title": "Protocolo S1-S2", "desc": "Protocolo padrão para investigar a refratariedade e a vulnerabilidade do tecido cardíaco." },
       "restitution_curve": { "title": "Curva de Restituição", "desc": "Analisa a relação entre o intervalo de acoplamento e a duração do potencial de ação." },
       "bistable": { "title": "Bistable", "desc": "Modelo unidimensional que exibe comportamento biestável." },
@@ -62,13 +63,15 @@
     "cell_type": "Tipo de Célula",
     "custom_params": "Customizado",
     "action_potential": "Potencial de Ação",
-    "remaining": "restantes"
+    "remaining": "restantes",
+    "stimulus_protocol": "Protocolo de Estímulo"
   },
   "params": {
     "L": "Tamanho L",
     "N": "Resolução",
     "dt": "Passo de tempo (ms)",
     "tempo_total": "Tempo Total (ms)",
+    "downsamplingFactor": "Fator de Downsampling",
     "sigma_l": "Condutividade Longitudinal (σ_l)",
     "sigma_t": "Condutividade Transversal (σ_t)",
     "angle": "Ângulo da Fibra (°)",
@@ -78,9 +81,16 @@
     "Tau_out": "Tau out",
     "Tau_open": "Tau open",
     "Tau_close": "Tau close",
+    "despolarização": "Despolarização (Tau_in)",
+    "repolarização": "Repolarização (Tau_out)",
+    "recuperação": "Recuperação (Tau_open)",
+    "inativação": "Inativação (Tau_close)",
     "gate": "V Gate",
+    "v_inicial": "Voltagem Inicial",
+    "h_inicial": "Gate Inicial (h)",
     "inicio": "Início (ms)",
     "duracao": "Duração (ms)",
+    "duração": "Duração (ms)",
     "amplitude": "Amplitude",
     "intervalo": "Intervalo (ms)",
     "radius": "Raio",
@@ -88,11 +98,18 @@
     "cy": "Centro Y",
     "x1": "X1", "y1": "Y1", "x2": "X2", "y2": "Y2",
     "conductivity": "Condutividade (k)",
+    "condutividade": "Condutividade",
     "density": "Densidade",
+    "densidade": "Densidade",
     "seed": "Semente",
+    "semente": "Semente",
     "regionSize": "Tamanho da Região",
+    "BCL": "Ciclo Básico (BCL)",
     "BCL_S2_inicial": "BCL S2 Inicial",
     "BCL_S2_final": "BCL S2 Final",
+    "num_estimulos": "Nº de Estímulos",
+    "S1": "Estímulo S1",
+    "S2": "Estímulo S2",
     "delta_CL": "Delta CL",
     "CI1": "CI Inicial",
     "CI0": "CI Final",
@@ -106,9 +123,13 @@
     "endo_tau": "Tau Close Endocárdio",
     "mid_tau": "Tau Close Miocárdio-M",
     "epi_tau": "Tau Close Epicárdio",
+    "tau_endo": "Tau Close Endocárdio",
+    "tau_mid": "Tau Close Miocárdio-M",
+    "tau_epi": "Tau Close Epicárdio",
     "mid_start": "Início Miocárdio-M (%)",
     "epi_start": "Início Epicárdio (%)",
     "border_zone": "Tamanho da Zona de Borda",
+    "zona_borda": "Tamanho da Zona de Borda",
     "cellType": "Tipo de Célula",
     "epi": "Epicárdio",
     "endo": "Endocárdio",
@@ -129,6 +150,12 @@
     "advanced_features": "Outras Funcionalidades",
     "param_meaning": "Parâmetros",
     "how_to_use": "Como usar",
+    "ms_desc_base": "O modelo Mitchell-Schaeffer descreve a propagação do potencial de ação utilizando uma variável de voltagem (v) e uma variável de gate (h), simplificando as correntes iônicas.",
+    "minimal_desc_base": "O Minimal Model é um modelo de 4 variáveis que reproduz com precisão as características de restituição e dinâmica de ondas espirais do tecido cardíaco humano.",
+    "eq_u_minimal": "∂u/∂t = ∇·(D∇u) - (J_fi + J_so + J_si)",
+    "eq_v_minimal": "∂v/∂t = (1 - p)/τ_vminus - v/τ_vplus",
+    "eq_w_minimal": "∂w/∂t = (1 - p)(1 - w)/τ_wminus - w/τ_wplus",
+    "eq_s_minimal": "∂s/∂t = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
     "model_2d": {
       "desc": "Esta ferramenta simula a propagação elétrica em um tecido cardíaco 2D utilizando modelos matemáticos de reação-difusão. Ela permite investigar fenômenos como formação de ondas espirais, reentrada e bloqueios de condução causados por heterogeneidades.",
       "steps": {
@@ -138,6 +165,46 @@
         "4": "Clique em **Simular**.",
         "5": "Use o player para ver o resultado.",
         "6": "Clique no gráfico para ver o potencial de ação daquele ponto."
+      },
+      "math_intro": "A simulação resolve a equação de reação-difusão monodomínio, que descreve como o potencial transmembrânico se propaga pelo tecido.",
+      "eq_diffusion": "∂V/∂t = ∇ · (D ∇V) - I_ion / Cm",
+      "eq_diffusion_desc": "Onde V é a voltagem, D é o tensor de condutividade (difusão) e I_ion representa as correntes iônicas do modelo celular escolhido.",
+      "ms": {
+        "title": "Modelo Mitchell-Schaeffer",
+        "eq_v": "dv/dt = (h · v² · (1-v))/τ_in - v/τ_out + I_stim",
+        "eq_h_open": "Se v < v_gate: dh/dt = (1-h)/τ_open",
+        "eq_h_close": "Se v > v_gate: dh/dt = -h/τ_close"
+      },
+      "minimal": {
+        "title": "Minimal Model",
+        "eq_u": "∂u/∂t = ∇·(D∇u) - (J_fi + J_so + J_si)",
+        "vars": "4 variáveis de estado: u (voltagem), v, w, s (gates)",
+        "currents": "3 correntes: J_fi (rápida interna), J_so (lenta externa), J_si (lenta interna)"
+      },
+      "numerical_details": [
+        "Discretização Espacial: Método de Diferenças Finitas.",
+        "Integração Temporal: Método de Euler Explícito.",
+        "Rush-Larsen: Utilizado para integração das variáveis de gate (h, v, w, s).",
+        "Condições de Contorno: Neumann 0."
+      ],
+      "features": {
+        "fibrosis_title": "Fibrose e Heterogeneidade",
+        "fibrosis_desc": "Permite definir regiões do tecido com condutividade zero ou reduzida, simulando cicatrizes ou fibrose difusa.",
+        "transmurality_title": "Transmuralidade",
+        "transmurality_desc": "Simula as diferenças eletrofisiológicas entre as camadas do coração (Endocárdio, Miocárdio-M e Epicárdio) alterando parâmetros locais das células."
+      },
+      "glossary": {
+        "general": "Parâmetros Gerais",
+        "L_N": "L: Tamanho do tecido | N: Resolução da malha (pontos)",
+        "dt": "dt: Passo de tempo da simulação (ms)",
+        "sigma": "σ_l / σ_t: Condutividade longitudinal e transversal (difusão)",
+        "angle": "Ângulo: Orientação das fibras do tecido",
+        "ms_params": "Mitchell-Schaeffer",
+        "tau_in_out": "τ_in: Tempo de despolarização | τ_out: Tempo de repolarização",
+        "tau_gates": "τ_open/close: Tempos de recuperação do portão h",
+        "minimal_params": "Minimal Model",
+        "u_levels": "u_o / u_u: Níveis de potencial de repouso e limiar",
+        "tau_constants": "τ_v, τ_w, τ_s: Constantes de tempo dos gates"
       }
     },
     "single": {
@@ -145,8 +212,15 @@
       "minimal": { "title": "Minimal Model", "desc": "Simulação de 1 estímulo em célula única Minimal.", "vars": "Variáveis u, v, w, s", "currents": "Correntes J_fi, J_so, J_si" },
       "method": "Método de Euler Explícito e Rush-Larsen."
     },
-    "multiple": { "protocol_title": "Protocolo", "ms": { "desc": "Trem de pulsos (8 estímulos)." }, "minimal": { "desc": "Trem de pulsos com Minimal Model." } },
-    "s1s2": { "protocol_title": "Protocolo S1-S2", "ms": { "desc": "S1 (básico) seguido de S2 (prematuro)."}, "minimal": { "desc": "S1-S2 no Minimal Model para estudar refratariedade." }, "s1_desc": "S1: Estabilização", "s2_desc": "S2: Teste de acoplamento" },
-    "restitution": { "desc": "Curvas de Restituição APD vs DI", "minimal": { "desc": "Gera curva de restituição usando Minimal Model.", "eq_u": "Equações do Minimal Model" } }
+    "multiple": { "protocol_title": "Protocolo", "ms": { "desc": "Sequencia de 8 estímulos." }, "minimal": { "desc": "Sequência de estímulos com Minimal Model." } },
+    "s1s2": { "protocol_title": "Protocolo S1-S2", "ms": { "desc": "S1 seguido de S2."}, "minimal": { "desc": "S1-S2 no Minimal Model para estudar refratariedade." }, "s1_desc": "S1: Estabilização", "s2_desc": "S2: Teste de acoplamento" },
+    "restitution": { 
+        "desc": "Curvas de Restituição APD vs DI", 
+        "minimal": { 
+            "title": "Minimal Model",
+            "desc": "Gera curva de restituição usando Minimal Model.", 
+            "eq_u": "Equações do Minimal Model" 
+        } 
+    }
   }
 }
