@@ -491,8 +491,8 @@ const Model2DPage = ({ onBack }) => {
         </aside>
 
         <main className="flex-1 bg-slate-100 relative flex flex-col min-h-0">
-          <div className="flex-1 flex items-center justify-center p-4 overflow-hidden relative">
-            <div className="relative shadow-2xl rounded-lg overflow-hidden bg-black border-4 border-white aspect-square max-h-full">
+          <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
+            <div className="relative shadow-2xl rounded-lg overflow-hidden bg-black border-4 border-white aspect-square h-full w-full">
                <HeatmapChart 
                  data={currentChartData} 
                  nCols={N_dimension} 
@@ -503,7 +503,6 @@ const Model2DPage = ({ onBack }) => {
                />
                {!simulationResult && !calculating && (
                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/80 text-white pointer-events-none">
-                     <i className="bi bi-play-circle text-5xl mb-2 opacity-80"></i>
                      <p>{t('common.ready')}</p>
                  </div>
                )}

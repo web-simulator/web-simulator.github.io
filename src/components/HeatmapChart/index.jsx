@@ -43,7 +43,7 @@ const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fi
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     
     // Dimensões dos dados
-    const nRows = data.length / nCols;
+    const nRows = Math.ceil(data.length / nCols);
     
     // Ajusta o tamanho interno do canvas para bater com os dados
     if (canvas.width !== nCols || canvas.height !== nRows) {
@@ -150,10 +150,10 @@ const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fi
 
  // Estrutura do gráfico
   return (
-    <div className="heatmap-container">
+    <div className="heatmap-container" style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden',  }}>
       <canvas
         ref={canvasRef}
-        style={{ width: '400px', height: '400px', imageRendering: 'auto' }} 
+        style={{ width: '100%', height: '100%', imageRendering: 'auto', display: 'block' }} 
         onMouseMove={handleMouseMove} 
         onMouseLeave={handleMouseLeave} 
         onClick={handleCanvasClick} 
