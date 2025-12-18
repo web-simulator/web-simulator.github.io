@@ -143,11 +143,6 @@ const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fi
     }
   };
 
-  // Mensagem enquanto aguarda os dados
-  if (!data || data.length === 0) {
-    return <p>Aguardando simulação...</p>;
-  }
-
  // Estrutura do gráfico
   return (
     <div className="heatmap-container" style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden',  }}>

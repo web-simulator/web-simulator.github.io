@@ -67,9 +67,13 @@ const Model2DPage = ({ onBack }) => {
 
   // Parâmetros
   const [params, setParams] = useState({
-    L: 10.0, N: 100, dt: 0.1, duration: 1000, stride: 10,
+    L: 10.0, 
+    dx: 0.1,
+    dt: 0.1, duration: 1000, stride: 10,
     sigma_l: 0.004, sigma_t: 0.001, angle: 0,
     tau_in: 0.3, tau_out: 6.0, tau_open: 120.0, tau_close: 140.0, v_gate: 0.13,
+    v_init: 0.0, h_init: 1.0,
+    
     cellType: 'epi',
     fibrosis: false, fibrosisType: 'compact', fibrosisDistribution: 'random', fibrosisDensity: 10,
     fibrosisSeed: 12345, fibrosisConductivity: 0.0, fibrosisShape: 'rectangle', fibrosisBorderZone: 0.0,
@@ -198,11 +202,19 @@ const Model2DPage = ({ onBack }) => {
     const num = (v) => parseFloat(v) || 0;
     const int = (v) => parseInt(v, 10) || 0;
 
+    // Cálculo de N
+    const L_val = num(params.L);
+    const dx_val = num(params.dx) || 0.1;
+    const N_calculated = Math.round(L_val / dx_val);
+
     const safeParams = {
         ...params,
-        L: num(params.L), N: int(params.N), dt: num(params.dt), duration: num(params.duration), stride: int(params.stride),
+        L: L_val, 
+        N: N_calculated, 
+        dt: num(params.dt), duration: num(params.duration), stride: int(params.stride),
         sigma_l: num(params.sigma_l), sigma_t: num(params.sigma_t), angle: num(params.angle),
         tau_in: num(params.tau_in), tau_out: num(params.tau_out), tau_open: num(params.tau_open), tau_close: num(params.tau_close), v_gate: num(params.v_gate),
+        v_init: num(params.v_init), h_init: num(params.h_init),
         fibrosisDensity: num(params.fibrosisDensity), fibrosisSeed: int(params.fibrosisSeed), fibrosisConductivity: num(params.fibrosisConductivity), fibrosisBorderZone: num(params.fibrosisBorderZone),
         endo_tau: num(params.endo_tau), mid_tau: num(params.mid_tau), epi_tau: num(params.epi_tau), mid_start: num(params.mid_start), epi_start: num(params.epi_start),
     };
@@ -229,6 +241,7 @@ const Model2DPage = ({ onBack }) => {
       ...safeParams,
       Tau_in: safeParams.tau_in, Tau_out: safeParams.tau_out, Tau_open: safeParams.tau_open, Tau_close: safeParams.tau_close, gate: safeParams.v_gate,
       totalTime: safeParams.duration, downsamplingFactor: safeParams.stride,
+      v_init: safeParams.v_init, h_init: safeParams.h_init,
       
       fibrosisParams: {
         enabled: params.fibrosis, type: params.fibrosisType, distribution: params.fibrosisDistribution, shape: params.fibrosisShape,
@@ -257,7 +270,7 @@ const Model2DPage = ({ onBack }) => {
 
   let currentChartData = null;
   let currentFibrosisMap = null;
-  let N_dimension = parseInt(params.N, 10) || 100;
+  let N_dimension = simulationResult ? simulationResult.N : Math.round((parseFloat(params.L) || 10.0) / (parseFloat(params.dx) || 0.1));
 
   if (simulationResult) {
       const { frames, fibrosis, N } = simulationResult;
@@ -280,7 +293,7 @@ const Model2DPage = ({ onBack }) => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 overflow-hidden">
+    <div className="flex flex-col h-screen bg-slate-50 overflow-auto lg:overflow-hidden">
       
       <header className="bg-white border-b border-slate-200 h-16 flex-none flex items-center justify-between px-6 shadow-sm z-20">
         <div className="flex items-center gap-4">
@@ -298,14 +311,14 @@ const Model2DPage = ({ onBack }) => {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        <aside className="w-full lg:w-96 bg-white border-r border-slate-200 overflow-y-auto custom-scrollbar flex-none shadow-xl z-10">
+      <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden">
+        <aside className="w-full lg:w-96 bg-white border-r border-slate-200 lg:overflow-y-auto custom-scrollbar flex-none shadow-xl z-10">
           <div className="p-6 pb-24 lg:pb-6">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">{t('common.configuration')}</p>
 
             <SettingsSection title={t('common.geometry')} defaultOpen={true}>
               <div className="grid grid-cols-2 gap-3">
-                <Input label={t('params.N')} value={params.N} onChange={(e) => handleChange(e, 'N')} type="number" />
+                <Input label="dx" value={params.dx} onChange={(e) => handleChange(e, 'dx')} type="number" />
                 <Input label={t('params.L')} value={params.L} onChange={(e) => handleChange(e, 'L')} type="number" />
                 <Input label={t('params.dt')} value={params.dt} onChange={(e) => handleChange(e, 'dt')} type="number" />
                 <Input label={t('params.tempo_total')} value={params.duration} onChange={(e) => handleChange(e, 'duration')} type="number" />
@@ -327,6 +340,8 @@ const Model2DPage = ({ onBack }) => {
                         <Input label={t('params.Tau_open')} value={params.tau_open} onChange={(e) => handleChange(e, 'tau_open')} type="number" />
                         <Input label={t('params.Tau_close')} value={params.tau_close} onChange={(e) => handleChange(e, 'tau_close')} type="number" />
                         <Input label={t('params.gate')} value={params.v_gate} onChange={(e) => handleChange(e, 'v_gate')} type="number" />
+                        <Input label="V Inicial" value={params.v_init} onChange={(e) => handleChange(e, 'v_init')} type="number" />
+                        <Input label="h Inicial" value={params.h_init} onChange={(e) => handleChange(e, 'h_init')} type="number" />
                     </div>
                 </SettingsSection>
             ) : (
@@ -490,9 +505,9 @@ const Model2DPage = ({ onBack }) => {
           </div>
         </aside>
 
-        <main className="flex-1 bg-slate-100 relative flex flex-col min-h-0">
+        <main className="flex-1 bg-slate-100 relative flex flex-col min-h-[50vh] lg:min-h-0">
           <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
-            <div className="relative shadow-2xl rounded-lg overflow-hidden bg-black border-4 border-white aspect-square h-full w-full">
+            <div className="relative shadow-lg rounded-lg overflow-hidden bg-white border border-slate-200 aspect-square h-full w-full">
                <HeatmapChart 
                  data={currentChartData} 
                  nCols={N_dimension} 
@@ -502,7 +517,8 @@ const Model2DPage = ({ onBack }) => {
                  fibrosisConductivity={params.fibrosisConductivity}
                />
                {!simulationResult && !calculating && (
-                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/80 text-white pointer-events-none">
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/80 text-slate-400 pointer-events-none">
+                     <i className="bi bi-activity text-6xl mb-4 opacity-50"></i>
                      <p>{t('common.ready')}</p>
                  </div>
                )}
