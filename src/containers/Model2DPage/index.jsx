@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import HeatmapChart from '../../components/HeatmapChart';
+import Colorbar from '../../components/Colorbar';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Chart from '../../components/Chart';
@@ -507,21 +508,33 @@ const Model2DPage = ({ onBack }) => {
 
         <main className="flex-1 bg-slate-100 relative flex flex-col min-h-[50vh] lg:min-h-0">
           <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
-            <div className="relative shadow-lg rounded-lg overflow-hidden bg-white border border-slate-200 aspect-square w-full h-auto lg:h-full lg:w-auto max-w-full max-h-full">
-               <HeatmapChart 
-                 data={currentChartData} 
-                 nCols={N_dimension} 
-                 maxValue={selectedModel === 'minimal' ? 2.0 : 1.0} 
-                 onPointClick={(point) => { setSelectedPoint(point); setIsChartModalOpen(true); }}
-                 fibrosisMap={currentFibrosisMap} 
-                 fibrosisConductivity={params.fibrosisConductivity}
-               />
-               {!simulationResult && !calculating && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/80 text-slate-400 pointer-events-none">
-                     <i className="bi bi-activity text-6xl mb-4 opacity-50"></i>
-                     <p>{t('common.ready')}</p>
-                 </div>
-               )}
+            <div className="flex items-center justify-center gap-4 w-full h-full">
+              {(() => {
+                const maxValue = selectedModel === 'minimal' ? 2.0 : 1.0;
+                return (
+                  <>
+                    <div className="relative shadow-lg rounded-lg overflow-hidden bg-white border border-slate-200 aspect-square w-full h-auto lg:h-full lg:w-auto max-w-full max-h-full">
+                      <HeatmapChart 
+                        data={currentChartData} 
+                        nCols={N_dimension} 
+                        maxValue={maxValue}
+                        onPointClick={(point) => { setSelectedPoint(point); setIsChartModalOpen(true); }}
+                        fibrosisMap={currentFibrosisMap} 
+                        fibrosisConductivity={params.fibrosisConductivity}
+                      />
+                      {!simulationResult && !calculating && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/80 text-slate-400 pointer-events-none">
+                            <i className="bi bi-activity text-6xl mb-4 opacity-50"></i>
+                            <p>{t('common.ready')}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="hidden sm:block">
+                      <Colorbar maxValue={maxValue} minValue={0} />
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
 
