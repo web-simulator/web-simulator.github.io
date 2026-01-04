@@ -507,7 +507,7 @@ const Model2DPage = ({ onBack }) => {
 
         <main className="flex-1 bg-slate-100 relative flex flex-col min-h-[50vh] lg:min-h-0">
           <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
-            <div className="relative shadow-lg rounded-lg overflow-hidden bg-white border border-slate-200 aspect-square h-full w-full">
+            <div className="relative shadow-lg rounded-lg overflow-hidden bg-white border border-slate-200 aspect-square w-full h-auto lg:h-full lg:w-auto max-w-full max-h-full">
                <HeatmapChart 
                  data={currentChartData} 
                  nCols={N_dimension} 

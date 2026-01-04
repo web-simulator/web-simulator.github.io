@@ -69,7 +69,7 @@
   "params": {
     "L": "Tamanho L",
     "N": "Resolução",
-    "dt": "Passo de tempo (ms)",
+    "dt": "Passo de tempo",
     "tempo_total": "Tempo Total (ms)",
     "downsamplingFactor": "Fator de Downsampling",
     "sigma_l": "Condutividade Longitudinal (σ_l)",

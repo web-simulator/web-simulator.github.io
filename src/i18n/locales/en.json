@@ -68,8 +68,8 @@
   },
   "params": {
     "L": "Size L",
-    "N": "Resolution (N)",
-    "dt": "Time Step (ms)",
+    "N": "Resolution",
+    "dt": "Time Step",
     "tempo_total": "Total Time (ms)",
     "downsamplingFactor": "Downsampling Factor",
     "sigma_l": "Longitudinal Cond. (σ_l)",
