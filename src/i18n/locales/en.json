@@ -64,7 +64,13 @@
     "cell_type": "Cell Type",
     "custom_params": "Custom Params",
     "action_potential": "Action Potential",
-    "remaining": "remaining"
+    "remaining": "remaining",
+    "show_stimuli": "Show Stimuli",
+    "view_options": "View Options",
+    "line_chart": "Line Chart",
+    "color_chart": "Color Chart",
+    "left_pulse": "Left Pulse",
+    "reentry": "Reentry"
   },
   "params": {
     "L": "Size L",
@@ -142,7 +148,34 @@
     "tau_fi": "tau_fi", "tau_o1": "tau_o1", "tau_o2": "tau_o2", 
     "tau_so1": "tau_so1", "tau_so2": "tau_so2", "k_so": "k_so", "u_so": "u_so", 
     "tau_s1": "tau_s1", "tau_s2": "tau_s2", "k_s": "k_s", "u_s": "u_s", 
-    "tau_si": "tau_si", "tau_winf": "tau_winf", "w_infstar": "w_infstar"
+    "tau_si": "tau_si", "tau_winf": "tau_winf", "w_infstar": "w_infstar",
+    "num_estimulos_s1": "Num S1 Stimuli",
+    "tau_in": "Tau In",
+    "tau_out": "Tau Out",
+    "tau_open": "Tau Open",
+    "tau_close": "Tau Close",
+    "v_gate": "V Gate",
+    "BCL_S1": "BCL S1",
+    "posição_do_estímulo": "Stimulus Position",
+    "tamanho_do_estímulo": "Stimulus Size",
+    "epsilon": "Epsilon",
+    "gamma": "Gamma",
+    "alpha": "Alpha",
+    "dx": "dx",
+    "totalTime": "Total Time",
+    "k": "k (Diffusion)",
+    "A": "A",
+    "cellType_desc": "Defines parameter sets to simulate Epicardial, Endocardial, or Myocardial cells.",
+    "BCL_S1_desc": "Time interval between stimuli in the S1 train.",
+    "BCL_S2_inicial_desc": "Initial interval for the S2 stimulus.",
+    "BCL_S2_final_desc": "Final interval for the S2 stimulus.",
+    "delta_CL_desc": "Amount the S1-S2 interval is decreased in each iteration.",
+    "inicio_desc": "Time instant when the first stimulus is applied.",
+    "duracao_desc": "Temporal duration of the stimulus current.",
+    "amplitude_desc": "Intensity of the applied stimulus current.",
+    "dt_desc": "Time step.",
+    "num_estimulos_s1_desc": "Number of S1 stimuli applied to stabilize the system before S2.",
+    "downsamplingFactor_desc": "Reduces the number of saved points to optimize chart visualization."
   },
   "modals": {
     "math_model": "Mathematical Model",
@@ -161,7 +194,7 @@
       "steps": {
         "1": "Configure geometry and tissue properties in the sidebar.",
         "2": "Add stimuli and position them.",
-        "3": "Configure fibrosis (optional) to create obstacles.",
+        "3": "Configure fibrosis to create obstacles.",
         "4": "Click **Simulate**.",
         "5": "Use the player to view the result.",
         "6": "Click on the chart to see the action potential at that point."
@@ -216,11 +249,46 @@
     "s1s2": { "protocol_title": "S1-S2 Protocol", "ms": { "desc": "S1 (basic) followed by S2 (premature)."}, "minimal": { "desc": "S1-S2 on Minimal Model to study refractoriness." }, "s1_desc": "S1: Stabilization", "s2_desc": "S2: Coupling Test" },
     "restitution": { 
         "desc": "Restitution Curves APD vs DI", 
-        "minimal": { 
+        "apd_def": "APD: Action Potential Duration. Time the cell remains depolarized.",
+        "di_def": "DI: Diastolic Interval. Resting time between the end of an AP and the start of the next.",
+        "what_is_desc": "The restitution curve describes how the Action Potential Duration (APD) adapts to different heart rates (diastolic intervals).",
+          "minimal": { 
             "title": "Minimal Model",
             "desc": "Generates restitution curve using Minimal Model.", 
-            "eq_u": "Minimal Model Equations" 
-        } 
+            "eq_u": "Minimal Model Equations",
+            "eq_v": "dv/dt = (1 - p)/τ_vminus - v/τ_vplus",
+            "eq_w": "dw/dt = (1 - p)(1 - w)/τ_wminus - pw/τ_wplus",
+            "eq_s": "ds/dt = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
+            "vars": "State variables (v, w, s) control the AP shape.",
+            "currents": "Simplified currents (J_fi, J_so, J_si) model depolarization and repolarization.",
+            "method": "Numerical integration via Explicit Euler method."
+        },
+        "s1s2": {
+          "title": "S1-S2 Protocol"
+        },
+        "mms": {
+          "title": "MMS Model"
+        },
+        "dynamic": {
+          "title": "Dynamic Protocol"
+        }
+    },
+    
+    "fhn": {
+      "desc": "The FitzHugh-Nagumo model is a 2D simplification of the Hodgkin-Huxley model, capturing essential excitability.",
+      "reentry": "The 'Reentry' initial condition creates a spiral wave simulating an arrhythmia.",
+      "method": "Finite difference method for diffusion and explicit Euler for reaction."
+    },
+    "bistable": {
+      "desc": "Simple bistable model demonstrating wave propagation in excitable media.",
+      "eq": "∂v/∂t = k * ∂²v/∂x² + A * v * (1 - v) * (v - α)",
+      "method": "Explicit Euler method in time and central finite differences in space."
+    },
+    "ms1d": {
+      "desc": "1D simulation of the Mitchell-Schaeffer model, showing action potential propagation and the effect of sodium channel inactivation.",
+      "eq": "∂v/∂t = k * ∂²v/∂x² + (h * v² * (1 - v)) / τ_in - v / τ_out",
+      "method": "Numerical integration via Explicit Euler."
     }
+
   }
 }

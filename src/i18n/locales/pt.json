@@ -64,7 +64,13 @@
     "custom_params": "Customizado",
     "action_potential": "Potencial de Ação",
     "remaining": "restantes",
-    "stimulus_protocol": "Protocolo de Estímulo"
+    "stimulus_protocol": "Protocolo de Estímulo",
+    "show_stimuli": "Exibir Estímulos",
+    "view_options": "Visualização",
+    "line_chart": "Gráfico de Linha",
+    "color_chart": "Gráfico de Cores",
+    "left_pulse": "Pulso à Esquerda",
+    "reentry": "Reentrada"
   },
   "params": {
     "L": "Tamanho L",
@@ -72,8 +78,8 @@
     "dt": "Passo de tempo",
     "tempo_total": "Tempo Total (ms)",
     "downsamplingFactor": "Fator de Downsampling",
-    "sigma_l": "Condutividade Longitudinal (σ_l)",
-    "sigma_t": "Condutividade Transversal (σ_t)",
+    "sigma_l": "Condutividade Longitudinal",
+    "sigma_t": "Condutividade Transversal",
     "angle": "Ângulo da Fibra (°)",
     "sigma_x": "Condutividade X",
     "sigma_y": "Condutividade Y",
@@ -142,7 +148,34 @@
     "tau_fi": "tau_fi", "tau_o1": "tau_o1", "tau_o2": "tau_o2", 
     "tau_so1": "tau_so1", "tau_so2": "tau_so2", "k_so": "k_so", "u_so": "u_so", 
     "tau_s1": "tau_s1", "tau_s2": "tau_s2", "k_s": "k_s", "u_s": "u_s", 
-    "tau_si": "tau_si", "tau_winf": "tau_winf", "w_infstar": "w_infstar"
+    "tau_si": "tau_si", "tau_winf": "tau_winf", "w_infstar": "w_infstar",
+    "num_estimulos_s1": "Nº Estímulos S1",
+    "tau_in": "Tau In",
+    "tau_out": "Tau Out",
+    "tau_open": "Tau Open",
+    "tau_close": "Tau Close",
+    "v_gate": "V Gate",
+    "BCL_S1": "BCL S1",
+    "posição_do_estímulo": "Posição Estímulo",
+    "tamanho_do_estímulo": "Tamanho Estímulo",
+    "epsilon": "Epsilon",
+    "gamma": "Gamma",
+    "alpha": "Alpha",
+    "dx": "dx ",
+    "totalTime": "Tempo Total",
+    "k": "k (difusão)",
+    "A": "A",
+    "cellType_desc": "Define o conjunto de parâmetros para simular células do Epicárdio, Endocárdio ou Miocárdio.",
+    "BCL_S1_desc": "Intervalo de tempo entre os estímulos S1.",
+    "BCL_S2_inicial_desc": "Intervalo inicial para o estímulo S2.",
+    "BCL_S2_final_desc": "Intervalo final para o estímulo S2.",
+    "delta_CL_desc": "Valor decrementado do intervalo S1-S2 a cada iteração.",
+    "inicio_desc": "Instante em que o primeiro estímulo é aplicado.",
+    "duracao_desc": "Duração temporal da corrente de estímulo.",
+    "amplitude_desc": "Intensidade da corrente de estímulo aplicada.",
+    "dt_desc": "Passo de tempo.",
+    "num_estimulos_s1_desc": "Quantidade de estímulos S1.",
+    "downsamplingFactor_desc": "Reduz a quantidade de pontos salvos para otimizar a visualização do gráfico."
   },
   "modals": {
     "math_model": "Modelo Matemático",
@@ -161,7 +194,7 @@
       "steps": {
         "1": "Configure a geometria e tecido na barra lateral.",
         "2": "Adicione estímulos e posicione-os.",
-        "3": "Configure a fibrose (opcional) para criar obstáculos.",
+        "3": "Configure a fibrose para criar obstáculos.",
         "4": "Clique em **Simular**.",
         "5": "Use o player para ver o resultado.",
         "6": "Clique no gráfico para ver o potencial de ação daquele ponto."
@@ -197,7 +230,7 @@
         "general": "Parâmetros Gerais",
         "L_N": "L: Tamanho do tecido | N: Resolução da malha (pontos)",
         "dt": "dt: Passo de tempo da simulação (ms)",
-        "sigma": "σ_l / σ_t: Condutividade longitudinal e transversal (difusão)",
+        "sigma": "σ_l / σ_t: Condutividade longitudinal e transversal",
         "angle": "Ângulo: Orientação das fibras do tecido",
         "ms_params": "Mitchell-Schaeffer",
         "tau_in_out": "τ_in: Tempo de despolarização | τ_out: Tempo de repolarização",
@@ -216,11 +249,43 @@
     "s1s2": { "protocol_title": "Protocolo S1-S2", "ms": { "desc": "S1 seguido de S2."}, "minimal": { "desc": "S1-S2 no Minimal Model para estudar refratariedade." }, "s1_desc": "S1: Estabilização", "s2_desc": "S2: Teste de acoplamento" },
     "restitution": { 
         "desc": "Curvas de Restituição APD vs DI", 
-        "minimal": { 
-            "title": "Minimal Model",
-            "desc": "Gera curva de restituição usando Minimal Model.", 
-            "eq_u": "Equações do Minimal Model" 
-        } 
+        "apd_def": "APD: Duração do Potencial de Ação. Tempo em que a célula permanece despolarizada.",
+        "di_def": "DI: Intervalo Diastólico. Tempo de repouso entre o fim de um AP e o início do próximo.",
+        "what_is_desc": "A curva de restituição descreve como a duração do potencial de ação (APD) se adapta a diferentes intervalos diastólicos.",
+        "minimal": {
+          "title": "Minimal Model",
+          "eq_v": "dv/dt = (1 - p)/τ_vminus - v/τ_vplus",
+          "eq_w": "dw/dt = (1 - p)(1 - w)/τ_wminus - pw/τ_wplus",
+          "eq_s": "ds/dt = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
+          "vars": "Variáveis de estado (v, w, s) controlam a forma do AP.",
+          "currents": "Correntes simplificadas (J_fi, J_so, J_si) modelam a despolarização e repolarização.",
+          "method": "Integração numérica via método de Euler explícito."
+        },
+        "s1s2": {
+          "title": "Protocolo S1-S2"
+        } ,
+        "mms": {
+          "title": "Modelo MMS"
+        } ,
+        "dynamic": {
+          "title": "Protocolo Dinâmico"
+        }
+    },
+    "fhn": {
+      "desc": "O modelo FitzHugh-Nagumo é uma representação simplificada que captura a excitabilidade essencial.",
+      "reentry": "A condição inicial de Reentrada cria uma onda espiral simulando uma arritmia.",
+      "method": "Método de diferenças finitas para difusão e Euler explícito para reação."
+    },
+    "bistable": {
+      "desc": "Modelo bistável simples que demonstra propagação de onda em meio excitável.",
+      "eq": "∂v/∂t = k * ∂²v/∂x² + A * v * (1 - v) * (v - α)",
+      "method": "Método de Euler explícito no tempo e diferenças finitas centrais no espaço."
+    },
+    "ms1d": {
+      "desc": "Simulação 1D do modelo Mitchell-Schaeffer, mostrando propagação do potencial de ação e o efeito da inativação do canal de sódio.",
+      "eq": "∂v/∂t = k * ∂²v/∂x² + (h * v² * (1 - v)) / τ_in - v / τ_out",
+      "method": "Integração numérica via Euler explícito."
     }
+    
   }
 }
