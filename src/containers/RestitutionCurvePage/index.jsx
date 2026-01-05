@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Chart from '../../components/Chart';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
@@ -32,7 +32,22 @@ const SettingsSection = ({ title, children, defaultOpen = false }) => {
   );
 };
 
-// Valores padrão iniciais do Minimal Model
+// Configuração das variáveis por modelo
+const MODEL_VARIABLES = {
+  s1s2: ['v', 'h'],
+  mms: ['v', 'h'],
+  dynamic: ['v', 'h'],
+  minimal: ['v', 'gate_v', 'gate_w', 'gate_s']
+};
+
+const VARIABLE_LABELS = {
+  v: 'Voltagem',
+  h: 'Gate h',
+  gate_v: 'Gate v',
+  gate_w: 'Gate w',
+  gate_s: 'Gate s'
+};
+
 const DEFAULT_MINIMAL_PARAMS = {
   endo: {
     u_o: 0.0, u_u: 1.56, theta_v: 0.3, theta_w: 0.13, theta_vminus: 0.2, theta_o: 0.006,
@@ -71,6 +86,7 @@ const RestitutionCurvePage = ({ onBack }) => {
   const [selectedModel, setSelectedModel] = useState('minimal');
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false); 
   const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
+  const [visibleVars, setVisibleVars] = useState({ v: true, gate_v: true, gate_w: true, gate_s: true });
 
   // Parâmetros editáveis para cada modelo
   const [editableParams, setEditableParams] = useState({
@@ -102,16 +118,16 @@ const RestitutionCurvePage = ({ onBack }) => {
       delta_CL: 20,
       tau_in: 0.3, 
       tau_out: 6.0, 
-      tau_open: 120.0,
-      tau_close: 150.0,
-      v_gate: 0.13,
-      inicio: 5.0,
-      duracao: 1.0,
-      amplitude: 1.0,
-      dt: 0.1,
-      v_inicial: 0.0,
-      h_inicial: 1.0,
-      num_estimulos_s1: 8,
+      tau_open: 120.0, 
+      tau_close: 150.0, 
+      v_gate: 0.13, 
+      inicio: 5.0, 
+      duracao: 1.0, 
+      amplitude: 1.0, 
+      dt: 0.1, 
+      v_inicial: 0.0, 
+      h_inicial: 1.0, 
+      num_estimulos_s1: 8, 
       downsamplingFactor: 1000,
     },
     // Parâmetros para o modelo Dinâmico
@@ -121,16 +137,16 @@ const RestitutionCurvePage = ({ onBack }) => {
       CIinc: 10, 
       nbeats: 5, 
       tau_in: 0.3,
-      tau_out: 6.0,
-      tau_open: 120.0,
-      tau_close: 150.0,
-      v_gate: 0.13,
-      inicio: 5.0,
-      duracao: 1.0,
-      amplitude: 1.0,
-      dt: 0.1,
-      v_inicial: 0.0,
-      h_inicial: 1.0,
+      tau_out: 6.0, 
+      tau_open: 120.0, 
+      tau_close: 150.0, 
+      v_gate: 0.13, 
+      inicio: 5.0, 
+      duracao: 1.0, 
+      amplitude: 1.0, 
+      dt: 0.1, 
+      v_inicial: 0.0, 
+      h_inicial: 1.0, 
       downsamplingFactor: 50,
     },
     // Parâmetros para o Minimal Model
@@ -172,7 +188,6 @@ const RestitutionCurvePage = ({ onBack }) => {
         if (analyticalApd && analyticalApd > 0) return { bcl: di, apd: analyticalApd };
         return null;
       }).filter(Boolean); 
-
     } else if (selectedModel === 's1s2' || selectedModel === 'dynamic') {
       // Calculo analitico do modelo MS padrão
       const h_min = (4 * tau_in) / tau_out;
@@ -188,7 +203,6 @@ const RestitutionCurvePage = ({ onBack }) => {
     setAnalyticalData(analyticalPoints); 
   }, [editableParams, selectedModel]);
 
-
   useEffect(() => {
     let simulationWorker;
     if (selectedModel === 's1s2') simulationWorker = new RestitutionWorker(); 
@@ -196,19 +210,36 @@ const RestitutionCurvePage = ({ onBack }) => {
     else if (selectedModel === 'minimal') simulationWorker = new MinimalWorker();
     else simulationWorker = new DynamicWorker();
 
+    // Resetar visibilidade ao trocar de modelo
+    if (selectedModel === 'minimal') {
+      setVisibleVars({ v: true, gate_v: true, gate_w: true, gate_s: true });
+    } else {
+      setVisibleVars({ v: true, h: true });
+    }
+
     setWorker(simulationWorker);
     simulationWorker.onmessage = (e) => {
       const { timeSeriesData, restitutionData } = e.data;
       if (timeSeriesData) setData(timeSeriesData);
       setRestitutionData(restitutionData);
-      // Calcula a curva analítica
       calculateAnalyticalCurve(restitutionData); 
       setLoading(false);
     };
     return () => simulationWorker.terminate();
   }, [selectedModel, calculateAnalyticalCurve]); 
 
-  //  função para lidar com mudanças nos inputs
+  const chartData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    const activeKeys = ['time', 'tempo', ...Object.keys(visibleVars).filter(k => visibleVars[k])];
+    return data.map(point => {
+      const newPoint = {};
+      activeKeys.forEach(key => {
+        if (point[key] !== undefined) newPoint[key] = point[key];
+      });
+      return newPoint;
+    });
+  }, [data, visibleVars]);
+
   const handleChange = useCallback((e, name) => {
     const value = name === 'cellType' ? e.target.value : parseFloat(e.target.value);
     setEditableParams((prev) => ({
@@ -239,14 +270,19 @@ const RestitutionCurvePage = ({ onBack }) => {
       setData([]);
       setRestitutionData([]);
       setAnalyticalData([]);
-      
       const payload = { ...editableParams[selectedModel] };
       if (selectedModel === 'minimal') payload.minimalCellParams = minimalCustomParams;
       worker.postMessage(payload);
     }
   }, [worker, editableParams, selectedModel, minimalCustomParams]);
 
-  // Função para renderizar o conteúdo do modal de informações
+  const toggleVariable = (variableKey) => {
+    setVisibleVars(prev => ({
+      ...prev,
+      [variableKey]: !prev[variableKey]
+    }));
+  };
+
   const renderInfoModalContent = () => {
     const modelKey = selectedModel;
     const steps = t(`modals.restitution.${modelKey}.steps`, { returnObjects: true });
@@ -318,6 +354,7 @@ const RestitutionCurvePage = ({ onBack }) => {
   
   // Parâmetros atuais baseados no modelo selecionado
   const currentParams = editableParams[selectedModel];
+  const currentVariables = MODEL_VARIABLES[selectedModel];
 
   // Renderiza a página
   return (
@@ -356,20 +393,41 @@ const RestitutionCurvePage = ({ onBack }) => {
           <div className="p-6 pb-6">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">{t('common.configuration')}</p>
             
-            <SettingsSection title={t('common.view_options') || "Visualização"} defaultOpen={true}>
-                <div className="flex items-center justify-between px-2">
-                    <label htmlFor="showTimeSeries" className="text-sm font-medium text-slate-700 cursor-pointer">{t('common.show_stimuli')}</label>
-                    <div className="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
-                        <input 
-                            type="checkbox" 
-                            name="showTimeSeries" 
-                            id="showTimeSeries" 
-                            checked={showTimeSeries}
-                            onChange={() => setShowTimeSeries(!showTimeSeries)}
-                            className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer checked:right-0 checked:border-emerald-500 right-5 border-slate-300 transition-all duration-200 top-0.5"
-                        />
-                        <label htmlFor="showTimeSeries" className="toggle-label block overflow-hidden h-6 rounded-full bg-slate-200 cursor-pointer checked:bg-emerald-500"></label>
+            <SettingsSection title={t('common.view_options')} defaultOpen={true}>
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between px-2">
+                        <label htmlFor="showTimeSeries" className="text-sm font-medium text-slate-700 cursor-pointer">{t('common.show_stimuli')}</label>
+                        <div className="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                            <input 
+                                type="checkbox" 
+                                name="showTimeSeries" 
+                                id="showTimeSeries" 
+                                checked={showTimeSeries}
+                                onChange={() => setShowTimeSeries(!showTimeSeries)}
+                                className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer checked:right-0 checked:border-emerald-500 right-5 border-slate-300 transition-all duration-200 top-0.5"
+                            />
+                            <label htmlFor="showTimeSeries" className="toggle-label block overflow-hidden h-6 rounded-full bg-slate-200 cursor-pointer checked:bg-emerald-500"></label>
+                        </div>
                     </div>
+
+                    {showTimeSeries && currentVariables.map(variableKey => (
+                      <div key={variableKey} className="flex items-center justify-between px-2 border-l-2 border-slate-100 pl-2 ml-1">
+                        <label htmlFor={`toggle-${variableKey}`} className="text-sm font-medium text-slate-600 cursor-pointer">
+                          {VARIABLE_LABELS[variableKey] || variableKey}
+                        </label>
+                        <div className="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                            <input 
+                                type="checkbox" 
+                                name={`toggle-${variableKey}`} 
+                                id={`toggle-${variableKey}`} 
+                                checked={!!visibleVars[variableKey]} 
+                                onChange={() => toggleVariable(variableKey)}
+                                className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer checked:right-0 checked:border-emerald-500 right-5 border-slate-300 transition-all duration-200 top-0.5"
+                            />
+                            <label htmlFor={`toggle-${variableKey}`} className="toggle-label block overflow-hidden h-6 rounded-full bg-slate-200 cursor-pointer checked:bg-emerald-500"></label>
+                        </div>
+                      </div>
+                    ))}
                 </div>
             </SettingsSection>
 
@@ -431,18 +489,18 @@ const RestitutionCurvePage = ({ onBack }) => {
                          <RestitutionChart data={restitutionData} analyticalData={analyticalData} />
                     ) : (
                         <div className="h-[350px] w-full flex flex-col items-center justify-center text-slate-400">
-                             <i className="bi bi-activity text-6xl mb-4 opacity-50"></i>
+                             <i className="bi bi-graph-up text-6xl mb-4 opacity-50"></i>
                              <p>{t('common.ready')}</p>
                         </div>
                     )}
                 </div>
 
-                {/* Série Temporal */}
+                {/* Série Temporal (Opcional) */}
                 {showTimeSeries && (
                     <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 min-h-[300px]">
                         <h3 className="text-lg font-bold text-slate-700 mb-4 pl-2 border-l-4 border-emerald-500">{t('common.stimuli')}</h3>
-                        {data.length > 0 ? (
-                             <Chart data={data} />
+                        {chartData.length > 0 ? (
+                             <Chart data={chartData} />
                         ) : (
                             <div className="h-[250px] w-full flex flex-col items-center justify-center text-slate-400">
                                 <p>{t('common.ready')}</p>
@@ -451,6 +509,8 @@ const RestitutionCurvePage = ({ onBack }) => {
                     </div>
                 )}
             </div>
+
+            {/* Barra de Ação Inferior */}
             <div className="bg-white border-t border-slate-200 p-4 shadow-lg z-20">
                 <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-4 w-full md:w-auto">

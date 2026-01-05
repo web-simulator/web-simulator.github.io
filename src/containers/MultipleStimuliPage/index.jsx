@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Chart from '../../components/Chart';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
@@ -57,6 +57,20 @@ const DEFAULT_MINIMAL_PARAMS = {
   }
 };
 
+// Configuração das variáveis por modelo
+const MODEL_VARIABLES = {
+  ms: ['v', 'h'],
+  minimal: ['v', 'gate_v', 'gate_w', 'gate_s']
+};
+
+const VARIABLE_LABELS = {
+  v: 'Voltagem',
+  h: 'Gate h',
+  gate_v: 'Gate v',
+  gate_w: 'Gate w',
+  gate_s: 'Gate s'
+};
+
 const MultipleStimuliPage = ({ onBack }) => {
   const { t } = useTranslation();
   const [data, setData] = useState([]);
@@ -66,6 +80,9 @@ const MultipleStimuliPage = ({ onBack }) => {
   
   const [selectedModel, setSelectedModel] = useState('ms');
   const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
+
+  // Estado para visibilidade das variáveis
+  const [visibleVars, setVisibleVars] = useState({ v: true, h: true });
 
   const [editableParams, setEditableParams] = useState({
     ms: {
@@ -100,8 +117,10 @@ const MultipleStimuliPage = ({ onBack }) => {
     let simulationWorker;
     if (selectedModel === 'minimal') {
       simulationWorker = new MinimalWorker();
+      setVisibleVars({ v: true, gate_v: true, gate_w: true, gate_s: true });
     } else {
       simulationWorker = new SimulationWorker();
+      setVisibleVars({ v: true, h: true });
     }
     setWorker(simulationWorker);
 
@@ -117,7 +136,19 @@ const MultipleStimuliPage = ({ onBack }) => {
     };
   }, [selectedModel]);
 
-  // Atualiza os parâmetros editáveis quando o usuário altera os campos de entrada
+  // Filtragem dos dados para o gráfico
+  const chartData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    const activeKeys = ['time', 'tempo', ...Object.keys(visibleVars).filter(k => visibleVars[k])];
+    return data.map(point => {
+      const newPoint = {};
+      activeKeys.forEach(key => {
+        if (point[key] !== undefined) newPoint[key] = point[key];
+      });
+      return newPoint;
+    });
+  }, [data, visibleVars]);
+
   const handleChange = useCallback((e, name) => {
     const value = name === 'cellType' ? e.target.value : parseFloat(e.target.value);
     setEditableParams((prevParams) => ({ 
@@ -152,7 +183,15 @@ const MultipleStimuliPage = ({ onBack }) => {
     }
   }, [worker, editableParams, selectedModel, minimalCustomParams]);
 
+  const toggleVariable = (variableKey) => {
+    setVisibleVars(prev => ({
+      ...prev,
+      [variableKey]: !prev[variableKey]
+    }));
+  };
+
   const currentParams = editableParams[selectedModel];
+  const currentVariables = MODEL_VARIABLES[selectedModel];
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-auto lg:overflow-hidden">
@@ -183,6 +222,29 @@ const MultipleStimuliPage = ({ onBack }) => {
           <div className="p-6 pb-6">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">{t('common.configuration')}</p>
 
+            <SettingsSection title={t('common.view_options')} defaultOpen={true}>
+              <div className="space-y-3">
+                {currentVariables.map(variableKey => (
+                  <div key={variableKey} className="flex items-center justify-between px-2">
+                    <label htmlFor={`toggle-${variableKey}`} className="text-sm font-medium text-slate-700 cursor-pointer">
+                      {VARIABLE_LABELS[variableKey] || variableKey}
+                    </label>
+                    <div className="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                        <input 
+                            type="checkbox" 
+                            name={`toggle-${variableKey}`} 
+                            id={`toggle-${variableKey}`} 
+                            checked={!!visibleVars[variableKey]} 
+                            onChange={() => toggleVariable(variableKey)}
+                            className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer checked:right-0 checked:border-emerald-500 right-5 border-slate-300 transition-all duration-200 top-0.5"
+                        />
+                        <label htmlFor={`toggle-${variableKey}`} className="toggle-label block overflow-hidden h-6 rounded-full bg-slate-200 cursor-pointer checked:bg-emerald-500"></label>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SettingsSection>
+
             <SettingsSection title={t('common.simulation_params')} defaultOpen={true}>
               <div className="grid grid-cols-2 gap-3">
                  <Input label={t('params.dt')} value={currentParams.dt} onChange={(e) => handleChange(e, 'dt')} type="number" />
@@ -190,7 +252,7 @@ const MultipleStimuliPage = ({ onBack }) => {
               </div>
             </SettingsSection>
 
-            <SettingsSection title={t('common.stimulus_protocol')} defaultOpen={true}>
+            <SettingsSection title={t('common.stimulus')} defaultOpen={true}>
               <div className="grid grid-cols-2 gap-3">
                  <Input label={t('params.BCL')} value={currentParams.BCL} onChange={(e) => handleChange(e, 'BCL')} type="number" />
                  <Input label={t('params.num_estimulos')} value={currentParams.num_estimulos} onChange={(e) => handleChange(e, 'num_estimulos')} type="number" />
@@ -250,8 +312,8 @@ const MultipleStimuliPage = ({ onBack }) => {
         <main className="flex-1 bg-slate-100 relative flex flex-col min-h-0">
           <div className="flex-1 flex items-center justify-center p-4 relative min-h-[50vh] lg:min-h-0">
             <div className="relative shadow-lg rounded-lg overflow-hidden bg-white w-full h-full border border-slate-200 p-4">
-               {data.length > 0 ? (
-                  <Chart data={data} />
+               {chartData.length > 0 ? (
+                  <Chart data={chartData} />
                ) : (
                   <div className="h-full w-full flex flex-col items-center justify-center text-slate-400">
                       <i className="bi bi-activity text-6xl mb-4 opacity-50"></i>
@@ -291,11 +353,9 @@ const MultipleStimuliPage = ({ onBack }) => {
           <section>
             <h2 className="text-2xl font-bold text-emerald-800 mb-2">{t('home.models.multiple_stimuli.title')}</h2>
             
-            <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.multiple.protocol_title')}</h3>
-            
             {selectedModel === 'ms' ? (
                 <>
-                <p className="text-slate-600 leading-relaxed mb-4">{t('modals.multiple.ms.desc')}</p>
+                <p className="text-slate-600 leading-relaxed mb-4">{t('modals.single.ms.desc')}</p>
                 <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.math_model')}</h3>
                 <p className="text-sm text-slate-600 mb-2">{t('modals.ms_desc_base')}</p>
                 <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm space-y-2">
@@ -306,10 +366,10 @@ const MultipleStimuliPage = ({ onBack }) => {
                 </>
             ) : (
                 <>
-                <p className="text-slate-600 leading-relaxed mb-4">{t('modals.multiple.minimal.desc')}</p>
+                <p className="text-slate-600 leading-relaxed mb-4">{t('modals.single.minimal.desc')}</p>
                 <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.math_model')}</h3>
                 <p className="text-sm text-slate-600 mb-2">{t('modals.minimal_desc_base')}</p>
-                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm space-y-2">
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm space-y-2 mb-4">
                     <p>{t('modals.eq_u_minimal')}</p>
                     <p>{t('modals.eq_v_minimal')}</p>
                     <p>{t('modals.eq_w_minimal')}</p>
