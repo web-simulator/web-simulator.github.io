@@ -1,6 +1,17 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from 'recharts';
 
+// Cores das linhas 
+const LINES_CONFIG = {
+  v: { stroke: "#8884d8", name: "Voltagem" },
+  h: { stroke: "#82ca9d", name: "Gate h" },
+  gate_v: { stroke: "#ff7300", name: "Gate v" },
+  gate_w: { stroke: "#ff0000", name: "Gate w" },
+  gate_s: { stroke: "#00bfff", name: "Gate s" }
+};
+
 const Chart = ({ data }) => {
+  const availableKeys = data && data.length > 0 ? Object.keys(data[0]) : []; // Linhas disponíveis
+
   return (
     // Container responsivo para ajustar o gráfico ao tamanho do elemento pai
     <ResponsiveContainer width="100%" height={400}>
@@ -45,56 +56,24 @@ const Chart = ({ data }) => {
           travellerWidth={10}
         />
         
-        {/* Curva da voltagem */}
-        <Line 
-          type="monotone"       
-          dataKey="v"           
-          stroke="#8884d8"      
-          name="Voltagem"
-          dot={false}           
-          isAnimationActive={false} 
-          strokeWidth={2.2}
-        />
-        
-        {/* Curva do Gate */}
-        <Line 
-          type="monotone" 
-          dataKey="h" 
-          stroke="#82ca9d" 
-          name="Gate h"
-          dot={false} 
-          isAnimationActive={false} 
-          strokeWidth={2.2}
-        />
-
-        {/* Curvas específicas do Minimal Model */}
-        <Line 
-          type="monotone" 
-          dataKey="gate_v" 
-          stroke="#ff7300" 
-          name="Gate v"
-          dot={false} 
-          isAnimationActive={false} 
-          strokeWidth={2.0}
-        />
-        <Line 
-          type="monotone" 
-          dataKey="gate_w" 
-          stroke="#ff0000" 
-          name="Gate w"
-          dot={false} 
-          isAnimationActive={false} 
-          strokeWidth={2.0}
-        />
-        <Line 
-          type="monotone" 
-          dataKey="gate_s" 
-          stroke="#00bfff" 
-          name="Gate s"
-          dot={false} 
-          isAnimationActive={false} 
-          strokeWidth={2.0}
-        />
+        {/* Renderização das linhas */}
+        {Object.keys(LINES_CONFIG).map(key => {
+            if (availableKeys.includes(key)) {
+                return (
+                    <Line 
+                        key={key}
+                        type="monotone"
+                        dataKey={key}
+                        stroke={LINES_CONFIG[key].stroke}
+                        name={LINES_CONFIG[key].name}
+                        dot={false}
+                        isAnimationActive={false}
+                        strokeWidth={2.2}
+                    />
+                );
+            }
+            return null;
+        })}
 
       </LineChart>
     </ResponsiveContainer>
