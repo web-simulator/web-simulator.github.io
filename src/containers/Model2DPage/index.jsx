@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import HeatmapChart from '../../components/HeatmapChart';
 import Colorbar from '../../components/Colorbar';
 import Input from '../../components/Input';
@@ -282,7 +282,7 @@ const Model2DPage = ({ onBack }) => {
       currentFibrosisMap = fibrosis; 
   }
 
-  const getTimeseriesForPoint = () => {
+  const timeseriesData = useMemo(() => {
     if (!selectedPoint || !simulationResult) return [];
     const { frames, times, N, totalFrames } = simulationResult;
     const idx = selectedPoint.i * N + selectedPoint.j;
@@ -291,7 +291,14 @@ const Model2DPage = ({ onBack }) => {
         timeseries.push({ tempo: times[f].toFixed(1), v: frames[f * N * N + idx] });
     }
     return timeseries;
-  };
+  }, [selectedPoint, simulationResult]);
+
+  const chartModalContent = useMemo(() => (
+     <>
+       <h2 className="text-lg font-bold mb-2">{t('common.action_potential')}</h2>
+       <Chart data={timeseriesData} />
+     </>
+  ), [timeseriesData, t]);
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-auto lg:overflow-hidden">
@@ -596,8 +603,7 @@ const Model2DPage = ({ onBack }) => {
       </div>
 
       <Modal isOpen={isChartModalOpen} onClose={() => setIsChartModalOpen(false)}>
-         <h2 className="text-lg font-bold mb-2">{t('common.action_potential')}</h2>
-         <Chart data={getTimeseriesForPoint()} />
+         {chartModalContent}
       </Modal>
 
       {/* Modal para Informações */}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import HeatmapChart from '../../components/HeatmapChart';
 import Colorbar from '../../components/Colorbar';
 import Input from '../../components/Input';
@@ -253,7 +253,22 @@ const SourceSinkPage = ({ onBack }) => {
       currentGeometryMap = fibrosis; 
   }
 
-  const timeseriesData = getTimeseriesForPoint(); 
+  // Memoriza os dados da série temporal para evitar recálculos no modal
+  const timeseriesData = useMemo(() => {
+    if (!selectedPoint || !simulationResult) return [];
+    
+    const { frames, times, N, totalFrames } = simulationResult;
+    const { i, j } = selectedPoint;
+    const idx = i * N + j;
+    
+    const timeseries = [];
+    for(let f = 0; f < totalFrames; f++) {
+        const val = frames[f * N * N + idx];
+        const t = times[f];
+        timeseries.push({ tempo: parseFloat(t.toFixed(2)), v: val });
+    }
+    return timeseries;
+  }, [selectedPoint, simulationResult]);
 
   const renderInfoModalContent = () => (
     <div className="info-modal-content text-slate-800 space-y-6 max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
@@ -285,6 +300,16 @@ const SourceSinkPage = ({ onBack }) => {
       </section>
     </div>
   );
+
+  // Memoriza o conteúdo do modal
+  const chartModalContent = useMemo(() => (
+    <>
+      <h2 className="text-lg font-bold text-slate-700 mb-4">
+        Potencial em (x: {selectedPoint ? (selectedPoint.j * params.dx).toFixed(2) : 0}, y: {selectedPoint ? (selectedPoint.i * params.dx).toFixed(2) : 0})
+      </h2>
+      <Chart data={timeseriesData} />
+    </>
+  ), [selectedPoint, params.dx, timeseriesData]);
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-auto lg:overflow-hidden">
@@ -447,10 +472,7 @@ const SourceSinkPage = ({ onBack }) => {
       
       {/* Modal do gráfico de ponto */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <h2 className="text-lg font-bold text-slate-700 mb-4">
-          Potencial em (x: {selectedPoint ? (selectedPoint.j * params.dx).toFixed(2) : 0}, y: {selectedPoint ? (selectedPoint.i * params.dx).toFixed(2) : 0})
-        </h2>
-        <Chart data={timeseriesData} />
+        {chartModalContent}
       </Modal>
 
       {/* Modal de Informações */}

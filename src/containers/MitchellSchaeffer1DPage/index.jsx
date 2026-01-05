@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import MS1DChart from '../../components/MS1DChart';
 import SpatiotemporalChart from '../../components/SpatiotemporalChart';
 import Input from '../../components/Input';
@@ -139,17 +139,16 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
   }, []);
 
   // Filtra com base no 'selectedX'
-  const getTimeseriesForPoint = () => {
+  const timeseriesData = useMemo(() => {
     if (selectedX === null || simulationData.length === 0) return [];
     return simulationData.map(frame => ({
       tempo: parseFloat(frame.time),
       v: frame.data[selectedX].v,
       h: frame.data[selectedX].h,
     }));
-  };
+  }, [selectedX, simulationData]);
 
   const currentChartData = simulationData[currentFrame]?.data || [];
-  const timeseriesData = getTimeseriesForPoint();
 
   const renderInfoModalContent = () => (
     <div className="info-modal-content text-slate-800 space-y-4">
@@ -174,6 +173,16 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
       </ul>
     </div>
   );
+
+
+  const chartModalContent = useMemo(() => (
+    <>
+      <h2 className="text-lg font-bold text-slate-700 mb-4">
+        Potencial em X = {selectedX !== null ? (selectedX * editableParams.dx).toFixed(2) : ''}
+      </h2>
+      <Chart data={timeseriesData} />
+    </>
+  ), [selectedX, editableParams.dx, timeseriesData]);
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-auto lg:overflow-hidden">
@@ -312,8 +321,7 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
 
       {/* Modal para exibir o gráfico de um ponto clicado. */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <h2 className="text-lg font-bold text-slate-700 mb-4">Potencial em X = {selectedX !== null ? (selectedX * editableParams.dx).toFixed(2) : ''}</h2>
-        <Chart data={timeseriesData} />
+        {chartModalContent}
       </Modal>
 
       {/* Modal para Informações */}
