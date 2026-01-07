@@ -267,6 +267,7 @@ const S1S2Page = ({ onBack }) => {
                  <Input label="S2 (Intervalo)" value={currentParams.S2} onChange={(e) => handleChange(e, 'S2')} type="number" />
                  <Input label={t('params.duracao')} value={currentParams.duração} onChange={(e) => handleChange(e, 'duração')} type="number" />
                  <Input label={t('params.amplitude')} value={currentParams.amplitude} onChange={(e) => handleChange(e, 'amplitude')} type="number" />
+                 <Input label="Nº Estímulos S1" value={currentParams.num_estimulos_s1} onChange={(e) => handleChange(e, 'num_estimulos_s1')} type="number" />
               </div>
             </SettingsSection>
 
