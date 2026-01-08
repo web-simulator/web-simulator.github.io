@@ -410,7 +410,7 @@ const SourceSinkPage = ({ onBack }) => {
                 <Input label={t('params.cx')} value={stimulusParams.cx} onChange={(e) => handleStimulusChange(e, 'cx')} type="number" className="mb-0" />
                 <Input label={t('params.cy')} value={stimulusParams.cy} onChange={(e) => handleStimulusChange(e, 'cy')} type="number" className="mb-0" />
                 <Input label={t('params.radius')} value={stimulusParams.radius} onChange={(e) => handleStimulusChange(e, 'radius')} type="number" className="col-span-2 mb-0" />
-                <Input label={t('params.startTime')} value={stimulusParams.startTime} onChange={(e) => handleStimulusChange(e, 'startTime')} type="number" className="mb-0" />
+                <Input label={t('params.inicio')} value={stimulusParams.startTime} onChange={(e) => handleStimulusChange(e, 'startTime')} type="number" className="mb-0" />
                 <Input label={t('params.duracao')} value={stimulusParams.duration} onChange={(e) => handleStimulusChange(e, 'duration')} type="number" className="mb-0" />
               </div>
             </SettingsSection>

@@ -17,6 +17,49 @@ function aplicarEstimulo(tempo_atual, amplitude, duracao, inicio, BCL_S1, interv
   return 0.0;
 }
 
+// Cálculo do APD90
+function calculateAPD90(trace) {
+    if (trace.length === 0) return 0;
+    
+    let v_peak = -Infinity;
+    let v_rest = 0;
+    let peakIndex = 0;
+
+    for (let i = 0; i < trace.length; i++) {
+        if (trace[i].v > v_peak) {
+            v_peak = trace[i].v;
+            peakIndex = i;
+        }
+    }
+
+    if (v_peak < 0.05) return 0;
+
+    const amplitude = v_peak - v_rest;
+    const v_90 = v_peak - 0.9 * amplitude;
+    
+    let t_start = trace[0].t;
+    let t_end = trace[trace.length - 1].t;
+
+    // Busca para trás a partir do pico
+    for (let i = peakIndex; i >= 0; i--) {
+        if (trace[i].v < v_90) {
+            t_start = trace[i].t;
+            break;
+        }
+    }
+
+    // Busca para frente a partir do pico
+    for (let i = peakIndex; i < trace.length; i++) {
+        if (trace[i].v < v_90) {
+            t_end = trace[i].t;
+            break;
+        }
+    }
+
+    return t_end - t_start;
+}
+
+
 // Parâmetros da simulação para o worker
 self.onmessage = (e) => {
   const params = e.data;
@@ -52,6 +95,11 @@ self.onmessage = (e) => {
   h[0] = h_inicial;
   tempo[0] = 0;
 
+  // Métricas do último estímulo
+  const inicio_s2 = inicio + (num_estimulos_s1 - 1) * BCL_S1 + intervalo_S2;
+  let max_dvdt = 0;
+  let last_beat_trace = [];
+
   // Loop principal (Euler + Rush-Larsen)
   for (let i = 1; i < passos; i++) {
     tempo[i] = i * dt;
@@ -69,6 +117,11 @@ self.onmessage = (e) => {
     const dv_dt = J_entrada + J_saida + estimulo;
 
     const v_next = v_prev + dv_dt * dt;
+
+    if (t >= inicio_s2) {
+        if (dv_dt > max_dvdt) max_dvdt = dv_dt;
+        last_beat_trace.push({ t: t, v: v_next });
+    }
 
     // Método de Rush-Larsen para h
     let alpha_h, beta_h;
@@ -96,6 +149,9 @@ self.onmessage = (e) => {
     h[i] = Math.max(0.0, Math.min(1.0, h_next));
   }
 
+  // Calcula APD
+  const apd = calculateAPD90(last_beat_trace);
+
   // Reduz a quantidade de pontos para otimização
   const sampledData = [];
   for (let i = 0; i < passos; i += downsamplingFactor) {
@@ -103,5 +159,11 @@ self.onmessage = (e) => {
   }
 
   // Envia os dados para a página principal
-  self.postMessage(sampledData);
+  self.postMessage({
+      data: sampledData,
+      metrics: {
+          dvdtMax: max_dvdt,
+          apd: apd
+      }
+  });
 };

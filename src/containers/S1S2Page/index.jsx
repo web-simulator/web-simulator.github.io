@@ -30,6 +30,18 @@ const SettingsSection = ({ title, children, defaultOpen = false }) => {
   );
 };
 
+const MetricCard = ({ label, value, unit }) => (
+  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col items-center justify-center shadow-sm hover:shadow-md transition-shadow">
+    <span className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">{label}</span>
+    <div className="flex items-baseline gap-1">
+      <span className="text-xl font-bold text-emerald-700">
+        {value !== null && value !== undefined ? value.toFixed(2) : '-'}
+      </span>
+      <span className="text-xs text-slate-400 font-medium">{unit}</span>
+    </div>
+  </div>
+);
+
 const DEFAULT_MINIMAL_PARAMS = {
   endo: {
     u_o: 0.0, u_u: 1.56, theta_v: 0.3, theta_w: 0.13, theta_vminus: 0.2, theta_o: 0.006,
@@ -73,6 +85,7 @@ const VARIABLE_LABELS = {
 const S1S2Page = ({ onBack }) => {
   const { t } = useTranslation();
   const [data, setData] = useState([]);
+  const [metrics, setMetrics] = useState(null);
   const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
@@ -124,7 +137,13 @@ const S1S2Page = ({ onBack }) => {
     setWorker(simulationWorker);
 
     simulationWorker.onmessage = (e) => {
-      setData(e.data);
+      if (e.data.metrics) {
+        setData(e.data.data);
+        setMetrics(e.data.metrics);
+      } else {
+        setData(e.data);
+        setMetrics(null);
+      }
       setLoading(false);
     };
 
@@ -170,6 +189,7 @@ const S1S2Page = ({ onBack }) => {
   const handleSimularClick = useCallback(() => {
     if (worker) {
       setLoading(true);
+      setMetrics(null);
       
       const currentParams = editableParams[selectedModel];
 
@@ -216,7 +236,7 @@ const S1S2Page = ({ onBack }) => {
             <span className="text-sm text-slate-500 hidden sm:block">{t('common.select_model')}:</span>
             <select 
               value={selectedModel} 
-              onChange={(e) => { setData([]); setSelectedModel(e.target.value); }} 
+              onChange={(e) => { setData([]); setMetrics(null); setSelectedModel(e.target.value); }} 
               className="bg-slate-100 border-none text-sm font-medium text-slate-700 py-2 px-4 rounded-lg cursor-pointer focus:ring-2 focus:ring-emerald-500"
             >
                 <option value="ms">Mitchell-Schaeffer</option>
@@ -320,9 +340,24 @@ const S1S2Page = ({ onBack }) => {
         {/* Conteúdo Principal */}
         <main className="flex-1 bg-slate-100 relative flex flex-col min-h-0">
           <div className="flex-1 flex items-center justify-center p-4 relative min-h-[50vh] lg:min-h-0">
-            <div className="relative shadow-lg rounded-lg overflow-hidden bg-white w-full h-full border border-slate-200 p-4">
+            <div className="relative shadow-lg rounded-lg overflow-hidden bg-white w-full h-full border border-slate-200 p-4 flex flex-col">
                {chartData.length > 0 ? (
-                  <Chart data={chartData} />
+                  <>
+                      <div className="flex-1 min-h-0">
+                          <Chart data={chartData} />
+                      </div>
+                      {metrics && (
+                          <div className="mt-4 pt-4 border-t border-slate-100 animate-fade-in">
+                            <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                                <i className="bi bi-speedometer2"></i> Métricas
+                            </h4>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <MetricCard label="dV/dt Máximo" value={metrics.dvdtMax} unit={selectedModel === 'ms' ? '1/ms' : ''} />
+                                <MetricCard label="APD 90" value={metrics.apd} unit="ms" />
+                            </div>
+                          </div>
+                      )}
+                  </>
                ) : (
                   <div className="h-full w-full flex flex-col items-center justify-center text-slate-400">
                       <i className="bi bi-activity text-6xl mb-4 opacity-50"></i>
