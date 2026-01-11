@@ -1,6 +1,7 @@
 {
   "home": {
     "title": "Simulador de Eletrofisiologia Cardíaca",
+    "subtitle": "Explore modelos matemáticos avançados de eletrofisiologia cardíaca em um ambiente interativo.",
     "btn_start": "Iniciar Simulação",
     "categories": {
       "0d": "Modelos 0D",

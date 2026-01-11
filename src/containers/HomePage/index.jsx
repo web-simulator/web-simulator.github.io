@@ -82,7 +82,7 @@ const HomePage = ({ onNavigate }) => {
             {t('home.title')}
           </h1>
           <p className="text-base md:text-xl text-emerald-100 max-w-2xl mx-auto font-light">
-            Explore modelos matemáticos avançados de eletrofisiologia cardíaca em um ambiente interativo.
+            {t('home.subtitle')}
           </p>
         </div>
       </header>

@@ -1,6 +1,7 @@
 {
   "home": {
     "title": "Cardiac Electrophysiology Simulator",
+    "subtitle": "Explore advanced mathematical models of cardiac electrophysiology in an interactive environment.",
     "btn_start": "Start Simulation",
     "categories": {
       "0d": "0D Models",
