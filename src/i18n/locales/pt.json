@@ -177,7 +177,21 @@
     "amplitude_desc": "Intensidade da corrente de estímulo aplicada.",
     "dt_desc": "Passo de tempo.",
     "num_estimulos_s1_desc": "Quantidade de estímulos S1.",
-    "downsamplingFactor_desc": "Reduz a quantidade de pontos salvos para otimizar a visualização do gráfico."
+    "downsamplingFactor_desc": "Reduz a quantidade de pontos salvos para otimizar a visualização do gráfico.",
+    "tempo_total_desc": "Duração total da simulação em milissegundos.",
+    "v_inicial_desc": "Valor inicial do potencial transmembrânico (v) no início da simulação.",
+    "h_inicial_desc": "Valor inicial da variável de gate (h), representando a disponibilidade dos canais de sódio.",
+    "despolarização_desc": "Constante de tempo que define a velocidade da fase de subida do potencial de ação (despolarização).",
+    "repolarização_desc": "Constante de tempo que define a velocidade de retorno ao repouso (repolarização).",
+    "recuperação_desc": "Constante de tempo para a reabertura do gate h quando a voltagem é baixa (período refratário).",
+    "inativação_desc": "Constante de tempo para o fechamento do gate h quando a voltagem é alta.",
+    "gate_desc": "Limiar de voltagem  que define a transição entre os estados de abertura e fechamento do gate h.",
+    "BCL_desc": "Basic Cycle Length: O intervalo de tempo entre estímulos consecutivos.",
+    "num_estimulos_desc": "Quantidade total de pulsos elétricos aplicados durante a simulação.",
+    "duração_desc": "Tempo de duração da aplicação da corrente de estímulo externo.",
+    "intervalo_desc": "Intervalo de tempo entre estímulos consecutivos na sequência.",
+    "S1_desc": "Estímulo básico (S1) aplicado em uma sequência regular para condicionar o tecido.",
+    "S2_desc": "Estímulo extra (S2) aplicado prematuramente após o trem de estímulos S1."
   },
   "modals": {
     "math_model": "Modelo Matemático",

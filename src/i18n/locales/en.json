@@ -177,7 +177,21 @@
     "amplitude_desc": "Intensity of the applied stimulus current.",
     "dt_desc": "Time step.",
     "num_estimulos_s1_desc": "Number of S1 stimuli applied to stabilize the system before S2.",
-    "downsamplingFactor_desc": "Reduces the number of saved points to optimize chart visualization."
+    "downsamplingFactor_desc": "Reduces the number of saved points to optimize chart visualization.",
+    "tempo_total_desc": "Total duration of the simulation in milliseconds.",
+    "v_inicial_desc": "Initial value of the transmembrane potential (v) at the start of the simulation.",
+    "h_inicial_desc": "Initial value of the gate variable (h), representing sodium channel availability.",
+    "despolarização_desc": "Time constant defining the speed of the action potential upstroke (depolarization).",
+    "repolarização_desc": "Time constant defining the speed of return to rest (repolarization).",
+    "recuperação_desc": "Time constant for the h-gate reopening when voltage is low (refractory period).",
+    "inativação_desc": "Time constant for the h-gate closing when voltage is high.",
+    "gate_desc": "Voltage threshold defining the transition between gate opening and closing states.",
+    "BCL_desc": "Basic Cycle Length: The time interval between consecutive stimuli.",
+    "num_estimulos_desc": "Total number of electrical pulses applied during the simulation.",
+    "duração_desc": "Duration time of the applied stimulus current.",
+    "intervalo_desc": "Time interval between consecutive stimuli in the sequence.",
+    "S1_desc": "Basic stimulus (S1) applied in a regular train to condition the tissue.",
+    "S2_desc": "Extra stimulus (S2) applied prematurely after the S1 train."
   },
   "modals": {
     "math_model": "Mathematical Model",

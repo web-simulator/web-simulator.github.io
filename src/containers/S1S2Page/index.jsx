@@ -435,7 +435,7 @@ const S1S2Page = ({ onBack }) => {
                 {Object.keys(currentParams).map(key => (
                  <div key={key} className="flex gap-1">
                      <span className="font-bold">{t(`params.${key}`) || key}:</span>
-                     <span>{key}</span>
+                     <span>{t(`params.${key}_desc`) || ''}</span>
                  </div>
                 ))}
             </div>

@@ -390,7 +390,7 @@ const MultipleStimuliPage = ({ onBack }) => {
                 {Object.keys(currentParams).map(key => (
                  <div key={key} className="flex gap-1">
                      <span className="font-bold">{t(`params.${key}`) || key}:</span>
-                     <span>{key}</span>
+                     <span>{t(`params.${key}_desc`) || key}</span>
                  </div>
                 ))}
             </div>
