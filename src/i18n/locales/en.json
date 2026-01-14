@@ -191,12 +191,22 @@
     "duração_desc": "Duration time of the applied stimulus current.",
     "intervalo_desc": "Time interval between consecutive stimuli in the sequence.",
     "S1_desc": "Basic stimulus (S1) applied in a regular train to condition the tissue.",
-    "S2_desc": "Extra stimulus (S2) applied prematurely after the S1 train."
+    "S2_desc": "Extra stimulus (S2) applied prematurely after the S1 train.",
+    "CI1_desc": "Initial Cycle Length (interval between stimuli) for the dynamic protocol.",
+    "CI0_desc": "Final (minimum) Cycle Length to be reached.",
+    "CIinc_desc": "Amount the cycle length is decremented at each stage.",
+    "nbeats_desc": "Number of beats applied for each cycle length before accelerating.",
+    "tau_in_desc": "Time constant defining the speed of depolarization (upstroke).",
+    "tau_out_desc": "Time constant defining the speed of repolarization (return to rest).",
+    "tau_open_desc": "Time for the h-gate to reopen (recovery of excitability).",
+    "tau_close_desc": "Time for the h-gate to close (inactivation during plateau).",
+    "v_gate_desc": "Voltage threshold that switches the h-gate behavior (open vs close)."
   },
   "modals": {
     "math_model": "Mathematical Model",
     "numerical_method": "Numerical Methods",
     "advanced_features": "Advanced Features",
+    "protocol": "Simulation Protocol",
     "param_meaning": "Parameters",
     "how_to_use": "How to use",
     "ms_desc_base": "The Mitchell-Schaeffer model describes action potential propagation using a voltage variable (v) and a gate variable (h), simplifying ionic currents.",
@@ -257,36 +267,99 @@
       }
     },
     "single": {
-      "ms": { "title": "Mitchell-Schaeffer", "desc": "Single stimulus simulation on a single MS cell.", "eq_v": "dv/dt = (h v² (1-v))/τ_in - v/τ_out", "eq_h1": "dh/dt = (1-h)/τ_open", "eq_h2": "dh/dt = -h/τ_close" },
-      "minimal": { "title": "Minimal Model", "desc": "Single stimulus simulation on a single Minimal cell.", "vars": "Variables u, v, w, s", "currents": "Currents J_fi, J_so, J_si" },
+      "ms": { 
+        "title": "Mitchell-Schaeffer", 
+        "desc": "Simulates the basic electrophysiological response of an excitable cell. This phenomenological model captures essential excitability and refractoriness properties using only two variables (voltage and h-gate)."
+      },
+      "eq_v": "dv/dt = (h v² (1-v))/τ_in - v/τ_out",
+      "eq_h1": "dh/dt = (1-h)/τ_open",
+      "eq_h2": "dh/dt = -h/τ_close",
+      "minimal": { 
+        "title": "Minimal Model", 
+        "desc": "Simulates a realistic Action Potential for human tissue. The model reproduces the detailed morphology of Epicardial, Endocardial, and Mid-myocardial (M-cells) cells, allowing the study of APD heterogeneity.",
+        "vars": "Variables u, v, w, s",
+        "currents": "Currents J_fi, J_so, J_si"
+      },
       "method": "Explicit Euler and Rush-Larsen Methods."
     },
-    "multiple": { "protocol_title": "Protocol", "ms": { "desc": "8 estimuli sequence." }, "minimal": { "desc": "Estimuli sequence with Minimal Model." } },
-    "s1s2": { "protocol_title": "S1-S2 Protocol", "ms": { "desc": "S1 (basic) followed by S2 (premature)."}, "minimal": { "desc": "S1-S2 on Minimal Model to study refractoriness." }, "s1_desc": "S1: Stabilization", "s2_desc": "S2: Coupling Test" },
+    "multiple": { 
+      "protocol_title": "Protocol",
+      "ms": { 
+        "desc": "Applies a train of 8 consecutive pulses with a fixed interval (Basic Cycle Length). Allows observation of cell adaptation to the imposed rhythm and stability of stimulus capture." 
+      }, 
+      "minimal": { 
+        "desc": "Subjects the Minimal Model cell to a fixed heart rate. Useful for analyzing inactivation accumulation and Action Potential Duration (APD) rate adaptation in a steady state." 
+      } 
+    },
+    "s1s2": { 
+      "protocol_title": "S1-S2 Protocol",
+      "ms": { 
+        "desc": "Standard protocol to determine the Effective Refractory Period. A series of basic stimuli (S1) conditions the cell, followed by a premature stimulus (S2) to test excitability at different repolarization phases."
+      }, 
+      "minimal": { 
+        "desc": "Investigates vulnerability and the refractory window in human cells. The premature S2 stimulus reveals the recovery dynamics of slow and fast channels in the Minimal Model." 
+      },
+      "s1_desc": "S1: Stabilization",
+      "s2_desc": "S2: Coupling Test"
+    },
     "restitution": { 
         "desc": "Restitution Curves APD vs DI", 
-        "apd_def": "APD: Action Potential Duration. Time the cell remains depolarized.",
-        "di_def": "DI: Diastolic Interval. Resting time between the end of an AP and the start of the next.",
-        "what_is_desc": "The restitution curve describes how the Action Potential Duration (APD) adapts to different heart rates (diastolic intervals).",
-          "minimal": { 
+        "what_is": "What is a Restitution Curve?",
+        "what_is_desc": "The restitution curve describes the relationship between the Action Potential Duration (APD) and the preceding Diastolic Interval (DI). It is crucial for understanding cardiac stability and the mechanism of alternans.",
+        "measuring": "How is it measured?",
+        "apd_def": "APD (Action Potential Duration): Time the cell remains depolarized.",
+        "di_def": "DI (Diastolic Interval): Resting time between the end of an AP and the start of the next.",
+        "minimal": { 
             "title": "Minimal Model",
-            "desc": "Generates restitution curve using Minimal Model.", 
-            "eq_u": "Minimal Model Equations",
+            "desc": "Generates the Electrical Restitution Curve (APD vs DI) using the Minimal Model. Allows analysis of critical slopes that can lead to instabilities such as cardiac alternans and conduction block.", 
+            "eq_u": "∂u/∂t = ∇·(D∇u) - (J_fi + J_so + J_si)",
             "eq_v": "dv/dt = (1 - p)/τ_vminus - v/τ_vplus",
             "eq_w": "dw/dt = (1 - p)(1 - w)/τ_wminus - pw/τ_wplus",
             "eq_s": "ds/dt = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
+            "method": "Explicit Euler method with Rush-Larsen integration for gate variables.",
             "vars": "State variables (v, w, s) control the AP shape.",
             "currents": "Simplified currents (J_fi, J_so, J_si) model depolarization and repolarization.",
-            "method": "Numerical integration via Explicit Euler method."
+            "steps": [
+              "A train of S1 stimuli is applied to stabilize the cell.",
+              "A premature S2 stimulus is delivered with variable interval.",
+              "The resulting APD and preceding DI are calculated and plotted."
+            ]
         },
         "s1s2": {
-          "title": "S1-S2 Protocol"
+          "protocol_title": "S1-S2 Protocol",
+          "title": "S1-S2 Protocol",
+          "desc": "Uses the classic S1-S2 method to build the restitution curve point-by-point, varying the premature stimulus coupling interval until loss of capture.",
+          "eq_v": "∂v/∂t = (h · v² · (1-v))/τ_in - v/τ_out + I_stim",
+          "eq_h": "dh/dt = (1-h)/τ_open (if v < v_gate) or -h/τ_close (if v > v_gate)",
+          "method": "Numerical integration via Explicit Euler.",
+          "steps": [
+            "8 S1 stimuli are applied with a fixed cycle length (BCL S1).",
+            "An S2 stimulus is applied with an initial interval (BCL S2).",
+            "The S2 interval is reduced, and the process is repeated until refractoriness."
+          ]
         },
         "mms": {
-          "title": "MMS Model"
+          "title": "MMS Model",
+          "desc": "Uses the Modified Mitchell-Schaeffer model, which includes adjusted cardiac memory dynamics to reproduce more physiological and less abrupt restitution curves.",
+          "eq_v": "∂v/∂t = (h · v² · (1-v))/τ_in - v/τ_out + I_stim",
+          "eq_h": "Modified h-gate dynamics for cardiac memory adjustment.",
+          "method": "Numerical integration via Explicit Euler.",
+          "steps": [
+            "Similar to S1-S2, but using MMS model parameters.",
+            "Focuses on capturing the correct slope of the restitution curve."
+          ]
         },
         "dynamic": {
-          "title": "Dynamic Protocol"
+          "title": "Dynamic Protocol",
+          "desc": "Generates the Dynamic Restitution curve through continuous pacing with progressive frequency, simulating stress conditions or increasing tachycardia.",
+          "eq_v": "∂v/∂t = (h · v² · (1-v))/τ_in - v/τ_out + I_stim",
+          "eq_h": "dh/dt = (1-h)/τ_open (if v < v_gate) or -h/τ_close (if v > v_gate)",
+          "method": "Numerical integration via Explicit Euler.",
+          "steps": [
+            "Starts with a long, stable Cycle Length (CI).",
+            "Reduces the CI by a fixed amount (CI Inc) after a set number of beats (nbeats).",
+            "APD and DI are measured for each beat in the quasi-steady state."
+          ]
         }
     },
     
@@ -305,6 +378,5 @@
       "eq": "∂v/∂t = k * ∂²v/∂x² + (h * v² * (1 - v)) / τ_in - v / τ_out",
       "method": "Numerical integration via Explicit Euler."
     }
-
   }
 }

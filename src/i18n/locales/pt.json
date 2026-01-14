@@ -163,7 +163,7 @@
     "epsilon": "Epsilon",
     "gamma": "Gamma",
     "alpha": "Alpha",
-    "dx": "dx ",
+    "dx": "dx",
     "totalTime": "Tempo Total",
     "k": "k (difusão)",
     "A": "A",
@@ -185,18 +185,28 @@
     "repolarização_desc": "Constante de tempo que define a velocidade de retorno ao repouso (repolarização).",
     "recuperação_desc": "Constante de tempo para a reabertura do gate h quando a voltagem é baixa (período refratário).",
     "inativação_desc": "Constante de tempo para o fechamento do gate h quando a voltagem é alta.",
-    "gate_desc": "Limiar de voltagem  que define a transição entre os estados de abertura e fechamento do gate h.",
+    "gate_desc": "Limiar de voltagem que define a transição entre os estados de abertura e fechamento do gate h.",
     "BCL_desc": "Basic Cycle Length: O intervalo de tempo entre estímulos consecutivos.",
     "num_estimulos_desc": "Quantidade total de pulsos elétricos aplicados durante a simulação.",
     "duração_desc": "Tempo de duração da aplicação da corrente de estímulo externo.",
     "intervalo_desc": "Intervalo de tempo entre estímulos consecutivos na sequência.",
     "S1_desc": "Estímulo básico (S1) aplicado em uma sequência regular para condicionar o tecido.",
-    "S2_desc": "Estímulo extra (S2) aplicado prematuramente após o trem de estímulos S1."
+    "S2_desc": "Estímulo extra (S2) aplicado prematuramente após a sequência de estímulos S1.",
+    "CI1_desc": "Comprimento de Ciclo (Intervalo entre estímulos) inicial do protocolo dinâmico.",
+    "CI0_desc": "Comprimento de Ciclo final a ser alcançado.",
+    "CIinc_desc": "Valor decrementado do ciclo a cada etapa do protocolo dinâmico.",
+    "nbeats_desc": "Número de batimentos aplicados para cada comprimento de ciclo antes de acelerar.",
+    "tau_in_desc": "Constante de tempo que define a rapidez da despolarização (subida do potencial).",
+    "tau_out_desc": "Constante de tempo que define a rapidez da repolarização (retorno ao repouso).",
+    "tau_open_desc": "Tempo para o gate h reabrir (recuperação da excitabilidade).",
+    "tau_close_desc": "Tempo para o gate h fechar (inativação durante o platô).",
+    "v_gate_desc": "Voltagem limiar que alterna o comportamento do gate h (abrir vs fechar)."
   },
   "modals": {
     "math_model": "Modelo Matemático",
     "numerical_method": "Métodos Numéricos",
     "advanced_features": "Outras Funcionalidades",
+    "protocol": "Protocolo de Simulação",
     "param_meaning": "Parâmetros",
     "how_to_use": "Como usar",
     "ms_desc_base": "O modelo Mitchell-Schaeffer descreve a propagação do potencial de ação utilizando uma variável de voltagem (v) e uma variável de gate (h), simplificando as correntes iônicas.",
@@ -237,7 +247,7 @@
         "Condições de Contorno: Neumann 0."
       ],
       "features": {
-        "fibrosis_title": "Fibrose e Heterogeneidade",
+        "fibrosis_title": "Fibrosis e Heterogeneidade",
         "fibrosis_desc": "Permite definir regiões do tecido com condutividade zero ou reduzida, simulando cicatrizes ou fibrose difusa.",
         "transmurality_title": "Transmuralidade",
         "transmurality_desc": "Simula as diferenças eletrofisiológicas entre as camadas do coração (Endocárdio, Miocárdio-M e Epicárdio) alterando parâmetros locais das células."
@@ -250,42 +260,107 @@
         "angle": "Ângulo: Orientação das fibras do tecido",
         "ms_params": "Mitchell-Schaeffer",
         "tau_in_out": "τ_in: Tempo de despolarização | τ_out: Tempo de repolarização",
-        "tau_gates": "τ_open/close: Tempos de recuperação do portão h",
+        "tau_gates": "τ_open/close: Tempos de recuperação do gate h",
         "minimal_params": "Minimal Model",
         "u_levels": "u_o / u_u: Níveis de potencial de repouso e limiar",
         "tau_constants": "τ_v, τ_w, τ_s: Constantes de tempo dos gates"
       }
     },
     "single": {
-      "ms": { "title": "Mitchell-Schaeffer", "desc": "Simulação de 1 estímulo em célula única MS.", "eq_v": "dv/dt = (h v² (1-v))/τ_in - v/τ_out", "eq_h1": "dh/dt = (1-h)/τ_open", "eq_h2": "dh/dt = -h/τ_close" },
-      "minimal": { "title": "Minimal Model", "desc": "Simulação de 1 estímulo em célula única Minimal.", "vars": "Variáveis u, v, w, s", "currents": "Correntes J_fi, J_so, J_si" },
+      "ms": { 
+        "title": "Mitchell-Schaeffer", 
+        "desc": "Simula a resposta eletrofisiológica básica de uma célula excitável. Este modelo captura as propriedades essenciais de excitabilidade e refratariedade usando as variáveis v e h.",
+        "eq_v": "dv/dt = (h v² (1-v))/τ_in - v/τ_out",
+        "eq_h1": "dh/dt = (1-h)/τ_open",
+        "eq_h2": "dh/dt = -h/τ_close"
+      },
+      "minimal": { 
+        "title": "Minimal Model", 
+        "desc": "Simula um Potencial de Ação realista para tecido humano. O modelo reproduz a morfologia detalhada de células do Epicárdio, Endocárdio e Miocárdio (M-cells), permitindo estudar diferenças na duração do potencial (APD).",
+        "vars": "Variáveis u, v, w, s",
+        "currents": "Correntes J_fi, J_so, J_si"
+      },
       "method": "Método de Euler Explícito e Rush-Larsen."
     },
-    "multiple": { "protocol_title": "Protocolo", "ms": { "desc": "Sequencia de 8 estímulos." }, "minimal": { "desc": "Sequência de estímulos com Minimal Model." } },
-    "s1s2": { "protocol_title": "Protocolo S1-S2", "ms": { "desc": "S1 seguido de S2."}, "minimal": { "desc": "S1-S2 no Minimal Model para estudar refratariedade." }, "s1_desc": "S1: Estabilização", "s2_desc": "S2: Teste de acoplamento" },
-    "restitution": { 
-        "desc": "Curvas de Restituição APD vs DI", 
-        "apd_def": "APD: Duração do Potencial de Ação. Tempo em que a célula permanece despolarizada.",
-        "di_def": "DI: Intervalo Diastólico. Tempo de repouso entre o fim de um AP e o início do próximo.",
-        "what_is_desc": "A curva de restituição descreve como a duração do potencial de ação (APD) se adapta a diferentes intervalos diastólicos.",
-        "minimal": {
-          "title": "Minimal Model",
-          "eq_v": "dv/dt = (1 - p)/τ_vminus - v/τ_vplus",
-          "eq_w": "dw/dt = (1 - p)(1 - w)/τ_wminus - pw/τ_wplus",
-          "eq_s": "ds/dt = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
-          "vars": "Variáveis de estado (v, w, s) controlam a forma do AP.",
-          "currents": "Correntes simplificadas (J_fi, J_so, J_si) modelam a despolarização e repolarização.",
-          "method": "Integração numérica via método de Euler explícito."
-        },
-        "s1s2": {
-          "title": "Protocolo S1-S2"
-        } ,
-        "mms": {
-          "title": "Modelo MMS"
-        } ,
-        "dynamic": {
-          "title": "Protocolo Dinâmico"
-        }
+    "multiple": { 
+      "protocol_title": "Protocolo",
+      "ms": { 
+        "desc": "Aplica uma sequência de 8 pulsos consecutivos com intervalo fixo. Permite observar a adaptação da célula ao ritmo imposto e a estabilidade da captura estímulo-a-estímulo." 
+      }, 
+      "minimal": { 
+        "desc": "Submete a célula do Minimal Model a uma frequência cardíaca fixa. Útil para analisar o acúmulo de inativação e a adaptação da duração do potencial de ação (APD) em regime estacionário." 
+      } 
+    },
+    "s1s2": { 
+      "protocol_title": "Protocolo S1-S2",
+      "ms": { 
+        "desc": "Protocolo padrão para determinar o Período Refratário Efetivo. Uma série de estímulos básicos (S1) condiciona a célula, seguida por um estímulo prematuro (S2) para testar a excitabilidade em diferentes fases da repolarização."
+      }, 
+      "minimal": { 
+        "desc": "Investiga a vulnerabilidade e a janela de refratariedade em células humanas. O estímulo S2 prematuro revela a dinâmica de recuperação dos canais lentos e rápidos no Minimal Model." 
+      },
+      "s1_desc": "S1: Estabilização",
+      "s2_desc": "S2: Teste de acoplamento"
+    },
+    "restitution": {
+      "desc": "Curvas de Restituição APD vs DI",
+      "what_is": "O que é uma Curva de Restituição?",
+      "what_is_desc": "A curva de restituição descreve a relação entre a Duração do Potencial de Ação (APD) e o Intervalo Diastólico (DI) precedente. Ela é fundamental para entender a estabilidade elétrica do coração e a propensão a arritmias como a alternância cardíaca.",
+      "measuring": "Como é medida?",
+      "apd_def": "APD (Action Potential Duration): Tempo em que a célula permanece despolarizada.",
+      "di_def": "DI (Diastolic Interval): Tempo de repouso entre o fim de um AP e o início do próximo.",
+      "minimal": {
+        "title": "Minimal Model",
+        "desc": "Gera a Curva de Restituição Elétrica (APD vs DI) utilizando o Minimal Model. Permite analisar inclinações críticas que podem levar a instabilidades como alternância cardíaca (alternans) e bloqueio de condução.",
+        "eq_u": "∂u/∂t = ∇·(D∇u) - (J_fi + J_so + J_si)",
+        "eq_v": "dv/dt = (1 - p)/τ_vminus - v/τ_vplus",
+        "eq_w": "dw/dt = (1 - p)(1 - w)/τ_wminus - pw/τ_wplus",
+        "eq_s": "ds/dt = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
+        "method": "Método de Euler Explícito com integração Rush-Larsen para as variáveis de gate.",
+        "vars": "As variáveis de estado (v, w, s) controlam a forma do PA.",
+        "currents": "Correntes simplificadas (J_fi, J_so, J_si) modelam a despolarização e repolarização.",
+        "steps": [
+          "O sistema aplica uma série de estímulos S1 para estabilizar a célula.",
+          "Um estímulo prematuro S2 é aplicado com intervalo variável.",
+          "O APD resultante e o DI precedente são calculados e plotados."
+        ]
+      },
+      "s1s2": {
+        "protocol_title": "Protocolo S1-S2",
+        "title": "Protocolo S1-S2",
+        "desc": "Protocolo padrão onde uma sequência de estímulos (S1) é seguido por um estímulo extra (S2) para varrer diferentes intervalos diastólicos.",
+        "eq_v": "∂v/∂t = (h · v² · (1-v))/τ_in - v/τ_out + I_stim",
+        "eq_h": "dh/dt = (1-h)/τ_open (se v < v_gate) ou -h/τ_close (se v > v_gate)",
+        "method": "Integração numérica via Euler Explícito.",
+        "steps": [
+          "Aplica-se 8 estímulos S1 com ciclo fixo (BCL S1).",
+          "Aplica-se um estímulo S2 com intervalo inicial (BCL S2).",
+          "Reduz-se o intervalo S2 e repete-se o processo até a refratariedade."
+        ]
+      },
+      "mms": {
+        "title": "Modelo MMS",
+        "desc": "Utiliza o modelo Mitchell-Schaeffer Modificado, que inclui dinâmicas ajustadas de memória cardíaca para reproduzir curvas de restituição mais fisiológicas e menos abruptas.",
+        "eq_v": "∂v/∂t = (h · v² · (1-v))/τ_in - v/τ_out + I_stim",
+        "eq_h": "Dinâmica do gate h modificada para ajuste de memória cardíaca.",
+        "method": "Integração numérica via Euler Explícito.",
+        "steps": [
+          "Semelhante ao S1-S2, mas utilizando os parâmetros do modelo MMS.",
+          "Foca em capturar a inclinação correta da curva de restituição."
+        ]
+      },
+      "dynamic": {
+        "title": "Protocolo Dinâmico",
+        "desc": "Gera a curva de restituição dinâmica através de pacing contínuo com frequência progressiva, simulando condições de estresse ou taquicardia crescente.",
+        "eq_v": "∂v/∂t = (h · v² · (1-v))/τ_in - v/τ_out + I_stim",
+        "eq_h": "dh/dt = (1-h)/τ_open (se v < v_gate) ou -h/τ_close (se v > v_gate)",
+        "method": "Integração numérica via Euler Explícito.",
+        "steps": [
+          "Inicia com um Ciclo (CI) longo e estável.",
+          "Reduz o CI por um valor fixo (CI Inc) após um número de batimentos (nbeats).",
+          "Mede-se o APD e DI para cada batimento em estado quase estacionário."
+        ]
+      }
     },
     "fhn": {
       "desc": "O modelo FitzHugh-Nagumo é uma representação simplificada que captura a excitabilidade essencial.",
@@ -302,6 +377,5 @@
       "eq": "∂v/∂t = k * ∂²v/∂x² + (h * v² * (1 - v)) / τ_in - v / τ_out",
       "method": "Integração numérica via Euler explícito."
     }
-    
   }
 }
