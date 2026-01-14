@@ -158,8 +158,8 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
       <p className="text-slate-600">{t('modals.ms1d.desc')}</p>
       <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm my-2 space-y-2">
         <code>{t('modals.ms1d.eq')}</code>
-        <code>{t('modals.single.eq_h1')}</code>
-        <code>{t('modals.single.eq_h2')}</code>
+        <code>{t('modals.single.ms.eq_h1')}</code>
+        <code>{t('modals.single.ms.eq_h2')}</code>
       </div>
       
       <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">{t('modals.numerical_method')}</h3>

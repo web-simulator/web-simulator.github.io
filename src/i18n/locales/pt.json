@@ -71,7 +71,8 @@
     "line_chart": "Gráfico de Linha",
     "color_chart": "Gráfico de Cores",
     "left_pulse": "Pulso à Esquerda",
-    "reentry": "Reentrada"
+    "reentry": "Reentrada",
+    "initial_condition": "Condição Inicial"
   },
   "params": {
     "L": "Tamanho L",

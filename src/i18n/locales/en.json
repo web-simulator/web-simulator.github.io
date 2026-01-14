@@ -71,7 +71,8 @@
     "line_chart": "Line Chart",
     "color_chart": "Color Chart",
     "left_pulse": "Left Pulse",
-    "reentry": "Reentry"
+    "reentry": "Reentry",
+    "initial_condition": "Initial Condition"
   },
   "params": {
     "L": "Size L",
