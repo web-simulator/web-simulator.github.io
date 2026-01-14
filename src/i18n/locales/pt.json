@@ -254,7 +254,7 @@
       },
       "glossary": {
         "general": "Parâmetros Gerais",
-        "L_N": "L: Tamanho do tecido | N: Resolução da malha (pontos)",
+        "L_N": "L: Tamanho do tecido",
         "dt": "dt: Passo de tempo da simulação (ms)",
         "sigma": "σ_l / σ_t: Condutividade longitudinal e transversal",
         "angle": "Ângulo: Orientação das fibras do tecido",

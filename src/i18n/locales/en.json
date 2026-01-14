@@ -254,7 +254,7 @@
       },
       "glossary": {
         "general": "General Parameters",
-        "L_N": "L: Tissue size | N: Mesh resolution (points)",
+        "L_N": "L: Tissue size",
         "dt": "dt: Simulation time step (ms)",
         "sigma": "σ_l / σ_t: Longitudinal and Transverse Conductivity (diffusion)",
         "angle": "Angle: Fiber orientation angle",
