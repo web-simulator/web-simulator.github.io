@@ -72,7 +72,8 @@
     "color_chart": "Gráfico de Cores",
     "left_pulse": "Pulso à Esquerda",
     "reentry": "Reentrada",
-    "initial_condition": "Condição Inicial"
+    "initial_condition": "Condição Inicial",
+    "export_result": "Exportar Resultado"
   },
   "params": {
     "L": "Tamanho L",

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Chart from '../../components/Chart';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
@@ -6,6 +6,7 @@ import Modal from '../../components/Modal';
 import SimulationWorker from '../../simulation.worker.js?worker';
 import MinimalWorker from '../../simulation_minimal_0d.worker.js?worker';
 import { useTranslation } from 'react-i18next';
+import { toPng } from 'html-to-image';
 import './styles.css';
 
 /* Componente para seções expansíveis na sidebar de configurações */
@@ -79,6 +80,7 @@ const SingleStimulusPage = ({ onBack }) => {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState('ms');
   const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
+  const chartRef = useRef(null);
 
   const [visibleVars, setVisibleVars] = useState({
     v: true, h: true
@@ -196,6 +198,30 @@ const SingleStimulusPage = ({ onBack }) => {
       [variableKey]: !prev[variableKey]
     }));
   };
+
+  // Função para exportar o gráfico como imagem PNG
+  const handleExport = useCallback(async () => {
+    if (chartRef.current === null) {
+      return;
+    }
+
+    try {
+      const dataUrl = await toPng(chartRef.current, {
+        cacheBust: true,
+        backgroundColor: '#ffffff',
+        pixelRatio: 2,
+      });
+
+      const link = document.createElement('a');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      link.download = `simulacao_${selectedModel}_${timestamp}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Erro ao exportar a imagem:', err);
+      alert('Não foi possível exportar a imagem.');
+    }
+  }, [selectedModel]);
 
   const currentParams = editableParams[selectedModel];
   const currentVariables = MODEL_VARIABLES[selectedModel];
@@ -318,7 +344,7 @@ const SingleStimulusPage = ({ onBack }) => {
         {/* Conteúdo Principal */}
         <main className="flex-1 bg-slate-100 relative flex flex-col min-h-0">
           <div className="flex-1 flex items-center justify-center p-4 relative min-h-[50vh] lg:min-h-0">
-            <div className="relative shadow-lg rounded-lg overflow-hidden bg-white w-full h-full border border-slate-200 p-4">
+            <div ref={chartRef} className="relative shadow-lg rounded-lg overflow-hidden bg-white w-full h-full border border-slate-200 p-4">
                {chartData.length > 0 ? (
                   <Chart data={chartData} />
                ) : (
@@ -344,6 +370,16 @@ const SingleStimulusPage = ({ onBack }) => {
                             <><i className="bi bi-play-fill text-xl"></i> {t('common.simulate')}</>
                         )}
                     </button>
+
+                    {/* Botão de Exportar */}
+                    {chartData.length > 0 && (
+                      <button 
+                          onClick={handleExport}
+                          className="w-full md:w-auto rounded-full px-6 py-2 font-medium text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 hover:text-emerald-600 shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2"
+                      >
+                          <i className="bi bi-download"></i> {t('common.export_result')}
+                      </button>
+                    )}
                 </div>
                 
                 <Button onClick={() => setIsInfoModalOpen(true)} className="!bg-slate-100 !text-slate-600 hover:!bg-slate-200 !p-2 !rounded-lg" title={t('common.more_info')}>

@@ -72,7 +72,8 @@
     "color_chart": "Color Chart",
     "left_pulse": "Left Pulse",
     "reentry": "Reentry",
-    "initial_condition": "Initial Condition"
+    "initial_condition": "Initial Condition",
+    "export_result": "Export Result"
   },
   "params": {
     "L": "Size L",
