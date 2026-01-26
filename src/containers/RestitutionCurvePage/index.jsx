@@ -1,14 +1,16 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Chart from '../../components/Chart';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import RestitutionChart from '../../components/RestitutionChart';
-import Modal from '../../components/Modal'; 
+import Modal from '../../components/Modal';
+import ExportButton from '../../components/ExportButton';
 import RestitutionWorker from '../../simulation_restitution.worker.js?worker';
 import MMSWorker from '../../simulation_mms_restitution_alt.worker.js?worker';
 import DynamicWorker from '../../simulation_dynamic_protocol1.worker.js?worker';
 import MinimalWorker from '../../simulation_minimal_restitution.worker.js?worker';
 import { useTranslation } from 'react-i18next';
+import { exportToPng } from '../../utils/export';
 
 /* Componente para seções expansíveis na sidebar */
 const SettingsSection = ({ title, children, defaultOpen = false }) => {
@@ -87,6 +89,7 @@ const RestitutionCurvePage = ({ onBack }) => {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false); 
   const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
   const [visibleVars, setVisibleVars] = useState({ v: true, gate_v: true, gate_w: true, gate_s: true });
+  const chartRef = useRef(null);
 
   // Parâmetros editáveis para cada modelo
   const [editableParams, setEditableParams] = useState({
@@ -282,6 +285,10 @@ const RestitutionCurvePage = ({ onBack }) => {
       [variableKey]: !prev[variableKey]
     }));
   };
+
+  const handleExport = useCallback(() => {
+    exportToPng(chartRef, `restituicao_${selectedModel}`);
+  }, [selectedModel]);
 
   const renderInfoModalContent = () => {
     const modelKey = selectedModel;
@@ -481,7 +488,8 @@ const RestitutionCurvePage = ({ onBack }) => {
 
         {/* Conteúdo Principal */}
         <main className="flex-1 bg-slate-100 relative flex flex-col min-h-0">
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
+            <div ref={chartRef} className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4 bg-slate-100">
+                
                 {/* Gráfico de Restituição */}
                 <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 min-h-[400px]">
                     <h3 className="text-lg font-bold text-slate-700 mb-4 pl-2 border-l-4 border-emerald-500">Curva de Restituição</h3>
@@ -525,6 +533,14 @@ const RestitutionCurvePage = ({ onBack }) => {
                                 <><i className="bi bi-play-fill text-xl"></i> {t('common.simulate')}</>
                             )}
                         </button>
+
+                        {/* Botão de Exportar */}
+                        {(restitutionData.length > 0 || (showTimeSeries && chartData.length > 0)) && (
+                          <ExportButton 
+                              onClick={handleExport}
+                              label={t('common.export_result')}
+                          />
+                        )}
                     </div>
                     
                     <Button onClick={() => setIsInfoModalOpen(true)} className="!bg-slate-100 !text-slate-600 hover:!bg-slate-200 !p-2 !rounded-lg" title={t('common.more_info')}>

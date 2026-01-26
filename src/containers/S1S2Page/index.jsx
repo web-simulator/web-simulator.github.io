@@ -1,11 +1,13 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Chart from '../../components/Chart';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal';
+import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation_s1_s2.worker.js?worker';
 import MinimalWorker from '../../simulation_minimal_0d.worker.js?worker';
 import { useTranslation } from 'react-i18next';
+import { exportToPng } from '../../utils/export';
 import './styles.css';
 
 /* Componente para seções expansíveis na sidebar */
@@ -92,6 +94,7 @@ const S1S2Page = ({ onBack }) => {
   
   const [selectedModel, setSelectedModel] = useState('ms');
   const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
+  const chartRef = useRef(null);
   const [visibleVars, setVisibleVars] = useState({ v: true, h: true });
 
   const [editableParams, setEditableParams] = useState({
@@ -217,6 +220,9 @@ const S1S2Page = ({ onBack }) => {
       [variableKey]: !prev[variableKey]
     }));
   };
+  const handleExport = useCallback(() => {
+    exportToPng(chartRef, `simulacao_s1s2_${selectedModel}`);
+  }, [selectedModel]);
 
   const currentParams = editableParams[selectedModel];
   const currentVariables = MODEL_VARIABLES[selectedModel];
@@ -340,7 +346,7 @@ const S1S2Page = ({ onBack }) => {
         {/* Conteúdo Principal */}
         <main className="flex-1 bg-slate-100 relative flex flex-col min-h-0">
           <div className="flex-1 flex items-center justify-center p-4 relative min-h-[50vh] lg:min-h-0">
-            <div className="relative shadow-lg rounded-lg overflow-hidden bg-white w-full h-full border border-slate-200 p-4 flex flex-col">
+            <div ref={chartRef} className="relative shadow-lg rounded-lg overflow-hidden bg-white w-full h-full border border-slate-200 p-4 flex flex-col">
                {chartData.length > 0 ? (
                   <>
                       <div className="flex-1 min-h-0">
@@ -381,6 +387,14 @@ const S1S2Page = ({ onBack }) => {
                             <><i className="bi bi-play-fill text-xl"></i> {t('common.simulate')}</>
                         )}
                     </button>
+
+                    {/* Botão de Exportar */}
+                    {chartData.length > 0 && (
+                      <ExportButton 
+                          onClick={handleExport}
+                          label={t('common.export_result')}
+                      />
+                    )}
                 </div>
                 
                 <Button onClick={() => setIsInfoModalOpen(true)} className="!bg-slate-100 !text-slate-600 hover:!bg-slate-200 !p-2 !rounded-lg" title={t('common.more_info')}>
@@ -391,6 +405,7 @@ const S1S2Page = ({ onBack }) => {
         </main>
       </div>
 
+      {/* Modal de Informações */}
       <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
         <div className="info-modal-content text-slate-800 space-y-6 max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
           <section>

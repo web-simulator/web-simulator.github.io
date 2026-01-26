@@ -1,11 +1,13 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Chart from '../../components/Chart';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal'; 
+import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation_8_stimuli.worker.js?worker';
 import MinimalWorker from '../../simulation_minimal_0d.worker.js?worker';
 import { useTranslation } from 'react-i18next';
+import { exportToPng } from '../../utils/export';
 import './styles.css';
 
 {{/* Componente para as configurações de parâmetros */}}
@@ -80,6 +82,7 @@ const MultipleStimuliPage = ({ onBack }) => {
   
   const [selectedModel, setSelectedModel] = useState('ms');
   const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
+  const chartRef = useRef(null);
 
   // Estado para visibilidade das variáveis
   const [visibleVars, setVisibleVars] = useState({ v: true, h: true });
@@ -189,6 +192,10 @@ const MultipleStimuliPage = ({ onBack }) => {
       [variableKey]: !prev[variableKey]
     }));
   };
+
+  const handleExport = useCallback(() => {
+    exportToPng(chartRef, `simulacao_multipla_${selectedModel}`);
+  }, [selectedModel]);
 
   const currentParams = editableParams[selectedModel];
   const currentVariables = MODEL_VARIABLES[selectedModel];
@@ -311,7 +318,7 @@ const MultipleStimuliPage = ({ onBack }) => {
         {/* Conteúdo Principal */}
         <main className="flex-1 bg-slate-100 relative flex flex-col min-h-0">
           <div className="flex-1 flex items-center justify-center p-4 relative min-h-[50vh] lg:min-h-0">
-            <div className="relative shadow-lg rounded-lg overflow-hidden bg-white w-full h-full border border-slate-200 p-4">
+            <div ref={chartRef} className="relative shadow-lg rounded-lg overflow-hidden bg-white w-full h-full border border-slate-200 p-4">
                {chartData.length > 0 ? (
                   <Chart data={chartData} />
                ) : (
@@ -337,6 +344,14 @@ const MultipleStimuliPage = ({ onBack }) => {
                             <><i className="bi bi-play-fill text-xl"></i> {t('common.simulate')}</>
                         )}
                     </button>
+
+                    {/* Botão de Exportar */}
+                    {chartData.length > 0 && (
+                      <ExportButton 
+                          onClick={handleExport}
+                          label={t('common.export_result')}
+                      />
+                    )}
                 </div>
                 
                 <Button onClick={() => setIsInfoModalOpen(true)} className="!bg-slate-100 !text-slate-600 hover:!bg-slate-200 !p-2 !rounded-lg" title={t('common.more_info')}>

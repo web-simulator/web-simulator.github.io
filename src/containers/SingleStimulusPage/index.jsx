@@ -3,10 +3,11 @@ import Chart from '../../components/Chart';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal';
+import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation.worker.js?worker';
 import MinimalWorker from '../../simulation_minimal_0d.worker.js?worker';
 import { useTranslation } from 'react-i18next';
-import { toPng } from 'html-to-image';
+import { exportToPng } from '../../utils/export';
 import './styles.css';
 
 /* Componente para seções expansíveis na sidebar de configurações */
@@ -199,28 +200,9 @@ const SingleStimulusPage = ({ onBack }) => {
     }));
   };
 
-  // Função para exportar o gráfico como imagem PNG
-  const handleExport = useCallback(async () => {
-    if (chartRef.current === null) {
-      return;
-    }
-
-    try {
-      const dataUrl = await toPng(chartRef.current, {
-        cacheBust: true,
-        backgroundColor: '#ffffff',
-        pixelRatio: 2,
-      });
-
-      const link = document.createElement('a');
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      link.download = `simulacao_${selectedModel}_${timestamp}.png`;
-      link.href = dataUrl;
-      link.click();
-    } catch (err) {
-      console.error('Erro ao exportar a imagem:', err);
-      alert('Não foi possível exportar a imagem.');
-    }
+  // Chama a exportação
+  const handleExport = useCallback(() => {
+    exportToPng(chartRef, `simulacao_${selectedModel}`);
   }, [selectedModel]);
 
   const currentParams = editableParams[selectedModel];
@@ -373,12 +355,10 @@ const SingleStimulusPage = ({ onBack }) => {
 
                     {/* Botão de Exportar */}
                     {chartData.length > 0 && (
-                      <button 
+                      <ExportButton 
                           onClick={handleExport}
-                          className="w-full md:w-auto rounded-full px-6 py-2 font-medium text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 hover:text-emerald-600 shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2"
-                      >
-                          <i className="bi bi-download"></i> {t('common.export_result')}
-                      </button>
+                          label={t('common.export_result')}
+                      />
                     )}
                 </div>
                 
