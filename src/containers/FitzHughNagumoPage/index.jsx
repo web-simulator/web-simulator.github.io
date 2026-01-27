@@ -1,12 +1,14 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import FHNChart from '../../components/FHNChart';
 import SpatiotemporalChart from '../../components/SpatiotemporalChart';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal';
 import Chart from '../../components/Chart';
+import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation_fhn.worker.js?worker';
 import { useTranslation } from 'react-i18next';
+import { export1DToGif } from '../../utils/export';
 
 
 const SettingsSection = ({ title, children, defaultOpen = false }) => {
@@ -37,6 +39,7 @@ const FitzHughNagumoPage = ({ onBack }) => {
   const [simulationData, setSimulationData] = useState([]);
   const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   
   // Estados de controle de reprodução
   const [currentFrame, setCurrentFrame] = useState(0);
@@ -49,6 +52,7 @@ const FitzHughNagumoPage = ({ onBack }) => {
   const [isModalOpen, setIsModalOpen] = useState(false); 
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedX, setSelectedX] = useState(null);
+  const chartRef = useRef(null);
 
   // Parâmetros da simulação
   const [editableParams, setEditableParams] = useState({
@@ -118,6 +122,24 @@ const FitzHughNagumoPage = ({ onBack }) => {
       worker.postMessage({ ...editableParams, initialCondition });
     }
   }, [worker, editableParams, initialCondition]);
+
+  // Função para exportar GIF
+  const handleExportGif = useCallback(async () => {
+    if (simulationData.length === 0) return;
+    
+    setExporting(true);
+    
+    const labels = {
+        potential: t('chart.potential_unit'),
+        position: t('chart.position_unit'),
+        time_ms: t('chart.time_ms')
+    };
+
+    setTimeout(async () => {
+      await export1DToGif(simulationData, editableParams, 'simulacao_fhn', labels, viewMode);
+      setExporting(false);
+    }, 100);
+  }, [simulationData, editableParams, t, viewMode]);
 
   // Lida com a mudança no controle deslizante de tempo
   const handleSliderChange = (e) => {
@@ -236,17 +258,18 @@ const FitzHughNagumoPage = ({ onBack }) => {
 
         <main className="flex-1 bg-slate-100 relative flex flex-col min-h-0">
             <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col items-center">
-                 <div className="w-full max-w-5xl bg-white rounded-lg shadow-sm border border-slate-200 p-4 mb-4 min-h-[400px]">
+                 {/* Container Principal com Ref */}
+                 <div ref={chartRef} className="w-full max-w-5xl bg-white rounded-lg shadow-sm border border-slate-200 p-4 mb-4 min-h-100">
                     {simulationData.length > 0 ? (
                         <>
                              {viewMode === 'line' ? (
                                 <FHNChart data={currentChartData} />
-                            ) : (
+                             ) : (
                                 <SpatiotemporalChart simulationData={simulationData} currentFrame={currentFrame} onPointClick={handlePointClick} />
-                            )}
+                             )}
                         </>
                     ) : (
-                        <div className="h-[350px] w-full flex flex-col items-center justify-center text-slate-400">
+                        <div className="h-87.5 w-full flex flex-col items-center justify-center text-slate-400">
                              <i className="bi bi-activity text-6xl mb-4 opacity-50"></i>
                              <p>{t('common.ready')}</p>
                         </div>
@@ -256,14 +279,14 @@ const FitzHughNagumoPage = ({ onBack }) => {
 
             <div className="bg-white border-t border-slate-200 p-4 shadow-lg z-20">
                 <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 w-full md:w-auto">
                         <button 
                             onClick={handleSimularClick} 
-                            disabled={loading}
+                            disabled={loading || exporting}
                             className={`rounded-full px-6 py-2 font-bold text-white shadow-md transition-transform active:scale-95 flex items-center gap-2 ${loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                         >
-                            {loading ? <span className="animate-spin"><i className="bi bi-arrow-repeat"></i></span> : <i className="bi bi-play-fill text-xl"></i>}
-                            {loading ? t('common.simulating') : t('common.simulate')}
+                             {loading ? <span className="animate-spin"><i className="bi bi-arrow-repeat"></i></span> : <i className="bi bi-play-fill text-xl"></i>}
+                             {loading ? t('common.simulating') : t('common.simulate')}
                         </button>
                         
                         {simulationData.length > 0 && (
@@ -276,10 +299,17 @@ const FitzHughNagumoPage = ({ onBack }) => {
                                 >
                                     <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} text-2xl ml-${isPlaying ? '0' : '1'}`}></i>
                                 </button>
+
+                                {/* Botão de Exportar GIF */}
+                                <ExportButton 
+                                    onClick={handleExportGif}
+                                    label={exporting ? t('common.generating_gif') : t('common.export_result')}
+                                    disabled={exporting}
+                                />
                              </>
                         )}
                     </div>
-
+                    
                     {simulationData.length > 0 && (
                         <div className="flex-1 w-full flex items-center gap-3">
                             <span className="text-xs font-mono text-slate-500 w-12 text-right">{(simulationData[currentFrame]?.time || 0)}ms</span>
@@ -307,7 +337,7 @@ const FitzHughNagumoPage = ({ onBack }) => {
                         </div>
                     )}
                     
-                    <Button onClick={() => setIsInfoModalOpen(true)} className="!bg-slate-100 !text-slate-600 hover:!bg-slate-200 !p-2 !rounded-lg" title={t('common.more_info')}>
+                    <Button onClick={() => setIsInfoModalOpen(true)} className="bg-slate-100 text-slate-600 hover:bg-slate-200 p-2 rounded-lg" title={t('common.more_info')}>
                         <i className="bi bi-info-circle text-lg"></i> <span className="md:hidden ml-2">{t('common.more_info')}</span>
                     </Button>
                 </div>

@@ -73,7 +73,13 @@
     "left_pulse": "Pulso à Esquerda",
     "reentry": "Reentrada",
     "initial_condition": "Condição Inicial",
-    "export_result": "Exportar Resultado"
+    "export_result": "Exportar Resultado",
+    "generating_gif": "Gerando GIF..."
+  },
+  "chart": {
+    "potential_unit": "Potencial (V)",
+    "position_unit": "Posição (cm)",
+    "time_ms": "Tempo: "
   },
   "params": {
     "L": "Tamanho L",
