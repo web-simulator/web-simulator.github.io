@@ -1,4 +1,5 @@
 import { Line } from 'react-chartjs-2';
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -9,6 +10,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { t } from 'i18next';
 
 ChartJS.register(
   CategoryScale,
@@ -22,14 +24,14 @@ ChartJS.register(
 
 const BistableChart = ({ data }) => {
   if (!data || data.length === 0) {
-    return <p>Aguardando simulação...</p>;
+    return <p>{t('common.simulating')}</p>;
   }
 
   const chartData = {
     labels: data.map(d => d.x.toFixed(2)),
     datasets: [
       {
-        label: 'Potencial v',
+        label: t('bistableChart.potential_unit'),
         data: data.map(d => d.v),
         borderColor: 'rgb(136, 132, 216)',
         backgroundColor: 'rgba(136, 132, 216, 0.5)',
@@ -48,14 +50,14 @@ const BistableChart = ({ data }) => {
       },
       title: {
         display: true,
-        text: 'Modelo Bistable 1D',
+        text: t('bistableChart.title'),
       },
     },
     scales: {
       x: {
         title: {
           display: true,
-          text: 'Posição (x)',
+          text: t('bistableChart.position_unit'),
         },
         type: 'category',
         ticks: {
@@ -66,7 +68,7 @@ const BistableChart = ({ data }) => {
       y: {
         title: {
           display: true,
-          text: 'v',
+          text: t('bistableChart.potential_unit'),
         },
         min: -0.2,
         max: 1.2,

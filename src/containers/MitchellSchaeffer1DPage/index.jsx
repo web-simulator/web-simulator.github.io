@@ -199,7 +199,7 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
   const chartModalContent = useMemo(() => (
     <>
       <h2 className="text-lg font-bold text-slate-700 mb-4">
-        Potencial em X = {selectedX !== null ? (selectedX * editableParams.dx).toFixed(2) : ''}
+        {t('bistableChart.potentialModal')} = {selectedX !== null ? (selectedX * editableParams.dx).toFixed(2) + ' cm' : ''}
       </h2>
       <Chart data={timeseriesData} />
     </>

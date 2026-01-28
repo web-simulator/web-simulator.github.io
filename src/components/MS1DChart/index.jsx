@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { Line } from 'react-chartjs-2';
+import { t } from 'i18next';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -23,14 +24,14 @@ ChartJS.register(
 
 const MS1DChart = ({ data }) => {
   if (!data || data.length === 0) {
-    return <p>Aguardando simulação...</p>;
+    return <p>{t('common.simulating')}</p>;
   }
 
   const chartData = {
     labels: data.map(d => d.x.toFixed(2)),
     datasets: [
       {
-        label: 'Potencial v',
+        label: t('chart.potential_unit'),
         data: data.map(d => d.v),
         borderColor: 'rgb(136, 132, 216)',
         backgroundColor: 'rgba(136, 132, 216, 0.5)',
@@ -38,7 +39,7 @@ const MS1DChart = ({ data }) => {
         tension: 0.1,
       },
       {
-        label: 'Variável h',
+        label: 'Gate h',
         data: data.map(d => d.h),
         borderColor: 'rgb(130, 202, 157)',
         backgroundColor: 'rgba(130, 202, 157, 0.5)',
@@ -57,14 +58,14 @@ const MS1DChart = ({ data }) => {
       },
       title: {
         display: true,
-        text: 'Modelo Mitchell-Schaeffer 1D',
+        text: t('ms1dChart.title'),
       },
     },
     scales: {
       x: {
         title: {
           display: true,
-          text: 'Posição (x)',
+          text: t('chart.position_unit'),
         },
         type: 'category',
         ticks: {
@@ -75,7 +76,7 @@ const MS1DChart = ({ data }) => {
       y: {
         title: {
           display: true,
-          text: 'Valor',
+          text: t('ms1dChart.value'),
         },
         min: -0.9,
         max: 1.2,

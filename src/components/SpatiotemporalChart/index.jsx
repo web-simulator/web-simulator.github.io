@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, memo } from 'react';
+import { t } from 'i18next';
 
 // Gráfico de cores 
 const SpatiotemporalChart = ({ simulationData, currentFrame, onPointClick }) => {
@@ -72,13 +73,13 @@ const SpatiotemporalChart = ({ simulationData, currentFrame, onPointClick }) => 
 
   // Mensagem exibida enquanto aguarda a simulação
   if (!simulationData || simulationData.length === 0) {
-    return <p>Aguardando simulação...</p>;
+    return <p>{t('common.simulating')}</p>;
   }
 
   // Renderiza o elemento
   return (
     <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h2>Visualização do estímulo</h2>
+      <h2>{t('bistableChart.ViewStimuli')}</h2>
       <canvas 
         ref={canvasRef} 
         height="50" 

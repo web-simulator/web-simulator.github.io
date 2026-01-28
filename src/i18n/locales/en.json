@@ -86,6 +86,26 @@
     "theoretical_restitution": "Restitution Curve (Analytical)",
     "dvdtMax": "Max dV/dt"
   },
+  "bistableChart": {
+    "title": "Bistable Model 1D",
+    "potential_unit": "Potential (V)",
+    "position_unit": "Position (cm)",
+    "time_ms": "Time: ",
+    "tooltip": "Potential: ",
+    "simulating": "Simulating...",
+    "ViewStimuli": "Stimulus Visualization",
+    "potentialModal": "Potential at X"
+  },
+  "fhnChart": {
+    "title": "FitzHugh-Nagumo Model 1D",
+    "value": "Value",
+    "simulating": "Simulating..."
+  },
+  "ms1dChart": {
+    "title": "Mitchell-Schaeffer Model 1D",
+    "value": "Value",
+    "simulating": "Simulating..."
+  },
   "params": {
     "L": "Size L",
     "N": "Resolution",

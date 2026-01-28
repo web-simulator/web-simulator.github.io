@@ -86,6 +86,19 @@
     "theoretical_restitution": "Curva de Restituição (Analítica)",
     "dvdtMax": "dV/dt Máximo"
   },
+  "bistableChart": {
+    "title": "Modelo Bistable 1D",
+    "potential_unit": "Potencial (v)",
+    "position_unit": "Posição (cm)",
+    "time_ms": "Tempo: ",
+    "tooltip": "Potencial: ",
+    "ViewStimuli": "Visualização do estímulo",
+    "potentialModal": "Potencial em X"
+  },
+  "ms1dChart": {
+    "title": "Modelo Mitchell-Schaeffer 1D",
+    "value": "Valor"
+  },
   "params": {
     "L": "Tamanho L",
     "N": "Resolução",
