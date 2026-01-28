@@ -11,6 +11,7 @@ import DynamicWorker from '../../simulation_dynamic_protocol1.worker.js?worker';
 import MinimalWorker from '../../simulation_minimal_restitution.worker.js?worker';
 import { useTranslation } from 'react-i18next';
 import { exportToPng } from '../../utils/export';
+import { t } from 'i18next';
 
 /* Componente para seções expansíveis na sidebar */
 const SettingsSection = ({ title, children, defaultOpen = false }) => {
@@ -43,7 +44,7 @@ const MODEL_VARIABLES = {
 };
 
 const VARIABLE_LABELS = {
-  v: 'Voltagem',
+  v: t('chart.potential_unit'),
   h: 'Gate h',
   gate_v: 'Gate v',
   gate_w: 'Gate w',

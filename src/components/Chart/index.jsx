@@ -1,8 +1,9 @@
+import { t } from 'i18next';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from 'recharts';
 
 // Cores das linhas 
 const LINES_CONFIG = {
-  v: { stroke: "#8884d8", name: "Voltagem" },
+  v: { stroke: "#8884d8", name: t('chart.potential_unit') },
   h: { stroke: "#82ca9d", name: "Gate h" },
   gate_v: { stroke: "#ff7300", name: "Gate v" },
   gate_w: { stroke: "#ff0000", name: "Gate w" },

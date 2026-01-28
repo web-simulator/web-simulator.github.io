@@ -79,7 +79,8 @@
   "chart": {
     "potential_unit": "Potential (V)",
     "position_unit": "Position (cm)",
-    "time_ms": "Time: "
+    "time_ms": "Time: ",
+    "tooltip": "Potential: "
   },
   "params": {
     "L": "Size L",

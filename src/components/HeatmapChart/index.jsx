@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, memo, useState, useMemo } from 'react';
 import './styles.css';
+import { useTranslation } from 'react-i18next';
 
 // Converte HSL para RGB
 const hslToRgb = (h, s, l) => {
@@ -12,6 +13,7 @@ const hslToRgb = (h, s, l) => {
 
 const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fibrosisConductivity }) => {
   const canvasRef = useRef(null);
+  const { t } = useTranslation();
   
   // tooltip
   const [tooltip, setTooltip] = useState({
@@ -157,7 +159,7 @@ const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fi
       {/* Mostra o tooltip*/}
       {tooltip.visible && (
         <div className="heatmap-tooltip" style={{ top: `${tooltip.y}px`, left: `${tooltip.x}px` }}>
-          Valor: {tooltip.value}
+          {t('chart.tooltip')} {tooltip.value} {'V'}
         </div>
       )}
     </div>

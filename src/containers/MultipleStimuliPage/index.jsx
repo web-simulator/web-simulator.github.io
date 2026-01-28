@@ -9,6 +9,7 @@ import MinimalWorker from '../../simulation_minimal_0d.worker.js?worker';
 import { useTranslation } from 'react-i18next';
 import { exportToPng } from '../../utils/export';
 import './styles.css';
+import { t } from 'i18next';
 
 {{/* Componente para as configurações de parâmetros */}}
 const SettingsSection = ({ title, children, defaultOpen = false }) => {
@@ -66,7 +67,7 @@ const MODEL_VARIABLES = {
 };
 
 const VARIABLE_LABELS = {
-  v: 'Voltagem',
+  v: t('chart.potential_unit'),
   h: 'Gate h',
   gate_v: 'Gate v',
   gate_w: 'Gate w',
