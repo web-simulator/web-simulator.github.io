@@ -1,7 +1,10 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Brush } from 'recharts';
+import { t } from 'i18next';
+import { useTranslation } from 'react-i18next';
 
 // Define o componente
 const RestitutionChart = ({ data, analyticalData }) => {
+  const { t } = useTranslation(); 
   return (
     // Gráfico se ajusta automaticamente ao tamanho do pai
     <ResponsiveContainer width="100%" height={400}>
@@ -59,7 +62,7 @@ const RestitutionChart = ({ data, analyticalData }) => {
           dataKey="apd" // Valores do eixo Y
           stroke="#8884d8" // A cor da linha
           strokeWidth={2} // A espessura da linha
-          name="Curva de Restituição (Simulada)" // Legenda.
+          name={t("chart.simulated_restitution")} // Legenda.
           dot={{ r: 4 }} // Desenha um ponto para cada dado
           activeDot={{ r: 8 }} // O ponto fica maior ao passar o mouse sobre ele
           isAnimationActive={false} // Desativa a animação ao renderizar 
@@ -74,7 +77,7 @@ const RestitutionChart = ({ data, analyticalData }) => {
             dataKey="apd"
             stroke="#82ca9d" // Cor da linha
             strokeWidth={2}
-            name="Curva de Restituição (Analítica)"
+            name={t("chart.theoretical_restitution")}
             dot={false} // Apenas a linha sem pontos
             isAnimationActive={false}
           />

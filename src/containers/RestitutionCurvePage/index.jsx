@@ -80,7 +80,7 @@ const DEFAULT_MINIMAL_PARAMS = {
 
 const RestitutionCurvePage = ({ onBack }) => {
   const { t } = useTranslation();
-  const [data, setData] = useState([]);
+  const [data, setData] = useState(null); 
   const [restitutionData, setRestitutionData] = useState([]);
   const [analyticalData, setAnalyticalData] = useState([]);
   const [worker, setWorker] = useState(null);
@@ -224,6 +224,7 @@ const RestitutionCurvePage = ({ onBack }) => {
     setWorker(simulationWorker);
     simulationWorker.onmessage = (e) => {
       const { timeSeriesData, restitutionData } = e.data;
+      // timeSeriesData pode vir como Array (formato antigo/outros workers) ou Objeto com TypedArrays (novo formato otimizado)
       if (timeSeriesData) setData(timeSeriesData);
       setRestitutionData(restitutionData);
       calculateAnalyticalCurve(restitutionData); 
@@ -233,16 +234,50 @@ const RestitutionCurvePage = ({ onBack }) => {
   }, [selectedModel, calculateAnalyticalCurve]); 
 
   const chartData = useMemo(() => {
-    if (!data || data.length === 0) return [];
-    const activeKeys = ['time', 'tempo', ...Object.keys(visibleVars).filter(k => visibleVars[k])];
-    return data.map(point => {
-      const newPoint = {};
-      activeKeys.forEach(key => {
-        if (point[key] !== undefined) newPoint[key] = point[key];
-      });
-      return newPoint;
-    });
-  }, [data, visibleVars]);
+    // Optimization: Only compute chart data if visibility is ON
+    if (!showTimeSeries) return [];
+    if (!data) return [];
+    
+    // Check for Optimized TypedArray Format (from optimized RestitutionWorker)
+    if (data.time && !Array.isArray(data)) {
+        const { time, v, h, gate_v, gate_w, gate_s } = data;
+        const count = time.length;
+        const result = [];
+        // Determine active variables to avoid checking object keys inside loop
+        const showV = visibleVars.v && v;
+        const showH = visibleVars.h && h;
+        const showGateV = visibleVars.gate_v && gate_v;
+        const showGateW = visibleVars.gate_w && gate_w;
+        const showGateS = visibleVars.gate_s && gate_s;
+
+        for (let i = 0; i < count; i++) {
+            // Note: Chart component likely expects simple objects. 
+            // We reconstruct them here on demand, preventing the "load" freeze from worker transfer.
+            const point = { time: time[i], tempo: time[i].toFixed(2) }; // Add formatted string for tooltip if needed
+            if (showV) point.v = v[i];
+            if (showH) point.h = h[i];
+            if (showGateV) point.gate_v = gate_v[i];
+            if (showGateW) point.gate_w = gate_w[i];
+            if (showGateS) point.gate_s = gate_s[i];
+            result.push(point);
+        }
+        return result;
+    }
+
+    // Fallback for Legacy Format (Array of Objects - other workers)
+    if (Array.isArray(data) && data.length > 0) {
+        const activeKeys = ['time', 'tempo', ...Object.keys(visibleVars).filter(k => visibleVars[k])];
+        return data.map(point => {
+            const newPoint = {};
+            activeKeys.forEach(key => {
+                if (point[key] !== undefined) newPoint[key] = point[key];
+            });
+            return newPoint;
+        });
+    }
+
+    return [];
+  }, [data, visibleVars, showTimeSeries]); // showTimeSeries added to dependencies
 
   const handleChange = useCallback((e, name) => {
     const value = name === 'cellType' ? e.target.value : parseFloat(e.target.value);
@@ -271,7 +306,7 @@ const RestitutionCurvePage = ({ onBack }) => {
   const handleSimularClick = useCallback(() => {
     if (worker) {
       setLoading(true);
-      setData([]);
+      setData(null);
       setRestitutionData([]);
       setAnalyticalData([]);
       const payload = { ...editableParams[selectedModel] };
@@ -382,7 +417,7 @@ const RestitutionCurvePage = ({ onBack }) => {
             onChange={(e) => { 
                 setSelectedModel(e.target.value); 
                 setRestitutionData([]); 
-                setData([]); 
+                setData(null); 
                 setAnalyticalData([]);
             }} 
             className="bg-slate-100 border-none text-sm font-medium text-slate-700 py-2 px-4 rounded-lg cursor-pointer focus:ring-2 focus:ring-emerald-500"
@@ -493,7 +528,7 @@ const RestitutionCurvePage = ({ onBack }) => {
                 
                 {/* Gráfico de Restituição */}
                 <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 min-h-100">
-                    <h3 className="text-lg font-bold text-slate-700 mb-4 pl-2 border-l-4 border-emerald-500">Curva de Restituição</h3>
+                    <h3 className="text-lg font-bold text-slate-700 mb-4 pl-2 border-l-4 border-emerald-500">{t("chart.chart_restitution")}</h3>
                     {restitutionData.length > 0 || analyticalData.length > 0 ? (
                          <RestitutionChart data={restitutionData} analyticalData={analyticalData} />
                     ) : (

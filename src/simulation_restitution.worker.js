@@ -143,7 +143,12 @@ self.onmessage = (e) => {
   const num_ciclos = Math.floor((BCL_S2_inicial - BCL_S2_final) / delta_CL) + 1;
 
   const restitutionData = [];
-  const allTimeSeriesData = [];
+  
+  // Arrays temporários para acumular os dados brutos (muito mais rápido que array de objetos)
+  const timeResults = [];
+  const vResults = [];
+  const hResults = [];
+  
   let tempo_offset = 0;
 
   // Construir a curva de restituição
@@ -166,16 +171,17 @@ self.onmessage = (e) => {
       }
     }
 
-    // Otimização do gráfico
-    for (let i = 0; i < full_v.length; i += downsamplingFactor) {
+    // Otimização do gráfico: Acumular em arrays simples
+    // Usamos um loop simples para evitar overhead de push de objetos
+    const len = full_v.length;
+    for (let i = 0; i < len; i += downsamplingFactor) {
         if(full_tempo[i] !== undefined) {
-            allTimeSeriesData.push({ 
-                tempo: (tempo_offset + full_tempo[i]).toFixed(2), 
-                v: full_v[i], 
-                h: full_h[i] 
-            });
+            timeResults.push(tempo_offset + full_tempo[i]);
+            vResults.push(full_v[i]);
+            hResults.push(full_h[i]);
         }
     }
+    
     if (full_tempo.length > 0) {
       tempo_offset += full_tempo[full_tempo.length - 1];
     }
@@ -184,5 +190,19 @@ self.onmessage = (e) => {
   // Ordena os dados da curva pelo DI
   restitutionData.sort((a, b) => a.bcl - b.bcl);
 
-  self.postMessage({ timeSeriesData: allTimeSeriesData, restitutionData });
+  // Converter para TypedArrays para transferência de "Custo Zero" (Zero-Copy Transfer)
+  const timeArr = new Float32Array(timeResults);
+  const vArr = new Float32Array(vResults);
+  const hArr = new Float32Array(hResults);
+
+  // Envia os buffers transferíveis. Isso é crucial para performance.
+  // timeSeriesData agora é um objeto de TypedArrays, não um array de objetos.
+  self.postMessage({ 
+      timeSeriesData: { 
+          time: timeArr, 
+          v: vArr, 
+          h: hArr 
+      }, 
+      restitutionData 
+  }, [timeArr.buffer, vArr.buffer, hArr.buffer]);
 };

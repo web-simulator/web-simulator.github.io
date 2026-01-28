@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { t } from 'i18next';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from 'recharts';
 
@@ -10,15 +11,40 @@ const LINES_CONFIG = {
   gate_s: { stroke: "#00bfff", name: "Gate s" }
 };
 
+const MAX_DISPLAY_POINTS = 3000; // Limite seguro para SVG sem travar
+
 const Chart = ({ data }) => {
-  const availableKeys = data && data.length > 0 ? Object.keys(data[0]) : []; // Linhas disponíveis
+  const availableKeys = data && data.length > 0 ? Object.keys(data[0]) : [];
+
+  // Otimização: Reduz a quantidade de pontos desenhados se houver muitos dados
+  const displayData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    
+    // Se a quantidade de dados for menor que o limite, usa os dados originais
+    if (data.length <= MAX_DISPLAY_POINTS) return data;
+
+    // Se for maior, faz um downsampling simples (pula pontos)
+    const factor = Math.ceil(data.length / MAX_DISPLAY_POINTS);
+    const sampled = [];
+    
+    for (let i = 0; i < data.length; i += factor) {
+      sampled.push(data[i]);
+    }
+    
+    // Garante que o último ponto seja incluído para fechar o gráfico corretamente
+    if (sampled[sampled.length - 1] !== data[data.length - 1]) {
+        sampled.push(data[data.length - 1]);
+    }
+
+    return sampled;
+  }, [data]);
 
   return (
     // Container responsivo para ajustar o gráfico ao tamanho do elemento pai
     <ResponsiveContainer width="100%" height={400}>
       {/* Componente principal do gráfico de linhas */}
       <LineChart
-        data={data} // Dados que serão exibidos no gráfico
+        data={displayData} // Usa os dados otimizados
         margin={{
           top: 5,    
           right: 30, 
@@ -31,7 +57,12 @@ const Chart = ({ data }) => {
         <CartesianGrid strokeDasharray="3 3" />
         
         {/* Eixo X */}
-        <XAxis dataKey="tempo" minTickGap={80} />
+        <XAxis 
+            dataKey="tempo" 
+            minTickGap={50} 
+            allowDuplicatedCategory={false}
+            tickFormatter={(tick) => typeof tick === 'number' ? tick.toFixed(0) : tick}
+        />
         
         {/* Eixo Y */}
         <YAxis />
@@ -44,6 +75,7 @@ const Chart = ({ data }) => {
             }
             return [value, name];
           }}
+          labelFormatter={(label) => `Tempo: ${label}`}
         />
         
         {/* Legenda do gráfico */}
@@ -55,6 +87,7 @@ const Chart = ({ data }) => {
           height={30}
           stroke="#8884d8"
           travellerWidth={10}
+          tickFormatter={(tick) => typeof tick === 'number' ? tick.toFixed(0) : tick}
         />
         
         {/* Renderização das linhas */}
@@ -68,8 +101,9 @@ const Chart = ({ data }) => {
                         stroke={LINES_CONFIG[key].stroke}
                         name={LINES_CONFIG[key].name}
                         dot={false}
-                        isAnimationActive={false}
-                        strokeWidth={2.2}
+                        isAnimationActive={false} // Desativa animação para performance
+                        strokeWidth={2}
+                        activeDot={{ r: 4 }} // Reduz tamanho do ponto ativo
                     />
                 );
             }

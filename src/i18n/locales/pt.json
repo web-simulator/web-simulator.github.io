@@ -80,7 +80,10 @@
     "potential_unit": "Potencial (V)",
     "position_unit": "Posição (cm)",
     "time_ms": "Tempo: ",
-    "tooltip": "Potencial: "
+    "tooltip": "Potencial: ",
+    "chart_restitution": "Curva de Restituição",
+    "simulated_restitution": "Curva de Restituição (Simulada)",
+    "theoretical_restitution": "Curva de Restituição (Analítica)"
   },
   "params": {
     "L": "Tamanho L",
