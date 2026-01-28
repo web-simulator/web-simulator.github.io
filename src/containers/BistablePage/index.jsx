@@ -131,7 +131,7 @@ const BistablePage = ({ onBack }) => {
     };
 
     setTimeout(async () => {
-      await export1DToGif(simulationData, editableParams, 'simulacao_bistavel', labels, viewMode);
+      await export1DToGif(simulationData, editableParams, 'bistable_simulation', labels, viewMode);
       setExporting(false);
     }, 100);
   }, [simulationData, editableParams, t, viewMode]);

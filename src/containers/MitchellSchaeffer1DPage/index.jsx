@@ -142,7 +142,7 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
     };
 
     setTimeout(async () => {
-        await export1DToGif(simulationData, editableParams, 'simulacao_ms1d', labels, viewMode);
+        await export1DToGif(simulationData, editableParams, 'ms1d_simulation', labels, viewMode);
         setExporting(false);
     }, 100);
   }, [simulationData, editableParams, t, viewMode]);

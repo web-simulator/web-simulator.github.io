@@ -136,7 +136,7 @@ const FitzHughNagumoPage = ({ onBack }) => {
     };
 
     setTimeout(async () => {
-      await export1DToGif(simulationData, editableParams, 'simulacao_fhn', labels, viewMode);
+      await export1DToGif(simulationData, editableParams, 'fhn_simulation', labels, viewMode);
       setExporting(false);
     }, 100);
   }, [simulationData, editableParams, t, viewMode]);
