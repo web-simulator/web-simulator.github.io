@@ -16,14 +16,13 @@ const MAX_DISPLAY_POINTS = 3000; // Limite seguro para SVG sem travar
 const Chart = ({ data }) => {
   const availableKeys = data && data.length > 0 ? Object.keys(data[0]) : [];
 
-  // Otimização: Reduz a quantidade de pontos desenhados se houver muitos dados
   const displayData = useMemo(() => {
     if (!data || data.length === 0) return [];
     
     // Se a quantidade de dados for menor que o limite, usa os dados originais
     if (data.length <= MAX_DISPLAY_POINTS) return data;
 
-    // Se for maior, faz um downsampling simples (pula pontos)
+    // Amostragem simples para reduzir o número de pontos
     const factor = Math.ceil(data.length / MAX_DISPLAY_POINTS);
     const sampled = [];
     
@@ -58,7 +57,7 @@ const Chart = ({ data }) => {
         
         {/* Eixo X */}
         <XAxis 
-            dataKey="tempo" 
+            dataKey="tempo"
             minTickGap={50} 
             allowDuplicatedCategory={false}
             tickFormatter={(tick) => typeof tick === 'number' ? tick.toFixed(0) : tick}
@@ -75,7 +74,7 @@ const Chart = ({ data }) => {
             }
             return [value, name];
           }}
-          labelFormatter={(label) => `Tempo: ${label}`}
+          labelFormatter={(label) => `${t('chart.time_ms')}: ${label}`}
         />
         
         {/* Legenda do gráfico */}
@@ -83,7 +82,7 @@ const Chart = ({ data }) => {
 
         {/* Barra de navegação para zoom e seleção */}
         <Brush
-          dataKey="tempo"
+          dataKey= "tempo"
           height={30}
           stroke="#8884d8"
           travellerWidth={10}

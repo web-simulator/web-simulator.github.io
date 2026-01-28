@@ -144,7 +144,7 @@ self.onmessage = (e) => {
 
   const restitutionData = [];
   
-  // Arrays temporários para acumular os dados brutos (muito mais rápido que array de objetos)
+  // Arrays para série temporal completa
   const timeResults = [];
   const vResults = [];
   const hResults = [];
@@ -171,8 +171,6 @@ self.onmessage = (e) => {
       }
     }
 
-    // Otimização do gráfico: Acumular em arrays simples
-    // Usamos um loop simples para evitar overhead de push de objetos
     const len = full_v.length;
     for (let i = 0; i < len; i += downsamplingFactor) {
         if(full_tempo[i] !== undefined) {
@@ -190,13 +188,11 @@ self.onmessage = (e) => {
   // Ordena os dados da curva pelo DI
   restitutionData.sort((a, b) => a.bcl - b.bcl);
 
-  // Converter para TypedArrays para transferência de "Custo Zero" (Zero-Copy Transfer)
   const timeArr = new Float32Array(timeResults);
   const vArr = new Float32Array(vResults);
   const hArr = new Float32Array(hResults);
 
-  // Envia os buffers transferíveis. Isso é crucial para performance.
-  // timeSeriesData agora é um objeto de TypedArrays, não um array de objetos.
+  // Envia os dados de volta para o thread principal
   self.postMessage({ 
       timeSeriesData: { 
           time: timeArr, 

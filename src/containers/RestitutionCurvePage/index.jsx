@@ -224,7 +224,6 @@ const RestitutionCurvePage = ({ onBack }) => {
     setWorker(simulationWorker);
     simulationWorker.onmessage = (e) => {
       const { timeSeriesData, restitutionData } = e.data;
-      // timeSeriesData pode vir como Array (formato antigo/outros workers) ou Objeto com TypedArrays (novo formato otimizado)
       if (timeSeriesData) setData(timeSeriesData);
       setRestitutionData(restitutionData);
       calculateAnalyticalCurve(restitutionData); 
@@ -234,16 +233,14 @@ const RestitutionCurvePage = ({ onBack }) => {
   }, [selectedModel, calculateAnalyticalCurve]); 
 
   const chartData = useMemo(() => {
-    // Optimization: Only compute chart data if visibility is ON
+    // Só faz os cálculos da serie se tiver habilitado
     if (!showTimeSeries) return [];
     if (!data) return [];
     
-    // Check for Optimized TypedArray Format (from optimized RestitutionWorker)
     if (data.time && !Array.isArray(data)) {
         const { time, v, h, gate_v, gate_w, gate_s } = data;
         const count = time.length;
         const result = [];
-        // Determine active variables to avoid checking object keys inside loop
         const showV = visibleVars.v && v;
         const showH = visibleVars.h && h;
         const showGateV = visibleVars.gate_v && gate_v;
@@ -251,9 +248,7 @@ const RestitutionCurvePage = ({ onBack }) => {
         const showGateS = visibleVars.gate_s && gate_s;
 
         for (let i = 0; i < count; i++) {
-            // Note: Chart component likely expects simple objects. 
-            // We reconstruct them here on demand, preventing the "load" freeze from worker transfer.
-            const point = { time: time[i], tempo: time[i].toFixed(2) }; // Add formatted string for tooltip if needed
+            const point = { time: time[i], tempo: time[i].toFixed(2) };
             if (showV) point.v = v[i];
             if (showH) point.h = h[i];
             if (showGateV) point.gate_v = gate_v[i];
@@ -264,7 +259,7 @@ const RestitutionCurvePage = ({ onBack }) => {
         return result;
     }
 
-    // Fallback for Legacy Format (Array of Objects - other workers)
+    // 
     if (Array.isArray(data) && data.length > 0) {
         const activeKeys = ['time', 'tempo', ...Object.keys(visibleVars).filter(k => visibleVars[k])];
         return data.map(point => {
@@ -277,7 +272,7 @@ const RestitutionCurvePage = ({ onBack }) => {
     }
 
     return [];
-  }, [data, visibleVars, showTimeSeries]); // showTimeSeries added to dependencies
+  }, [data, visibleVars, showTimeSeries]);
 
   const handleChange = useCallback((e, name) => {
     const value = name === 'cellType' ? e.target.value : parseFloat(e.target.value);

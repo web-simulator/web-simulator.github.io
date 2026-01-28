@@ -83,7 +83,8 @@
     "tooltip": "Potential: ",
     "chart_restitution": "Restitution Curve",
     "simulated_restitution": "Restitution Curve (Simulated)",
-    "theoretical_restitution": "Restitution Curve (Analytical)"
+    "theoretical_restitution": "Restitution Curve (Analytical)",
+    "dvdtMax": "Max dV/dt"
   },
   "params": {
     "L": "Size L",

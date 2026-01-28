@@ -83,7 +83,8 @@
     "tooltip": "Potencial: ",
     "chart_restitution": "Curva de Restituição",
     "simulated_restitution": "Curva de Restituição (Simulada)",
-    "theoretical_restitution": "Curva de Restituição (Analítica)"
+    "theoretical_restitution": "Curva de Restituição (Analítica)",
+    "dvdtMax": "dV/dt Máximo"
   },
   "params": {
     "L": "Tamanho L",

@@ -359,7 +359,7 @@ const S1S2Page = ({ onBack }) => {
                                 <i className="bi bi-speedometer2"></i> Métricas
                             </h4>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <MetricCard label="dV/dt Máximo" value={metrics.dvdtMax} unit={selectedModel === 'ms' ? '1/ms' : ''} />
+                                <MetricCard label={t('chart.dvdtMax')} value={metrics.dvdtMax} unit={selectedModel === 'ms' ? '1/ms' : ''} />
                                 <MetricCard label="APD 90" value={metrics.apd} unit="ms" />
                             </div>
                           </div>
