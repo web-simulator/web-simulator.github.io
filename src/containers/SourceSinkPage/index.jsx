@@ -1,12 +1,14 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import HeatmapChart from '../../components/HeatmapChart';
 import Colorbar from '../../components/Colorbar';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal';
 import Chart from '../../components/Chart';
+import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation_source_sink.worker.js?worker';
 import { useTranslation } from 'react-i18next';
+import { export2DToGif } from '../../utils/export';
 import './styles.css';
 
 /* Componente para seções expansíveis na sidebar */
@@ -48,6 +50,7 @@ const SourceSinkPage = ({ onBack }) => {
   const [currentFrame, setCurrentFrame] = useState(0);
   const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [simulationSpeed, setSimulationSpeed] = useState(50);
   const [progress, setProgress] = useState(0);
@@ -56,6 +59,7 @@ const SourceSinkPage = ({ onBack }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState(null);
+  const chartRef = useRef(null);
 
   // Parâmetros do modelo e geometria
   const [params, setParams] = useState({
@@ -296,6 +300,24 @@ const SourceSinkPage = ({ onBack }) => {
     setIsModalOpen(true);
   }, []);
 
+  // Função para exportar
+  const handleExportGif = useCallback(async () => {
+    if (!simulationResult) return;
+    setExporting(true);
+    
+    const labels = {
+        potential: t('chart.potential_unit'),
+        time_ms: t('chart.time_ms')
+    };
+
+    const exportParams = { ...params, modelType: selectedModel };
+
+    setTimeout(async () => {
+        await export2DToGif(simulationResult, exportParams, `source_sink_simulation_${selectedModel}`, labels);
+        setExporting(false);
+    }, 100);
+  }, [simulationResult, params, selectedModel, t]);
+
   let currentChartData = null;
   let currentGeometryMap = null;
   let N_dimension = simulationResult ? simulationResult.N : Math.round((params.L / params.dx));
@@ -495,7 +517,7 @@ const SourceSinkPage = ({ onBack }) => {
               </div>
             </SettingsSection>
 
-            <SettingsSection title={t('common.tissue_properties')}>
+            <SettingsSection title={t('common.tissue_properties')} defaultOpen={true}>
               <div className="grid grid-cols-2 gap-3">
                 <Input label={t('params.sigma_l')} value={params.sigma_l} onChange={(e) => handleParamChange(e, 'sigma_l')} type="number" className="mb-0" />
                 <Input label={t('params.sigma_t')} value={params.sigma_t} onChange={(e) => handleParamChange(e, 'sigma_t')} type="number" className="mb-0" />
@@ -548,14 +570,16 @@ const SourceSinkPage = ({ onBack }) => {
           <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
             <div className="flex items-center justify-center gap-4 w-full h-full">
               <div className="relative shadow-lg rounded-lg overflow-hidden bg-white border border-slate-200 aspect-square w-full h-auto lg:h-full lg:w-auto max-w-full max-h-full">
-                <HeatmapChart
-                  data={currentChartData}
-                  nCols={N_dimension}
-                  maxValue={heatmapMaxValue}
-                  onPointClick={handlePointClick}
-                  fibrosisMap={currentGeometryMap}
-                  fibrosisConductivity={params.fibrosis ? params.fibrosisConductivity : 0.0}
-                />
+                <div ref={chartRef} className="w-full h-full">
+                    <HeatmapChart
+                        data={currentChartData}
+                        nCols={N_dimension}
+                        maxValue={heatmapMaxValue}
+                        onPointClick={handlePointClick}
+                        fibrosisMap={currentGeometryMap}
+                        fibrosisConductivity={params.fibrosis ? params.fibrosisConductivity : 0.0}
+                    />
+                </div>
                 {!simulationResult && !loading && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/80 text-slate-400 pointer-events-none">
                     <i className="bi bi-activity text-6xl mb-4 opacity-50"></i>
@@ -589,6 +613,7 @@ const SourceSinkPage = ({ onBack }) => {
                 {!loading ? (
                   <button
                     onClick={handleSimularClick}
+                    disabled={exporting}
                     className={`rounded-full px-6 py-2 font-bold text-white shadow-md transition-transform active:scale-95 flex items-center gap-2 ${simulationResult ? 'bg-slate-500 hover:bg-slate-600 text-sm' : 'bg-emerald-600 hover:bg-emerald-700 text-base'}`}
                   >
                     {simulationResult ? <><i className="bi bi-arrow-repeat"></i> {t('common.resimulate')}</> : <><i className="bi bi-cpu"></i> {t('common.simulate')}</>}
@@ -609,6 +634,13 @@ const SourceSinkPage = ({ onBack }) => {
                     >
                       <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} text-2xl ml-${isPlaying ? '0' : '1'}`}></i>
                     </button>
+
+                    {/* Botão de Exportar */}
+                    <ExportButton 
+                        onClick={handleExportGif}
+                        label={exporting ? t('common.generating_gif') : t('common.export_result')}
+                        disabled={exporting}
+                    />
                   </>
                 )}
               </div>
@@ -640,7 +672,7 @@ const SourceSinkPage = ({ onBack }) => {
                 </div>
               )}
 
-              <Button onClick={() => setIsInfoModalOpen(true)} className="!bg-slate-100 !text-slate-600 hover:!bg-slate-200 !p-2 !rounded-lg" title={t('common.more_info')}>
+              <Button onClick={() => setIsInfoModalOpen(true)} className="bg-slate-100 text-slate-600 hover:bg-slate-200 p-2 rounded-lg" title={t('common.more_info')}>
                 <i className="bi bi-info-circle text-lg"></i>
               </Button>
             </div>

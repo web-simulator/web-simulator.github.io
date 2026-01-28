@@ -1,13 +1,15 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import HeatmapChart from '../../components/HeatmapChart';
 import Colorbar from '../../components/Colorbar';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Chart from '../../components/Chart';
 import Modal from '../../components/Modal';
+import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation_2d.worker.js?worker';
 import MinimalWorker from '../../simulation_minimal_2d.worker.js?worker';
 import { useTranslation } from 'react-i18next';
+import { export2DToGif } from '../../utils/export';
 
 const SettingsSection = ({ title, children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -53,6 +55,7 @@ const Model2DPage = ({ onBack }) => {
   const [simulationResult, setSimulationResult] = useState(null); 
   const [progress, setProgress] = useState(0);
   const [remainingTime, setRemainingTime] = useState(null);
+  const [exporting, setExporting] = useState(false);
   
   // Player
   const [isPlaying, setIsPlaying] = useState(false);
@@ -269,6 +272,25 @@ const Model2DPage = ({ onBack }) => {
       setWorker(simWorker); setCalculating(false); setProgress(0);
   };
 
+  // Função para exportar GIF
+  const handleExportGif = useCallback(async () => {
+    if (!simulationResult) return;
+    setExporting(true);
+    
+    const labels = {
+        potential: t('chart.potential_unit'),
+        time_ms: t('chart.time_ms')
+    };
+
+    // Adiciona o tipo de modelo aos parâmetros para ajuste de escala
+    const exportParams = { ...params, modelType: selectedModel };
+
+    setTimeout(async () => {
+        await export2DToGif(simulationResult, exportParams, `2d_simulation_${selectedModel}`, labels);
+        setExporting(false);
+    }, 100);
+  }, [simulationResult, params, selectedModel, t]);
+
   let currentChartData = null;
   let currentFibrosisMap = null;
   let N_dimension = simulationResult ? simulationResult.N : Math.round((parseFloat(params.L) || 10.0) / (parseFloat(params.dx) || 0.1));
@@ -354,24 +376,24 @@ const Model2DPage = ({ onBack }) => {
                 </SettingsSection>
             ) : (
                 <SettingsSection title={t('common.minimal_model')}>
-                     {!params.transmurality && (
-                         <div className="mb-3">
-                             <label className="text-sm font-medium text-slate-700">{t('common.cell_type')}</label>
-                             <select value={params.cellType} onChange={(e) => handleChange(e, 'cellType')} className="w-full mt-1 px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm">
-                                <option value="epi">{t('params.epi')}</option>
-                                <option value="endo">{t('params.endo')}</option>
-                                <option value="myo">{t('params.myo')}</option>
-                             </select>
-                         </div>
-                     )}
-                     <div className="mt-4 pt-2 border-t border-slate-100">
+                      {!params.transmurality && (
+                          <div className="mb-3">
+                              <label className="text-sm font-medium text-slate-700">{t('common.cell_type')}</label>
+                              <select value={params.cellType} onChange={(e) => handleChange(e, 'cellType')} className="w-full mt-1 px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm">
+                                 <option value="epi">{t('params.epi')}</option>
+                                 <option value="endo">{t('params.endo')}</option>
+                                 <option value="myo">{t('params.myo')}</option>
+                              </select>
+                          </div>
+                      )}
+                      <div className="mt-4 pt-2 border-t border-slate-100">
                         <p className="text-xs font-semibold text-slate-500 mb-2">{t('common.custom_params')} ({t(`params.${params.cellType}`)})</p>
                         <div className="grid grid-cols-2 gap-2">
                              {Object.keys(minimalCustomParams[params.cellType]).slice(0, 6).map(key => (
                                 <Input key={key} label={t(`params.${key}`) || key} value={minimalCustomParams[params.cellType][key]} onChange={(e) => handleMinimalCustomChange(key, e.target.value)} type="number" className="mb-0" />
                              ))}
                         </div>
-                     </div>
+                      </div>
                 </SettingsSection>
             )}
 
@@ -563,7 +585,7 @@ const Model2DPage = ({ onBack }) => {
             <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     {!calculating ? (
-                        <button onClick={handleStart} className={`rounded-full px-6 py-2 font-bold text-white shadow-md transition-transform active:scale-95 flex items-center gap-2 ${simulationResult ? 'bg-slate-500 hover:bg-slate-600 text-sm' : 'bg-emerald-600 hover:bg-emerald-700 text-base'}`}>
+                        <button onClick={handleStart} disabled={exporting} className={`rounded-full px-6 py-2 font-bold text-white shadow-md transition-transform active:scale-95 flex items-center gap-2 ${simulationResult ? 'bg-slate-500 hover:bg-slate-600 text-sm' : 'bg-emerald-600 hover:bg-emerald-700 text-base'}`}>
                             {simulationResult ? <><i className="bi bi-arrow-repeat"></i> {t('common.resimulate')}</> : <><i className="bi bi-cpu"></i> {t('common.simulate')}</>}
                         </button>
                     ) : (
@@ -577,6 +599,13 @@ const Model2DPage = ({ onBack }) => {
                             <button onClick={() => setIsPlaying(!isPlaying)} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-md transition-transform active:scale-95">
                                 <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} text-2xl ml-${isPlaying ? '0' : '1'}`}></i>
                             </button>
+
+                            {/* Botão de Exportar */}
+                            <ExportButton 
+                                onClick={handleExportGif}
+                                label={exporting ? t('common.generating_gif') : t('common.export_result')}
+                                disabled={exporting}
+                            />
                         </>
                     )}
                 </div>
@@ -594,7 +623,7 @@ const Model2DPage = ({ onBack }) => {
                     </div>
                 )}
                 
-                <Button onClick={() => setIsInfoModalOpen(true)} className="!bg-slate-100 !text-slate-600 hover:!bg-slate-200 !p-2 !rounded-lg" title={t('common.more_info')}>
+                <Button onClick={() => setIsInfoModalOpen(true)} className="bg-slate-100 text-slate-600 hover:bg-slate-200 p-2 rounded-lg" title={t('common.more_info')}>
                     <i className="bi bi-info-circle text-lg"></i>
                 </Button>
             </div>
