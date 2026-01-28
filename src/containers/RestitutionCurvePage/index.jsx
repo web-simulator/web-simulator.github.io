@@ -287,7 +287,7 @@ const RestitutionCurvePage = ({ onBack }) => {
   };
 
   const handleExport = useCallback(() => {
-    exportToPng(chartRef, `restituicao_${selectedModel}`);
+    exportToPng(chartRef, `restitution_${selectedModel}`);
   }, [selectedModel]);
 
   const renderInfoModalContent = () => {
@@ -491,12 +491,12 @@ const RestitutionCurvePage = ({ onBack }) => {
             <div ref={chartRef} className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4 bg-slate-100">
                 
                 {/* Gráfico de Restituição */}
-                <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 min-h-[400px]">
+                <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 min-h-100">
                     <h3 className="text-lg font-bold text-slate-700 mb-4 pl-2 border-l-4 border-emerald-500">Curva de Restituição</h3>
                     {restitutionData.length > 0 || analyticalData.length > 0 ? (
                          <RestitutionChart data={restitutionData} analyticalData={analyticalData} />
                     ) : (
-                        <div className="h-[350px] w-full flex flex-col items-center justify-center text-slate-400">
+                        <div className="h-87.5 w-full flex flex-col items-center justify-center text-slate-400">
                              <i className="bi bi-graph-up text-6xl mb-4 opacity-50"></i>
                              <p>{t('common.ready')}</p>
                         </div>
@@ -505,12 +505,12 @@ const RestitutionCurvePage = ({ onBack }) => {
 
                 {/* Série Temporal (Opcional) */}
                 {showTimeSeries && (
-                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 min-h-[300px]">
+                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 min-h-75">
                         <h3 className="text-lg font-bold text-slate-700 mb-4 pl-2 border-l-4 border-emerald-500">{t('common.stimuli')}</h3>
                         {chartData.length > 0 ? (
                              <Chart data={chartData} />
                         ) : (
-                            <div className="h-[250px] w-full flex flex-col items-center justify-center text-slate-400">
+                            <div className="h-62.5 w-full flex flex-col items-center justify-center text-slate-400">
                                 <p>{t('common.ready')}</p>
                             </div>
                         )}
@@ -543,7 +543,7 @@ const RestitutionCurvePage = ({ onBack }) => {
                         )}
                     </div>
                     
-                    <Button onClick={() => setIsInfoModalOpen(true)} className="!bg-slate-100 !text-slate-600 hover:!bg-slate-200 !p-2 !rounded-lg" title={t('common.more_info')}>
+                    <Button onClick={() => setIsInfoModalOpen(true)} className="bg-slate-100 text-slate-600 hover:bg-slate-200 p-2 rounded-lg" title={t('common.more_info')}>
                         <i className="bi bi-info-circle text-lg"></i> <span className="md:hidden ml-2">{t('common.more_info')}</span>
                     </Button>
                 </div>

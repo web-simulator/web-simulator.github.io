@@ -194,7 +194,7 @@ const MultipleStimuliPage = ({ onBack }) => {
   };
 
   const handleExport = useCallback(() => {
-    exportToPng(chartRef, `simulacao_multipla_${selectedModel}`);
+    exportToPng(chartRef, `multiple_stimuli_${selectedModel}`);
   }, [selectedModel]);
 
   const currentParams = editableParams[selectedModel];
@@ -354,7 +354,7 @@ const MultipleStimuliPage = ({ onBack }) => {
                     )}
                 </div>
                 
-                <Button onClick={() => setIsInfoModalOpen(true)} className="!bg-slate-100 !text-slate-600 hover:!bg-slate-200 !p-2 !rounded-lg" title={t('common.more_info')}>
+                <Button onClick={() => setIsInfoModalOpen(true)} className="bg-slate-100 text-slate-600 hover:bg-slate-200 p-2 rounded-lg" title={t('common.more_info')}>
                     <i className="bi bi-info-circle text-lg"></i> <span className="md:hidden ml-2">{t('common.more_info')}</span>
                 </Button>
             </div>
