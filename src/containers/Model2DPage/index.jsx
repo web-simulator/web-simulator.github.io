@@ -79,7 +79,7 @@ const Model2DPage = ({ onBack }) => {
     v_init: 0.0, h_init: 1.0,
     
     cellType: 'epi',
-    fibrosis: false, fibrosisType: 'compact', fibrosisDistribution: 'random', fibrosisDensity: 10,
+    fibrosis: false, fibrosisType: 'compact', fibrosisDistribution: 'region', fibrosisDensity: 10,
     fibrosisSeed: 12345, fibrosisConductivity: 0.0, fibrosisShape: 'rectangle', fibrosisBorderZone: 0.0,
     fibrosisRect: { x1: 2.0, y1: 2.0, x2: 5.0, y2: 5.0 },
     fibrosisCircle: { cx: 5.0, cy: 5.0, radius: 2.0 },
@@ -452,19 +452,9 @@ const Model2DPage = ({ onBack }) => {
                                 </select>
                             </div>
                             
-                            {params.fibrosisType === 'compact' && (
-                                <div>
-                                    <label className="text-xs font-medium text-slate-500">{t('common.distribution')}</label>
-                                    <select value={params.fibrosisDistribution} onChange={(e) => handleChange(e, 'fibrosisDistribution')} className="w-full text-sm border rounded p-1">
-                                        <option value="random">{t('common.random')}</option>
-                                        <option value="region">{t('common.region_defined')}</option>
-                                    </select>
-                                </div>
-                            )}
-
                             <Input label={t('params.condutividade')} value={params.fibrosisConductivity} onChange={(e) => handleChange(e, 'fibrosisConductivity')} type="number" />
 
-                            {params.fibrosisType === 'compact' && params.fibrosisDistribution === 'region' && (
+                            {params.fibrosisType === 'compact' && (
                                 <div className="space-y-2 pt-2 border-t border-slate-100">
                                     <label className="text-xs font-medium text-slate-500">{t('common.region_shape')}</label>
                                     <select value={params.fibrosisShape} onChange={(e) => handleChange(e, 'fibrosisShape')} className="w-full text-sm border rounded p-1">
@@ -499,13 +489,6 @@ const Model2DPage = ({ onBack }) => {
                                         <Input label="X2" value={params.fibrosisRegion.x2} onChange={(e) => handleFibrosisNestedChange('fibrosisRegion', 'x2', e.target.value)} type="number" className="mb-0" />
                                         <Input label="Y2" value={params.fibrosisRegion.y2} onChange={(e) => handleFibrosisNestedChange('fibrosisRegion', 'y2', e.target.value)} type="number" className="mb-0" />
                                     </div>
-                                    <Input label={t('params.densidade')} value={params.fibrosisDensity} onChange={(e) => handleChange(e, 'fibrosisDensity')} type="number" />
-                                    <Input label={t('params.semente')} value={params.fibrosisSeed} onChange={(e) => handleChange(e, 'fibrosisSeed')} type="number" />
-                                </div>
-                            )}
-
-                            {params.fibrosisType === 'compact' && params.fibrosisDistribution === 'random' && (
-                                <div className="pt-2 border-t border-slate-100">
                                     <Input label={t('params.densidade')} value={params.fibrosisDensity} onChange={(e) => handleChange(e, 'fibrosisDensity')} type="number" />
                                     <Input label={t('params.semente')} value={params.fibrosisSeed} onChange={(e) => handleChange(e, 'fibrosisSeed')} type="number" />
                                 </div>
