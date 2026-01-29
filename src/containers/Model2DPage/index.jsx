@@ -424,8 +424,8 @@ const Model2DPage = ({ onBack }) => {
                                </>
                            ) : (
                                <>
-                                <Input label="CX" value={stim.circleParams.cx} onChange={(e) => updateStimulusNested(stim.id, 'circleParams', 'cx', e.target.value)} type="number" />
-                                <Input label="CY" value={stim.circleParams.cy} onChange={(e) => updateStimulusNested(stim.id, 'circleParams', 'cy', e.target.value)} type="number" />
+                                <Input label={t('params.cx')} value={stim.circleParams.cx} onChange={(e) => updateStimulusNested(stim.id, 'circleParams', 'cx', e.target.value)} type="number" />
+                                <Input label={t('params.cy')} value={stim.circleParams.cy} onChange={(e) => updateStimulusNested(stim.id, 'circleParams', 'cy', e.target.value)} type="number" />
                                 <Input label={t('params.radius')} value={stim.circleParams.radius} onChange={(e) => updateStimulusNested(stim.id, 'circleParams', 'radius', e.target.value)} type="number" />
                                </>
                            )}
@@ -471,8 +471,8 @@ const Model2DPage = ({ onBack }) => {
                                         </div>
                                     ) : (
                                         <div className="grid grid-cols-2 gap-2">
-                                            <Input label="CX" value={params.fibrosisCircle.cx} onChange={(e) => handleFibrosisNestedChange('fibrosisCircle', 'cx', e.target.value)} type="number" className="mb-0" />
-                                            <Input label="CY" value={params.fibrosisCircle.cy} onChange={(e) => handleFibrosisNestedChange('fibrosisCircle', 'cy', e.target.value)} type="number" className="mb-0" />
+                                            <Input label={t('params.cx')} value={params.fibrosisCircle.cx} onChange={(e) => handleFibrosisNestedChange('fibrosisCircle', 'cx', e.target.value)} type="number" className="mb-0" />
+                                            <Input label={t('params.cy')} value={params.fibrosisCircle.cy} onChange={(e) => handleFibrosisNestedChange('fibrosisCircle', 'cy', e.target.value)} type="number" className="mb-0" />
                                             <Input label={t('params.radius')} value={params.fibrosisCircle.radius} onChange={(e) => handleFibrosisNestedChange('fibrosisCircle', 'radius', e.target.value)} type="number" className="mb-0 col-span-2" />
                                         </div>
                                     )}
@@ -489,7 +489,7 @@ const Model2DPage = ({ onBack }) => {
                                         <Input label="X2" value={params.fibrosisRegion.x2} onChange={(e) => handleFibrosisNestedChange('fibrosisRegion', 'x2', e.target.value)} type="number" className="mb-0" />
                                         <Input label="Y2" value={params.fibrosisRegion.y2} onChange={(e) => handleFibrosisNestedChange('fibrosisRegion', 'y2', e.target.value)} type="number" className="mb-0" />
                                     </div>
-                                    <Input label={t('params.densidade')} value={params.fibrosisDensity} onChange={(e) => handleChange(e, 'fibrosisDensity')} type="number" />
+                                    <Input label={t('params.densidade')+ " (%)"} value={params.fibrosisDensity} onChange={(e) => handleChange(e, 'fibrosisDensity')} type="number" />
                                     <Input label={t('params.semente')} value={params.fibrosisSeed} onChange={(e) => handleChange(e, 'fibrosisSeed')} type="number" />
                                 </div>
                             )}
