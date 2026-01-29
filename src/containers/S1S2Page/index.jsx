@@ -290,11 +290,11 @@ const S1S2Page = ({ onBack }) => {
 
             <SettingsSection title={t('home.models.s1s2.title')} defaultOpen={true}>
               <div className="grid grid-cols-2 gap-3">
-                 <Input label="S1 (BCL)" value={currentParams.S1} onChange={(e) => handleChange(e, 'S1')} type="number" />
-                 <Input label="S2 (Intervalo)" value={currentParams.S2} onChange={(e) => handleChange(e, 'S2')} type="number" />
+                 <Input label={t('params.BCLS1')} value={currentParams.S1} onChange={(e) => handleChange(e, 'S1')} type="number" />
+                 <Input label={t('params.BCLS2')} value={currentParams.S2} onChange={(e) => handleChange(e, 'S2')} type="number" />
                  <Input label={t('params.duracao')} value={currentParams.duração} onChange={(e) => handleChange(e, 'duração')} type="number" />
                  <Input label={t('params.amplitude')} value={currentParams.amplitude} onChange={(e) => handleChange(e, 'amplitude')} type="number" />
-                 <Input label="Nº Estímulos S1" value={currentParams.num_estimulos_s1} onChange={(e) => handleChange(e, 'num_estimulos_s1')} type="number" />
+                 <Input label={t('params.num_estimulos_s1')} value={currentParams.num_estimulos_s1} onChange={(e) => handleChange(e, 'num_estimulos_s1')} type="number" />
               </div>
             </SettingsSection>
 
@@ -306,8 +306,8 @@ const S1S2Page = ({ onBack }) => {
                         <Input label={t('params.Tau_open')} value={currentParams.recuperação} onChange={(e) => handleChange(e, 'recuperação')} type="number" />
                         <Input label={t('params.Tau_close')} value={currentParams.inativação} onChange={(e) => handleChange(e, 'inativação')} type="number" />
                         <Input label={t('params.gate')} value={currentParams.gate} onChange={(e) => handleChange(e, 'gate')} type="number" />
-                        <Input label="V Inicial" value={currentParams.v_inicial} onChange={(e) => handleChange(e, 'v_inicial')} type="number" />
-                        <Input label="h Inicial" value={currentParams.h_inicial} onChange={(e) => handleChange(e, 'h_inicial')} type="number" />
+                        <Input label={t('params.v_inicial')} value={currentParams.v_inicial} onChange={(e) => handleChange(e, 'v_inicial')} type="number" />
+                        <Input label={t('params.h_inicial')} value={currentParams.h_inicial} onChange={(e) => handleChange(e, 'h_inicial')} type="number" />
                     </div>
                 </SettingsSection>
             ) : (

@@ -119,7 +119,7 @@
     "recuperação": "Recuperação (Tau_open)",
     "inativação": "Inativação (Tau_close)",
     "gate": "V Gate",
-    "v_inicial": "Voltagem Inicial",
+    "v_inicial": "Potencial Inicial (v)",
     "h_inicial": "Gate Inicial (h)",
     "inicio": "Início (ms)",
     "duracao": "Duração (ms)",
@@ -208,9 +208,9 @@
     "h_inicial_desc": "Valor inicial da variável de gate (h), representando a disponibilidade dos canais de sódio.",
     "despolarização_desc": "Constante de tempo que define a velocidade da fase de subida do potencial de ação (despolarização).",
     "repolarização_desc": "Constante de tempo que define a velocidade de retorno ao repouso (repolarização).",
-    "recuperação_desc": "Constante de tempo para a reabertura do gate h quando a voltagem é baixa (período refratário).",
-    "inativação_desc": "Constante de tempo para o fechamento do gate h quando a voltagem é alta.",
-    "gate_desc": "Limiar de voltagem que define a transição entre os estados de abertura e fechamento do gate h.",
+    "recuperação_desc": "Constante de tempo para a reabertura do gate h quando o potencial é baixo (período refratário).",
+    "inativação_desc": "Constante de tempo para o fechamento do gate h quando o potencial é alto.",
+    "gate_desc": "Limiar de potencial que define a transição entre os estados de abertura e fechamento do gate h.",
     "BCL_desc": "Basic Cycle Length: O intervalo de tempo entre estímulos consecutivos.",
     "num_estimulos_desc": "Quantidade total de pulsos elétricos aplicados durante a simulação.",
     "duração_desc": "Tempo de duração da aplicação da corrente de estímulo externo.",
@@ -225,7 +225,7 @@
     "tau_out_desc": "Constante de tempo que define a rapidez da repolarização (retorno ao repouso).",
     "tau_open_desc": "Tempo para o gate h reabrir (recuperação da excitabilidade).",
     "tau_close_desc": "Tempo para o gate h fechar (inativação durante o platô).",
-    "v_gate_desc": "Voltagem limiar que alterna o comportamento do gate h (abrir vs fechar)."
+    "v_gate_desc": "Potencial limiar que alterna o comportamento do gate h (abrir vs fechar)."
   },
   "modals": {
     "math_model": "Modelo Matemático",
@@ -234,7 +234,7 @@
     "protocol": "Protocolo de Simulação",
     "param_meaning": "Parâmetros",
     "how_to_use": "Como usar",
-    "ms_desc_base": "O modelo Mitchell-Schaeffer descreve a propagação do potencial de ação utilizando uma variável de voltagem (v) e uma variável de gate (h), simplificando as correntes iônicas.",
+    "ms_desc_base": "O modelo Mitchell-Schaeffer descreve a propagação do potencial de ação utilizando uma variável de potencial (v) e uma variável de gate (h), simplificando as correntes iônicas.",
     "minimal_desc_base": "O Minimal Model é um modelo de 4 variáveis que reproduz com precisão as características de restituição e dinâmica de ondas espirais do tecido cardíaco humano.",
     "eq_u_minimal": "∂u/∂t = ∇·(D∇u) - (J_fi + J_so + J_si)",
     "eq_v_minimal": "∂v/∂t = (1 - p)/τ_vminus - v/τ_vplus",
@@ -252,7 +252,7 @@
       },
       "math_intro": "A simulação resolve a equação de reação-difusão monodomínio, que descreve como o potencial transmembrânico se propaga pelo tecido.",
       "eq_diffusion": "∂V/∂t = ∇ · (D ∇V) - I_ion / Cm",
-      "eq_diffusion_desc": "Onde V é a voltagem, D é o tensor de condutividade (difusão) e I_ion representa as correntes iônicas do modelo celular escolhido.",
+      "eq_diffusion_desc": "Onde V é o potencial, D é o tensor de condutividade (difusão) e I_ion representa as correntes iônicas do modelo celular escolhido.",
       "ms": {
         "title": "Modelo Mitchell-Schaeffer",
         "eq_v": "dv/dt = (h · v² · (1-v))/τ_in - v/τ_out + I_stim",
@@ -262,7 +262,7 @@
       "minimal": {
         "title": "Minimal Model",
         "eq_u": "∂u/∂t = ∇·(D∇u) - (J_fi + J_so + J_si)",
-        "vars": "4 variáveis de estado: u (voltagem), v, w, s (gates)",
+        "vars": "4 variáveis de estado: u (potencial), v, w, s (gates)",
         "currents": "3 correntes: J_fi (rápida interna), J_so (lenta externa), J_si (lenta interna)"
       },
       "numerical_details": [

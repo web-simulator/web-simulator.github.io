@@ -126,7 +126,7 @@
     "recuperação": "Recovery (Tau_open)",
     "inativação": "Inactivation (Tau_close)",
     "gate": "V Gate",
-    "v_inicial": "Initial Voltage",
+    "v_inicial": "Initial Potential (v)",
     "h_inicial": "Initial Gate (h)",
     "inicio": "Start (ms)",
     "duracao": "Duration (ms)",
@@ -145,6 +145,8 @@
     "semente": "Seed",
     "regionSize": "Region Size",
     "BCL": "Basic Cycle Length (BCL)",
+    "BCLS1": "BCL S1",
+    "BCLS2": "S2 Interval",
     "BCL_S2_inicial": "Initial S2 BCL",
     "BCL_S2_final": "Final S2 BCL",
     "num_estimulos": "No. of Stimuli",
@@ -215,9 +217,9 @@
     "h_inicial_desc": "Initial value of the gate variable (h), representing sodium channel availability.",
     "despolarização_desc": "Time constant defining the speed of the action potential upstroke (depolarization).",
     "repolarização_desc": "Time constant defining the speed of return to rest (repolarization).",
-    "recuperação_desc": "Time constant for the h-gate reopening when voltage is low (refractory period).",
-    "inativação_desc": "Time constant for the h-gate closing when voltage is high.",
-    "gate_desc": "Voltage threshold defining the transition between gate opening and closing states.",
+    "recuperação_desc": "Time constant for the h-gate reopening when potential is low (refractory period).",
+    "inativação_desc": "Time constant for the h-gate closing when potential is high.",
+    "gate_desc": "Potential threshold defining the transition between gate opening and closing states.",
     "BCL_desc": "Basic Cycle Length: The time interval between consecutive stimuli.",
     "num_estimulos_desc": "Total number of electrical pulses applied during the simulation.",
     "duração_desc": "Duration time of the applied stimulus current.",
@@ -232,7 +234,7 @@
     "tau_out_desc": "Time constant defining the speed of repolarization (return to rest).",
     "tau_open_desc": "Time for the h-gate to reopen (recovery of excitability).",
     "tau_close_desc": "Time for the h-gate to close (inactivation during plateau).",
-    "v_gate_desc": "Voltage threshold that switches the h-gate behavior (open vs close)."
+    "v_gate_desc": "Potential threshold that switches the h-gate behavior (open vs close)."
   },
   "modals": {
     "math_model": "Mathematical Model",
@@ -241,7 +243,7 @@
     "protocol": "Simulation Protocol",
     "param_meaning": "Parameters",
     "how_to_use": "How to use",
-    "ms_desc_base": "The Mitchell-Schaeffer model describes action potential propagation using a voltage variable (v) and a gate variable (h), simplifying ionic currents.",
+    "ms_desc_base": "The Mitchell-Schaeffer model describes action potential propagation using a potential variable (v) and a gate variable (h), simplifying ionic currents.",
     "minimal_desc_base": "The Minimal Model is a 4-variable model that accurately reproduces restitution characteristics and spiral wave dynamics of human cardiac tissue.",
     "eq_u_minimal": "∂u/∂t = ∇·(D∇u) - (J_fi + J_so + J_si)",
     "eq_v_minimal": "∂v/∂t = (1 - p)/τ_vminus - v/τ_vplus",
@@ -259,7 +261,7 @@
       },
       "math_intro": "The simulation solves the monodomain reaction-diffusion equation, which describes how transmembrane potential propagates through the tissue.",
       "eq_diffusion": "∂V/∂t = ∇ · (D ∇V) - I_ion / Cm",
-      "eq_diffusion_desc": "Where V is voltage, D is the conductivity tensor (diffusion), and I_ion represents the ionic currents of the chosen cell model.",
+      "eq_diffusion_desc": "Where V is potential, D is the conductivity tensor (diffusion), and I_ion represents the ionic currents of the chosen cell model.",
       "ms": {
         "title": "Mitchell-Schaeffer Model",
         "eq_v": "dv/dt = (h · v² · (1-v))/τ_in - v/τ_out + I_stim",
@@ -269,7 +271,7 @@
       "minimal": {
         "title": "Minimal Model",
         "eq_u": "∂u/∂t = ∇·(D∇u) - (J_fi + J_so + J_si)",
-        "vars": "4 state variables: u (voltage), v, w, s (gates)",
+        "vars": "4 state variables: u (potential), v, w, s (gates)",
         "currents": "3 phenomenological currents: J_fi (fast inward), J_so (slow outward), J_si (slow inward)"
       },
       "numerical_details": [
@@ -301,7 +303,7 @@
     "single": {
       "ms": { 
         "title": "Mitchell-Schaeffer", 
-        "desc": "Simulates the basic electrophysiological response of an excitable cell. This phenomenological model captures essential excitability and refractoriness properties using only two variables (voltage and h-gate)."
+        "desc": "Simulates the basic electrophysiological response of an excitable cell. This phenomenological model captures essential excitability and refractoriness properties using only two variables (potential and h-gate)."
       },
       "eq_v": "dv/dt = (h v² (1-v))/τ_in - v/τ_out",
       "eq_h1": "dh/dt = (1-h)/τ_open",
