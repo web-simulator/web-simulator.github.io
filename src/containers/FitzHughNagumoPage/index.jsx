@@ -265,7 +265,12 @@ const FitzHughNagumoPage = ({ onBack }) => {
                              {viewMode === 'line' ? (
                                 <FHNChart data={currentChartData} />
                              ) : (
-                                <SpatiotemporalChart simulationData={simulationData} currentFrame={currentFrame} onPointClick={handlePointClick} />
+                                <div className="w-full flex flex-col">
+                                    <h3 className="text-lg font-bold text-slate-700 mb-4 text-center">
+                                        {t('fhnChart.title')}
+                                    </h3>
+                                    <SpatiotemporalChart simulationData={simulationData} currentFrame={currentFrame} onPointClick={handlePointClick} className="w-full" />
+                                </div>
                              )}
                         </>
                     ) : (

@@ -95,6 +95,11 @@
     "ViewStimuli": "Visualização do estímulo",
     "potentialModal": "Potencial em X"
   },
+    "fhnChart": {
+    "title": "Modelo FitzHugh-Nagumo 1D",
+    "value": "Valor",
+    "simulating": "Simulando..."
+  },
   "ms1dChart": {
     "title": "Modelo Mitchell-Schaeffer 1D",
     "value": "Valor"
