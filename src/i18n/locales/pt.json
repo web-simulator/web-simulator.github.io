@@ -192,11 +192,11 @@
     "tamanho_do_estímulo": "Tamanho Estímulo",
     "epsilon": "Epsilon",
     "gamma": "Gamma",
-    "alpha": "Alpha",
-    "dx": "dx",
-    "totalTime": "Tempo Total",
-    "k": "k (difusão)",
-    "A": "A",
+    "alpha": "Limiar de Excitação",
+    "dx": "Passo espacial",
+    "totalTime": "Tempo Total de Simulação",
+    "k": "Coeficiente de difusão",
+    "A": "Amplitude",
     "cellType_desc": "Define o conjunto de parâmetros para simular células do Epicárdio, Endocárdio ou Miocárdio.",
     "BCL_S1_desc": "Intervalo de tempo entre os estímulos S1.",
     "BCL_S2_inicial_desc": "Intervalo inicial para o estímulo S2.",
@@ -398,9 +398,9 @@
       "method": "Método de diferenças finitas para difusão e Euler explícito para reação."
     },
     "bistable": {
-      "desc": "Modelo bistável simples que demonstra propagação de onda em meio excitável.",
+      "desc": "O Modelo Bistable é uma das representações mais fundamentais de um meio excitável. Ele descreve a dinâmica de uma única variável de estado, o potencial transmembrana (V), utilizando um termo de reação cúbico não linear. O sistema possui dois estados estáveis (repouso e excitado) separados por um limiar instável, demonstrando a essência do princípio \"tudo ou nada\" da propagação do potencial de ação.",
       "eq": "∂v/∂t = k * ∂²v/∂x² + A * v * (1 - v) * (v - α)",
-      "method": "Método de Euler explícito no tempo e diferenças finitas centrais no espaço."
+      "method": "A equação é resolvida numericamente utilizando o Método das Diferenças Finitas para discretizar o termo de difusão no espaço, e o método de Euler explícito para integração temporal."
     },
     "ms1d": {
       "desc": "Simulação 1D do modelo Mitchell-Schaeffer, mostrando propagação do potencial de ação e o efeito da inativação do canal de sódio.",

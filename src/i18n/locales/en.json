@@ -196,11 +196,11 @@
     "tamanho_do_estímulo": "Stimulus Size",
     "epsilon": "Epsilon",
     "gamma": "Gamma",
-    "alpha": "Alpha",
-    "dx": "dx",
-    "totalTime": "Total Time",
-    "k": "k (Diffusion)",
-    "A": "A",
+    "alpha": "Excitation Threshold",
+    "dx": "Spatial step",
+    "totalTime": "Total Simulation Time",
+    "k": "Diffusion Coefficient",
+    "A": "Amplitude",
     "cellType_desc": "Defines parameter sets to simulate Epicardial, Endocardial, or Myocardial cells.",
     "BCL_S1_desc": "Time interval between stimuli in the S1 train.",
     "BCL_S2_inicial_desc": "Initial interval for the S2 stimulus.",
@@ -403,9 +403,9 @@
       "method": "Finite difference method for diffusion and explicit Euler for reaction."
     },
     "bistable": {
-      "desc": "Simple bistable model demonstrating wave propagation in excitable media.",
+      "desc": "The Bistable Model describes wave propagation in an excitable medium using cubic nonlinear dynamics. It simplifies ionic currents into a single variable 'v', featuring two stable states (rest and excited) separated by a threshold, capturing the essence of \"all-or-none\" propagation.",
       "eq": "∂v/∂t = k * ∂²v/∂x² + A * v * (1 - v) * (v - α)",
-      "method": "Explicit Euler method in time and central finite differences in space."
+      "method": "The equation is solved using the Finite Difference Method for the diffusion term (Laplacian) and the Explicit Euler method for time integration."
     },
     "ms1d": {
       "desc": "1D simulation of the Mitchell-Schaeffer model, showing action potential propagation and the effect of sodium channel inactivation.",
