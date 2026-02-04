@@ -190,8 +190,8 @@
     "BCL_S1": "BCL S1",
     "posição_do_estímulo": "Posição Estímulo",
     "tamanho_do_estímulo": "Tamanho Estímulo",
-    "epsilon": "Epsilon",
-    "gamma": "Gamma",
+    "epsilon": "Taxa de Recuperação (ε)",
+    "gamma": "Constante de Equilíbrio (γ)",
     "alpha": "Limiar de Excitação",
     "dx": "Passo espacial",
     "totalTime": "Tempo Total de Simulação",
@@ -393,9 +393,11 @@
       }
     },
     "fhn": {
-      "desc": "O modelo FitzHugh-Nagumo é uma representação simplificada que captura a excitabilidade essencial.",
+      "desc": "O modelo FitzHugh-Nagumo é uma simplificação do modelo de Hodgkin-Huxley. Ele reduz a complexidade das correntes iônicas a duas variáveis principais: o potencial transmembrânico (v), responsável pela excitação rápida, e uma variável de recuperação (w), que simula a refratariedade lenta. É amplamente utilizado para estudar a natureza excitável de tecidos biológicos.",
       "reentry": "A condição inicial de Reentrada cria uma onda espiral simulando uma arritmia.",
-      "method": "Método de diferenças finitas para difusão e Euler explícito para reação."
+      "method": "O sistema é resolvido espacialmente usando o Método de Diferenças Finitas e temporalmente através do método de Euler Explícito.",
+      "eq_v": "∂v/∂t = k·∇²v + A·v·(1-v)·(v-α) - w",
+      "eq_w": "∂w/∂t = ε·(v - γ·w)"
     },
     "bistable": {
       "desc": "O Modelo Bistable é uma das representações mais fundamentais de um meio excitável. Ele descreve a dinâmica de uma única variável de estado, o potencial transmembrana (V), utilizando um termo de reação cúbico não linear. O sistema possui dois estados estáveis (repouso e excitado) separados por um limiar instável, demonstrando a essência do princípio \"tudo ou nada\" da propagação do potencial de ação.",

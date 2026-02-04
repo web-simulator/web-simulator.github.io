@@ -194,8 +194,8 @@
     "BCL_S1": "BCL S1",
     "posição_do_estímulo": "Stimulus Position",
     "tamanho_do_estímulo": "Stimulus Size",
-    "epsilon": "Epsilon",
-    "gamma": "Gamma",
+    "epsilon": "Recovery Rate (ε)",
+    "gamma": "Equilibrium Constant (γ)",
     "alpha": "Excitation Threshold",
     "dx": "Spatial step",
     "totalTime": "Total Simulation Time",
@@ -398,9 +398,11 @@
     },
     
     "fhn": {
-      "desc": "The FitzHugh-Nagumo model is a 2D simplification of the Hodgkin-Huxley model, capturing essential excitability.",
+      "desc": "The FitzHugh-Nagumo model is a simplification of the Hodgkin-Huxley model. It reduces the complexity of ionic currents to two main variables: the transmembrane potential (v), responsible for fast excitation, and a recovery variable (w), which mimics slow refractoriness. It is widely used to study the excitable nature of biological tissues.",
       "reentry": "The 'Reentry' initial condition creates a spiral wave simulating an arrhythmia.",
-      "method": "Finite difference method for diffusion and explicit Euler for reaction."
+      "method": "The system is solved spatially using the Finite Difference Method and temporally via the Explicit Euler method.",
+      "eq_v": "∂v/∂t = k·∇²v + A·v·(1-v)·(v-α) - w",
+      "eq_w": "∂w/∂t = ε·(v - γ·w)"
     },
     "bistable": {
       "desc": "The Bistable Model describes wave propagation in an excitable medium using cubic nonlinear dynamics. It simplifies ionic currents into a single variable 'v', featuring two stable states (rest and excited) separated by a threshold, capturing the essence of \"all-or-none\" propagation.",

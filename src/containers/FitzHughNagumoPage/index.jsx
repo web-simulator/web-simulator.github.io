@@ -168,23 +168,46 @@ const FitzHughNagumoPage = ({ onBack }) => {
   const renderInfoModalContent = () => (
     <div className="info-modal-content text-slate-800 space-y-4">
       <h2 className="text-2xl font-bold text-emerald-800 mb-4">{t('home.models.fhn.title')}</h2>
-      
-      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">{t('modals.math_model')}</h3>
-      <p className="text-slate-600">{t('modals.fhn.desc')}</p>
-      <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm my-2 space-y-2">
-        <p>∂v/∂t = k * (∂²v/∂x²) + A * v * (1 - v) * (v - α) - w</p>
-        <p>∂w/∂t = ε * (v - γ * w)</p>
-      </div>
-      <p className="text-slate-600 text-sm italic">{t('modals.fhn.reentry')}</p>
-      
-      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">{t('modals.numerical_method')}</h3>
-      <p className="text-slate-600 text-sm">{t('modals.fhn.method')}</p>
 
-      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">{t('modals.param_meaning')}</h3>
+      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">
+        {t('modals.math_model')}
+      </h3>
+      <p className="text-slate-600 text-justify">
+        {t('modals.fhn.desc')}
+      </p>
+      
+      <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm my-2 space-y-2 shadow-sm">
+        <p>{t('modals.fhn.eq_v')}</p>
+        <p className="border-t border-slate-200 pt-2 mt-2">{t('modals.fhn.eq_w')}</p>
+      </div>
+      <p className="text-slate-500 text-ms text-left mt-1">{t('modals.fhn.reentry')}</p>
+      
+      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">
+        {t('modals.numerical_method')}
+      </h3>
+      <p className="text-slate-600 text-sm text-justify">
+        {t('modals.fhn.method')}
+      </p>
+
+      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">
+        {t('modals.param_meaning')}
+      </h3>
       <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600">
-         {Object.keys(editableParams).map(key => (
-            <li key={key}><strong className="text-slate-700">{key}:</strong> {t(`params.${key}`) || key}</li>
-         ))}
+         {Object.keys(editableParams).map(key => {
+            const isSymbol = key.length <= 7;
+            
+            return (
+                <li key={key}>
+                    {isSymbol ? (
+                        <>
+                            <strong className="text-slate-700">{key}:</strong> {t(`params.${key}`) || key}
+                        </>
+                    ) : (
+                        <strong className="text-slate-700">{t(`params.${key}`) || key}</strong>
+                    )}
+                </li>
+            );
+         })}
       </ul>
     </div>
   );
