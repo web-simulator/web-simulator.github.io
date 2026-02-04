@@ -1,5 +1,6 @@
 import { toPng } from 'html-to-image';
 import GIF from 'gif.js/dist/gif';
+import gifWorkerUrl from '../gif.worker.js?url';
 
 export const exportToPng = async (elementRef, fileNamePrefix = 'simulacao') => {
   if (!elementRef.current) return;
@@ -64,7 +65,7 @@ export const export1DToGif = (simulationData, params, fileNamePrefix = '1d_simul
             quality: 10,
             width: width,
             height: height,
-            workerScript: '/gif.worker.js' 
+            workerScript: gifWorkerUrl 
         });
 
         // Limites
@@ -211,7 +212,7 @@ export const export2DToGif = (simulationResult, params, fileNamePrefix = '2d_sim
             quality: 10,
             width: width,
             height: height,
-            workerScript: '/gif.worker.js'
+            workerScript: gifWorkerUrl
         });
 
         // Escalas
