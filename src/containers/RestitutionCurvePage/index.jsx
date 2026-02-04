@@ -86,7 +86,7 @@ const RestitutionCurvePage = ({ onBack }) => {
   const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showTimeSeries, setShowTimeSeries] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('minimal');
+  const [selectedModel, setSelectedModel] = useState('mms');
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false); 
   const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
   const [visibleVars, setVisibleVars] = useState({ v: true, gate_v: true, gate_w: true, gate_s: true });
