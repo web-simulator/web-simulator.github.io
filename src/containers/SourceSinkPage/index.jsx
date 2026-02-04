@@ -348,34 +348,109 @@ const SourceSinkPage = ({ onBack }) => {
     return timeseries;
   }, [selectedPoint, simulationResult]);
 
+  const safeList = (key) => {
+    const list = t(key, { returnObjects: true });
+    return Array.isArray(list) ? list : [];
+  };
+
   const renderInfoModalContent = () => (
     <div className="info-modal-content text-slate-800 space-y-6 max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
-      <section>
-        <h2 className="text-2xl font-bold text-emerald-800 mb-2">{t('home.models.source_sink.title')}</h2>
-        <p className="text-slate-600 leading-relaxed">{t('modals.source_sink.desc')}</p>
-      </section>
 
       <section>
-        <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.math_model')}</h3>
-        <p className="text-slate-600 mb-2">{t('modals.source_sink.geometry_desc')}</p>
-        <p className="text-sm text-slate-500 mb-2">
-          {selectedModel === 'ms'
-            ? "Modelo: Mitchell-Schaeffer"
-            : "Modelo: Minimal Model "}
+        <h2 className="text-2xl font-bold text-emerald-800 mb-2">{t('home.models.source_sink.title')}</h2>
+        <p className="text-slate-600 leading-relaxed">
+          {t('modals.source_sink.desc')}
         </p>
       </section>
 
       <section>
-        <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.param_meaning')}</h3>
-        <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600">
-          <li><strong className="text-slate-700">{t('params.slitWidthStart')}:</strong> Abertura da fenda no topo.</li>
-          <li><strong className="text-slate-700">{t('params.slitWidthEnd')}:</strong> Abertura da fenda na base.</li>
-          <li><strong className="text-slate-700">{t('params.obstacleRadius')}:</strong> Raio do obstáculo semicircular.</li>
+        <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">
+          {t('modals.math_model')} ({selectedModel === 'ms' ? 'Mitchell-Schaeffer' : 'Minimal Model'})
+        </h3>
+        <p className="mb-2 text-sm text-slate-600">
+          {t('modals.source_sink.geometry_desc')}
+        </p>
+        
+        <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm text-center my-3 overflow-x-auto">
+          {t('modals.source_sink.eq')}
+        </div>
+
+        {selectedModel === 'ms' ? (
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm space-y-2">
+                <div className="text-center font-bold mb-2">{t('modals.source_sink.ms.title')}</div>
+                <p>{t('modals.source_sink.ms.eq_v')}</p>
+            </div>
+        ) : (
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm space-y-2">
+                <div className="text-center font-bold mb-2">{t('modals.source_sink.minimal.title')}</div>
+                <p>{t('modals.source_sink.minimal.eq_u')}</p>
+                <hr className="border-slate-200 my-2"/>
+                <p className="text-xs"><strong>{t('modals.source_sink.minimal.vars')}</strong></p>
+                <p className="text-xs"><strong>{t('modals.source_sink.minimal.currents')}</strong></p>
+            </div>
+        )}
+      </section>
+
+      <section>
+        <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.numerical_method')}</h3>
+        <ul className="list-disc pl-5 text-sm space-y-2 text-slate-600">
+            {safeList('modals.source_sink.numerical_details').map((item, i) => (
+                <li key={i}>{item}</li>
+            ))}
         </ul>
       </section>
+
+      <section>
+        <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.advanced_features')}</h3>
+        <div className="space-y-3 text-sm text-slate-600">
+            <p><strong>{t('modals.source_sink.features.geometry_title')}:</strong> {t('modals.source_sink.features.geometry_desc')}</p>
+        </div>
+      </section>
+
+      <section>
+        <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.param_meaning')}</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-600">
+            
+            <div className="col-span-2 font-bold text-slate-800 border-b border-slate-100 pb-1 mb-1">
+                {t('modals.source_sink.glossary.general')}
+            </div>
+            <div>{t('modals.source_sink.glossary.L_dx')}</div>
+            <div>{t('modals.source_sink.glossary.sigma')}</div>
+            <div>{t('modals.source_sink.glossary.slit')}</div>
+            <div>{t('modals.source_sink.glossary.obstacle')}</div>
+            <div>{t('modals.source_sink.glossary.angle')}</div>
+            <div>{t('modals.source_sink.glossary.dt_time')}</div>
+
+            {selectedModel === 'ms' ? (
+                <>
+                    <div className="col-span-2 font-bold text-slate-800 border-b border-slate-100 pb-1 mb-1 mt-3">
+                        {t('modals.source_sink.glossary.model_ms')}
+                    </div>
+                    <div>{t('modals.source_sink.glossary.ms_taus')}</div>
+                    <div>{t('modals.source_sink.glossary.ms_gates')}</div>
+                </>
+            ) : (
+                <>
+                    <div className="col-span-2 font-bold text-slate-800 border-b border-slate-100 pb-1 mb-1 mt-3">
+                        {t('modals.source_sink.glossary.model_minimal')}
+                    </div>
+                    <div className="col-span-2">{t('modals.source_sink.glossary.minimal_cells')}</div>
+                </>
+            )}
+        </div>
+      </section>
+
+      <section>
+        <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.how_to_use')}</h3>
+        <ol className="list-decimal pl-5 text-slate-700 space-y-1 text-sm">
+            {safeList('modals.source_sink.steps').map((step, i) => (
+                <li key={i}>{step}</li>
+            ))}
+        </ol>
+      </section>
+
     </div>
   );
-
   const chartModalContent = useMemo(() => (
     <>
       <h2 className="text-lg font-bold text-slate-700 mb-4">

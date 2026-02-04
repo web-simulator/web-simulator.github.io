@@ -175,22 +175,44 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
     <div className="info-modal-content text-slate-800 space-y-4">
       <h2 className="text-2xl font-bold text-emerald-800 mb-4">{t('home.models.ms_1d.title')}</h2>
       
-      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">{t('modals.math_model')}</h3>
-      <p className="text-slate-600">{t('modals.ms1d.desc')}</p>
-      <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm my-2 space-y-2">
-        <code>{t('modals.ms1d.eq')}</code>
-        <code>{t('modals.single.ms.eq_h1')}</code>
-        <code>{t('modals.single.ms.eq_h2')}</code>
+      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">
+        {t('modals.math_model')}
+      </h3>
+      <p className="text-slate-600 text-justify">
+        {t('modals.ms1d.desc')}
+      </p>
+      
+      <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm my-2 space-y-2 shadow-sm">
+        <p className="font-bold text-slate-700">{t('modals.ms1d.eq_v')}</p>
+        <div className="border-t border-slate-200 pt-2 mt-2 space-y-1 text-slate-600">
+            <p>{t('modals.ms1d.eq_h_open')}</p>
+            <p>{t('modals.ms1d.eq_h_close')}</p>
+        </div>
       </div>
       
-      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">{t('modals.numerical_method')}</h3>
-      <p className="text-slate-600 text-sm">{t('modals.ms1d.method')}</p>
-
-      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">{t('modals.param_meaning')}</h3>
+      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">
+        {t('modals.numerical_method')}
+      </h3>
+      <p className="text-slate-600 text-sm text-justify">
+        {t('modals.ms1d.method')}
+      </p>
+      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">
+        {t('modals.param_meaning')}
+      </h3>
       <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600">
-         {Object.keys(editableParams).map(key => (
-            <li key={key}><strong className="text-slate-700">{key}:</strong> {t(`params.${key}`) || key}</li>
-         ))}
+         {Object.keys(editableParams).map(key => {
+            const mathSymbols = ['k', 'tau_in', 'tau_out', 'tau_open', 'tau_close', 'gate', 'v_gate', 'L', 'dx', 'dt'];
+            const isSymbol = mathSymbols.includes(key);      
+            return (
+                <li key={key}>
+                    {isSymbol ? (
+                        <> <strong className="text-slate-700">{key}:</strong> {t(`params.${key}`) || key} </>
+                    ) : (
+                        <strong className="text-slate-700">{t(`params.${key}`) || key}</strong>
+                    )}
+                </li>
+            );
+         })}
       </ul>
     </div>
   );

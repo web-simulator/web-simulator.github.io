@@ -251,7 +251,7 @@
         "1": "Configure a geometria e tecido na barra lateral.",
         "2": "Adicione estímulos e posicione-os.",
         "3": "Configure a fibrose para criar obstáculos.",
-        "4": "Clique em **Simular**.",
+        "4": "Clique em Simular.",
         "5": "Use o player para ver o resultado.",
         "6": "Clique no gráfico para ver o potencial de ação daquele ponto."
       },
@@ -405,9 +405,60 @@
       "method": "A equação é resolvida numericamente utilizando o Método das Diferenças Finitas para discretizar o termo de difusão no espaço, e o método de Euler explícito para integração temporal."
     },
     "ms1d": {
-      "desc": "Simulação 1D do modelo Mitchell-Schaeffer, mostrando propagação do potencial de ação e o efeito da inativação do canal de sódio.",
-      "eq": "∂v/∂t = k * ∂²v/∂x² + (h * v² * (1 - v)) / τ_in - v / τ_out",
-      "method": "Integração numérica via Euler explícito."
+      "desc": "O modelo Mitchell-Schaeffer é uma formulação fenomenológica simplificada que descreve a propagação do potencial de ação cardíaco. Ele utiliza duas variáveis de estado: o potencial transmembrânico (v) e uma variável de 'gate' (h), que governa a refratariedade (semelhante à inativação dos canais de sódio). Apesar de simples, reproduz propriedades complexas como a curva de restituição do tecido cardíaco.",
+      "method": "A equação de difusão é resolvida espacialmente pelo Método de Diferenças Finitas. A integração temporal usa o método de Euler Explícito, com equações condicionais para a dinâmica do gate 'h'.",
+      "eq_v": "∂v/∂t = k·∇²v + (h·v²·(1-v))/τ_in - v/τ_out + J_stim",
+      "eq_h_open": "Se v < v_gate: ∂h/∂t = (1 - h) / τ_open",
+      "eq_h_close": "Se v > v_gate: ∂h/∂t = -h / τ_close"
+    },
+"source_sink": {
+      "desc": "A simulação Source-Sink Mismatch investiga o fator de segurança da propagação cardíaca. Ela modela a passagem de uma onda elétrica por um istmo estreito (fenda) em direção a uma região de tecido expandido. Se a corrente da fonte for insuficiente para carregar o sumidouro, ocorre bloqueio.",
+      "geometry_desc": "A geometria utiliza barreiras isolantes para criar uma fenda de largura variável, permitindo estudar os efeitos da curvatura da frente de onda.",
+      "eq": "∂V/∂t = ∇·(D∇V) - I_ion/Cm",
+      "ms": {
+         "title": "Modelo Mitchell-Schaeffer",
+         "eq_v": "∂v/∂t = ∇·(D∇v) + (h·v²·(1-v))/τ_in - v/τ_out",
+         "eq_h": "Dinâmica de gate h (abertura/fechamento)"
+      },
+      "minimal": {
+         "title": "Minimal Model",
+         "eq_u": "∂u/∂t = ∇·(D∇u) - (J_fi + J_so + J_si)",
+         "vars": "Variáveis: u (potencial), v, w, s",
+         "currents": "Correntes: J_fi, J_so, J_si"
+      },
+      "numerical_details": [
+        "Discretização Espacial: Método de Diferenças Finitas.",
+        "Integração Temporal: Euler Explícito.",
+        "Condições de Contorno: Neumann nas barreiras.",
+        "Malha: Retangular regular com passo dx."
+      ],
+      "features": {
+        "geometry_title": "Geometria da Fenda",
+        "geometry_desc": "Define a largura da passagem (Fenda Superior/Inferior) e a presença de obstáculos circulares que dificultam a propagação."
+      },
+      "glossary": {
+        "geometry": "Parâmetros Geométricos",
+        "model": "Parâmetros do Modelo",
+        "general": "Parâmetros Gerais",
+        "model_ms": "Parâmetros Mitchell-Schaeffer",
+        "model_minimal": "Parâmetros Minimal Model",
+        "L_dx": "L / dx: Tamanho do tecido (cm) e passo espacial",
+        "sigma": "σ_l / σ_t: Condutividade longitudinal e transversal",
+        "angle": "Ângulo: Orientação das fibras do tecido",
+        "slit": "Fenda: Largura superior e inferior",
+        "obstacle": "Obstáculo: Raio e posição da barreira central",
+        "dt_time": "dt / Tempo: Passo de tempo e duração total da simulação",
+        "ms_taus": "τ_in / τ_out: Tempos de despolarização e repolarização",
+        "ms_gates": "τ_open / τ_close: Tempos de recuperação e inativação (gate h)",
+        "minimal_cells": "Tipo Celular: Define parâmetros para Epicárdio, Endocárdio ou M-Cell"
+      },
+      "steps": [
+        "Escolha o modelo celular (Mitchell-Schaeffer ou Minimal).",
+        "Defina a geometria da fenda e do obstáculo na aba Geometria.",
+        "Posicione o estímulo antes da fenda.",
+        "Clique em Simular.",
+        "Analise se a onda consegue excitar o tecido após a expansão."
+      ]
     }
   }
 }

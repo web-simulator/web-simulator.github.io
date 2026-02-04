@@ -410,9 +410,62 @@
       "method": "The equation is solved using the Finite Difference Method for the diffusion term (Laplacian) and the Explicit Euler method for time integration."
     },
     "ms1d": {
-      "desc": "1D simulation of the Mitchell-Schaeffer model, showing action potential propagation and the effect of sodium channel inactivation.",
-      "eq": "∂v/∂t = k * ∂²v/∂x² + (h * v² * (1 - v)) / τ_in - v / τ_out",
-      "method": "Numerical integration via Explicit Euler."
+    "desc": "The Mitchell-Schaeffer model is a simplified phenomenological formulation describing cardiac action potential propagation. It uses two state variables: transmembrane potential (v) and a gate variable (h) governing refractoriness (similar to sodium channel inactivation). Despite its simplicity, it reproduces complex properties like the cardiac tissue restitution curve.",
+      "method": "The diffusion equation is solved spatially using the Finite Difference Method. Temporal integration uses the Explicit Euler method, with conditional equations for the 'h' gate dynamics.",
+      "eq_v": "∂v/∂t = k·∇²v + (h·v²·(1-v))/τ_in - v/τ_out + J_stim",
+      "eq_h_open": "If v < v_gate: ∂h/∂t = (1 - h) / τ_open",
+      "eq_h_close": "If v > v_gate: ∂h/∂t = -h / τ_close"
+    },
+"modals": {
+    "source_sink": {
+      "desc": "The Source-Sink Mismatch simulation investigates the safety factor of cardiac propagation. It models the passage of an electrical wave through a narrow isthmus (slit) into an expanded tissue region. If source current is insufficient to charge the sink, block occurs.",
+      "geometry_desc": "The geometry uses insulating barriers to create a variable-width slit, allowing the study of wavefront curvature effects.",
+      "eq": "∂V/∂t = ∇·(D∇V) - I_ion/Cm",
+      "ms": {
+         "title": "Mitchell-Schaeffer Model",
+         "eq_v": "∂v/∂t = ∇·(D∇v) + (h·v²·(1-v))/τ_in - v/τ_out",
+         "eq_h": "h-gate dynamics (opening/closing)"
+      },
+      "minimal": {
+         "title": "Minimal Model (Bueno-Orovio)",
+         "eq_u": "∂u/∂t = ∇·(D∇u) - (J_fi + J_so + J_si)",
+         "vars": "Variables: u (potential), v, w, s",
+         "currents": "Currents: J_fi, J_so, J_si"
+      },
+      "numerical_details": [
+        "Spatial Discretization: Finite Difference Method.",
+        "Time Integration: Explicit Euler.",
+        "Boundary Conditions: Neumann on barriers.",
+        "Mesh: Regular rectangular grid with step dx."
+      ],
+      "features": {
+        "geometry_title": "Slit Geometry",
+        "geometry_desc": "Defines the passage width (Upper/Lower Gap) and presence of circular obstacles hindering propagation."
+      },
+      "glossary": {
+        "geometry": "Geometric Parameters",
+        "model": "Model Parameters",
+        "general": "General Parameters",
+        "model_ms": "Mitchell-Schaeffer Parameters",
+        "model_minimal": "Minimal Model Parameters",
+        "L_dx": "L / dx: Tissue size (cm) and spatial step",
+        "sigma": "σ_l / σ_t: Longitudinal and transverse conductivity",
+        "angle": "Angle: Fiber orientation",
+        "slit": "Slit: Upper and Lower widths",
+        "obstacle": "Obstacle: Radius and central barrier position",
+        "dt_time": "dt / Time: Time step and total simulation duration",
+        "ms_taus": "τ_in / τ_out: Depolarization and repolarization times",
+        "ms_gates": "τ_open / τ_close: Recovery and inactivation times (h-gate)",
+        "minimal_cells": "Cell Type: Defines parameters for Epicardium, Endocardium, or M-Cell"
+      },
+      "steps": [
+        "Choose the cell model (Mitchell-Schaeffer or Minimal).",
+        "Define gap and obstacle geometry in the 'Geometry' tab.",
+        "Position the stimulus (green circle) before the gap.",
+        "Click 'Simulate' and observe propagation through the isthmus.",
+        "Analyze if the wave successfully excites the tissue after expansion (Sink)."
+      ]
     }
+  }
   }
 }
