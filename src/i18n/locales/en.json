@@ -10,7 +10,7 @@
     },
     "models": {
       "single_stimulus": { "title": "Single Stimulus", "desc": "Simulates the response of a cardiac cell to a single electrical stimulus." },
-      "multiple_stimuli": { "title": "8 Stimuli", "desc": "Observes the cellular response to a series of stimuli with a fixed interval." },
+      "multiple_stimuli": { "title": "Multiple Stimuli", "desc": "Observes the cellular response to a series of stimuli with a fixed interval." },
       "s1s2": { "title": "S1-S2 Protocol", "desc": "Standard protocol to investigate cardiac tissue refractoriness and vulnerability." },
       "s1_s2": { "title": "S1-S2 Protocol", "desc": "Standard protocol to investigate cardiac tissue refractoriness and vulnerability." },
       "restitution_curve": { "title": "Restitution Curve", "desc": "Analyzes the relationship between the diastolic interval (DI) and the action potential duration (APD)." },

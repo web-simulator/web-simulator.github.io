@@ -10,7 +10,7 @@
     },
     "models": {
       "single_stimulus": { "title": "1 Estímulo", "desc": "Simula a resposta de um único estímulo elétrico em uma célula cardíaca." },
-      "multiple_stimuli": { "title": "8 Estímulos", "desc": "Observa a resposta celular a uma série de estímulos com intervalo fixo." },
+      "multiple_stimuli": { "title": "Múltiplos Estímulos", "desc": "Observa a resposta celular a uma série de estímulos com intervalo fixo." },
       "s1s2": { "title": "Protocolo S1-S2", "desc": "Protocolo padrão para investigar a refratariedade e a vulnerabilidade do tecido cardíaco." },
       "s1_s2": { "title": "Protocolo S1-S2", "desc": "Protocolo padrão para investigar a refratariedade e a vulnerabilidade do tecido cardíaco." },
       "restitution_curve": { "title": "Curva de Restituição", "desc": "Analisa a relação entre o intervalo de acoplamento e a duração do potencial de ação." },
