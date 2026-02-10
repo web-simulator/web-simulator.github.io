@@ -356,7 +356,7 @@ const S1S2Page = ({ onBack }) => {
                       {metrics && (
                           <div className="mt-4 pt-4 border-t border-slate-100 animate-fade-in">
                             <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                                <i className="bi bi-speedometer2"></i> Métricas
+                                <i className="bi bi-speedometer2"></i> {t('chart.metrics')}
                             </h4>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <MetricCard label={t('chart.dvdtMax')} value={metrics.dvdtMax} unit={selectedModel === 'ms' ? '1/ms' : ''} />

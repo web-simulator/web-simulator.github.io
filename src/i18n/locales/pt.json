@@ -84,7 +84,8 @@
     "chart_restitution": "Curva de Restituição",
     "simulated_restitution": "Curva de Restituição (Simulada)",
     "theoretical_restitution": "Curva de Restituição (Analítica)",
-    "dvdtMax": "dV/dt Máximo"
+    "dvdtMax": "dV/dt Máximo",
+    "metrics": "Métricas"
   },
   "bistableChart": {
     "title": "Modelo Bistable 1D",

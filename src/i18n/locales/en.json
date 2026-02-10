@@ -84,7 +84,8 @@
     "chart_restitution": "Restitution Curve",
     "simulated_restitution": "Restitution Curve (Simulated)",
     "theoretical_restitution": "Restitution Curve (Analytical)",
-    "dvdtMax": "Max dV/dt"
+    "dvdtMax": "Max dV/dt",
+    "metrics": "Metrics"
   },
   "bistableChart": {
     "title": "Bistable Model 1D",
