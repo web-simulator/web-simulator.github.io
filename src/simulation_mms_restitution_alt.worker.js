@@ -42,6 +42,19 @@ function calculateAPD90(v, dt) {
   return (repolarizacaoIdx - despolarizacaoIdx) * dt;
 }
 
+// Função para calcular a derivada máxima
+function calculateDvDtMax(v, dt) {
+  if (!v || v.length < 2) return 0;
+  let maxDvDt = 0;
+  for (let i = 1; i < v.length; i++) {
+    const dvdt = (v[i] - v[i - 1]) / dt;
+    if (dvdt > maxDvDt) {
+      maxDvDt = dvdt;
+    }
+  }
+  return maxDvDt;
+}
+
 function runSingleCycle(params) {
   // Pega os parâmetros necessários para a simulação
   const {
@@ -159,11 +172,14 @@ self.onmessage = (e) => {
     const apd_s1 = calculateAPD90(v_s1, params.dt);
     const apd_s2 = calculateAPD90(v_s2, params.dt);
 
+    // Calcula o dV/dt máx do S2
+    const dvdt_max_s2 = calculateDvDtMax(v_s2, params.dt);
+
     // Se ambos os APDs forem válidos, calcula o Intervalo Diastólico e armazena
     if (apd_s1 > 0 && apd_s2 > 0) {
       const di = intervalo_S2 - apd_s1;
       if (di > 0) { // Garante que o DI seja positivo
-        restitutionData.push({ bcl: di, apd: apd_s2 }); // 'bcl' é usado para o eixo X do gráfico 
+        restitutionData.push({ bcl: di, apd: apd_s2, dvdt_max: dvdt_max_s2 }); // 'bcl' é usado para o eixo X do gráfico 
       }
     }
     

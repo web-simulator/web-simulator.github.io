@@ -87,6 +87,7 @@ const RestitutionCurvePage = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [showTimeSeries, setShowTimeSeries] = useState(false);
   const [selectedModel, setSelectedModel] = useState('mms');
+  const [curveType, setCurveType] = useState('apd');
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false); 
   const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
   const [visibleVars, setVisibleVars] = useState({ v: true, gate_v: true, gate_w: true, gate_s: true });
@@ -96,89 +97,39 @@ const RestitutionCurvePage = ({ onBack }) => {
   const [editableParams, setEditableParams] = useState({
     // Parâmetros para o modelo S1S2
     s1s2: {
-      BCL_S1: 250, 
-      BCL_S2_inicial: 200, 
-      BCL_S2_final: 100, 
-      delta_CL: 10, 
-      tau_in: 0.3, 
-      tau_out: 6.0, 
-      tau_open: 120.0, 
-      tau_close: 150.0, 
-      v_gate: 0.13, 
-      inicio: 5.0, 
-      duracao: 1.0, 
-      amplitude: 1.0, 
-      dt: 0.1, 
-      v_inicial: 0.0, 
-      h_inicial: 1.0, 
-      num_estimulos_s1: 8, 
-      downsamplingFactor: 50, 
+      BCL_S1: 250, BCL_S2_inicial: 200, BCL_S2_final: 100, delta_CL: 10, 
+      tau_in: 0.3, tau_out: 6.0, tau_open: 120.0, tau_close: 150.0, 
+      v_gate: 0.13, inicio: 5.0, duracao: 1.0, amplitude: 1.0, 
+      dt: 0.1, v_inicial: 0.0, h_inicial: 1.0, num_estimulos_s1: 8, downsamplingFactor: 50, 
     },
     // Parâmetros para o modelo MMS
     mms: {
-      BCL_S1: 1000,
-      BCL_S2_inicial: 900,
-      BCL_S2_final: 200,
-      delta_CL: 20,
-      tau_in: 0.3, 
-      tau_out: 6.0, 
-      tau_open: 120.0, 
-      tau_close: 150.0, 
-      v_gate: 0.13, 
-      inicio: 5.0, 
-      duracao: 1.0, 
-      amplitude: 1.0, 
-      dt: 0.1, 
-      v_inicial: 0.0, 
-      h_inicial: 1.0, 
-      num_estimulos_s1: 8, 
-      downsamplingFactor: 1000,
+      BCL_S1: 1000, BCL_S2_inicial: 900, BCL_S2_final: 200, delta_CL: 20,
+      tau_in: 0.3, tau_out: 6.0, tau_open: 120.0, tau_close: 150.0, 
+      v_gate: 0.13, inicio: 5.0, duracao: 1.0, amplitude: 1.0, 
+      dt: 0.1, v_inicial: 0.0, h_inicial: 1.0, num_estimulos_s1: 8, downsamplingFactor: 1000,
     },
     // Parâmetros para o modelo Dinâmico
     dynamic: {
-      CI1: 500, 
-      CI0: 250, 
-      CIinc: 10, 
-      nbeats: 5, 
-      tau_in: 0.3,
-      tau_out: 6.0, 
-      tau_open: 120.0, 
-      tau_close: 150.0, 
-      v_gate: 0.13, 
-      inicio: 5.0, 
-      duracao: 1.0, 
-      amplitude: 1.0, 
-      dt: 0.1, 
-      v_inicial: 0.0, 
-      h_inicial: 1.0, 
-      downsamplingFactor: 50,
+      CI1: 500, CI0: 250, CIinc: 10, nbeats: 5, tau_in: 0.3, tau_out: 6.0, 
+      tau_open: 120.0, tau_close: 150.0, v_gate: 0.13, inicio: 5.0, duracao: 1.0, 
+      amplitude: 1.0, dt: 0.1, v_inicial: 0.0, h_inicial: 1.0, downsamplingFactor: 50,
     },
     // Parâmetros para o Minimal Model
     minimal: {
-      cellType: 'epi',
-      BCL_S1: 600,
-      BCL_S2_inicial: 500,
-      BCL_S2_final: 200,
-      delta_CL: 10,
-      inicio: 10.0,
-      duracao: 1.0,
-      amplitude: 1.0,
-      dt: 0.1,
-      num_estimulos_s1: 8,
-      downsamplingFactor: 100
+      cellType: 'epi', BCL_S1: 600, BCL_S2_inicial: 500, BCL_S2_final: 200,
+      delta_CL: 10, inicio: 10.0, duracao: 1.0, amplitude: 1.0, dt: 0.1,
+      num_estimulos_s1: 8, downsamplingFactor: 100
     }
   });
 
   // Função para calcular a curva analítica
   const calculateAnalyticalCurve = useCallback((simulatedData) => {
-    if (!simulatedData || simulatedData.length === 0) {
+    if (!simulatedData || simulatedData.length === 0 || selectedModel === 'minimal') {
       setAnalyticalData([]);
       return;
     }
-    if (selectedModel === 'minimal') {
-      setAnalyticalData([]);
-      return;
-    }
+    
     let analyticalPoints = [];
     const currentParams = editableParams[selectedModel];
     const { tau_out, tau_in, tau_close, tau_open, v_gate } = currentParams;
@@ -232,11 +183,21 @@ const RestitutionCurvePage = ({ onBack }) => {
     return () => simulationWorker.terminate();
   }, [selectedModel, calculateAnalyticalCurve]); 
 
+  // Mapeia os dados do gráfico baseado se o usuário quer APD ou CV
+  const chartRestitutionData = useMemo(() => {
+    if (curveType === 'apd') return restitutionData;
+    // Caso for CV, adapta os valores para serem exibidos no mesmo gráfico
+    return restitutionData.map(d => ({ bcl: d.bcl, apd: d.dvdt_max || 0 }));
+  }, [restitutionData, curveType]);
+
+  // Desabilita a curva analítica para o CV
+  const chartAnalyticalData = useMemo(() => {
+    if (curveType === 'cv') return []; 
+    return analyticalData;
+  }, [analyticalData, curveType]);
+
   const chartData = useMemo(() => {
-    // Só faz os cálculos da serie se tiver habilitado
-    if (!showTimeSeries) return [];
-    if (!data) return [];
-    
+    if (!showTimeSeries || !data) return [];
     if (data.time && !Array.isArray(data)) {
         const { time, v, h, gate_v, gate_w, gate_s } = data;
         const count = time.length;
@@ -311,15 +272,12 @@ const RestitutionCurvePage = ({ onBack }) => {
   }, [worker, editableParams, selectedModel, minimalCustomParams]);
 
   const toggleVariable = (variableKey) => {
-    setVisibleVars(prev => ({
-      ...prev,
-      [variableKey]: !prev[variableKey]
-    }));
+    setVisibleVars(prev => ({ ...prev, [variableKey]: !prev[variableKey] }));
   };
 
   const handleExport = useCallback(() => {
-    exportToPng(chartRef, `restitution_${selectedModel}`);
-  }, [selectedModel]);
+    exportToPng(chartRef, `restitution_${selectedModel}_${curveType}`);
+  }, [selectedModel, curveType]);
 
   const renderInfoModalContent = () => {
     const modelKey = selectedModel;
@@ -334,57 +292,6 @@ const RestitutionCurvePage = ({ onBack }) => {
           <h2 className="text-2xl font-bold text-emerald-800 mb-2">{t(`modals.restitution.${modelKey}.title`)}</h2>
           <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.restitution.what_is')}</h3>
           <p className="text-slate-600 leading-relaxed mb-4">{t('modals.restitution.what_is_desc')}</p>
-          
-          <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.restitution.measuring')}</h3>
-          <ul className="list-disc ml-5 text-slate-600 mb-4">
-            <li>{t('modals.restitution.apd_def')}</li>
-            <li>{t('modals.restitution.di_def')}</li>
-          </ul>
-        </section>
-
-        <section>
-          <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.protocol')}</h3>
-          <p className="text-slate-600 mb-2">{t(`modals.restitution.${modelKey}.desc`)}</p>
-          <ol className="list-decimal ml-5 text-slate-600 space-y-1">
-            {Array.isArray(steps) && steps.map((step, index) => <li key={index}>{step}</li>)}
-          </ol>
-        </section>
-
-        <section>
-          <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.math_model')}</h3>
-          {selectedModel === 'minimal' ? (
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm space-y-2 mb-4">
-              <p>{t('modals.restitution.minimal.eq_u')}</p>
-              <p>{t('modals.restitution.minimal.eq_v')}</p>
-              <p>{t('modals.restitution.minimal.eq_w')}</p>
-              <p>{t('modals.restitution.minimal.eq_s')}</p>
-              <div className="mt-4 pt-2 border-t border-slate-200">
-                 <p className="font-sans font-bold text-slate-700 mb-1">{t('modals.restitution.minimal.vars')}</p>
-                 <p className="font-sans text-slate-600">{t('modals.restitution.minimal.currents')}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm space-y-2">
-              <p>{t(`modals.restitution.${modelKey}.eq_v`)}</p>
-              <p>{t(`modals.restitution.${modelKey}.eq_h`)}</p>
-            </div>
-          )}
-        </section>
-
-        <section>
-          <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.numerical_method')}</h3>
-          <p className="text-slate-600 text-sm">{t(`modals.restitution.${modelKey}.method`)}</p>
-        </section>
-
-        <section>
-          <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.param_meaning')}</h3>
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600">
-            {currentParamsList.map((param) => (
-              <li key={param} className="flex gap-1">
-                <strong className="font-bold text-slate-700">{t(`params.${param}`) || param}:</strong> {t(`params.${param}_desc`) || ''}
-              </li>
-            ))}
-          </ul>
         </section>
       </div>
     );
@@ -433,6 +340,21 @@ const RestitutionCurvePage = ({ onBack }) => {
             
             <SettingsSection title={t('common.view_options')} defaultOpen={true}>
                 <div className="space-y-3">
+                    {/* Seletor de tipo de Curva */}
+                    <div className="mb-4 border-b border-slate-100 pb-4 px-2">
+                      <label className="text-sm font-bold text-slate-700 mb-2 block">
+                        Métrica do Gráfico de Restituição:
+                      </label>
+                      <select 
+                        value={curveType} 
+                        onChange={(e) => setCurveType(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer"
+                      >
+                        <option value="apd">Duração do Potencial (APD)</option>
+                        <option value="cv">Vel. de Condução (dV/dt máx)</option>
+                      </select>
+                    </div>
+
                     <div className="flex items-center justify-between px-2">
                         <label htmlFor="showTimeSeries" className="text-sm font-medium text-slate-700 cursor-pointer">{t('common.show_stimuli')}</label>
                         <div className="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
@@ -497,23 +419,6 @@ const RestitutionCurvePage = ({ onBack }) => {
                 ))}
               </div>
             </SettingsSection>
-
-            {selectedModel === 'minimal' && (
-               <SettingsSection title={`Parâmetros (${t(`params.${currentParams.cellType}`)})`} defaultOpen={false}>
-                  <div className="grid grid-cols-2 gap-2">
-                     {Object.keys(minimalCustomParams[currentParams.cellType]).map(key => (
-                        <Input 
-                            key={key}
-                            label={t(`params.${key}`) || key}
-                            value={minimalCustomParams[currentParams.cellType][key]}
-                            onChange={(e) => handleMinimalCustomChange(key, e.target.value)}
-                            type="number"
-                            className="mb-0"
-                        />
-                     ))}
-                  </div>
-               </SettingsSection>
-            )}
           </div>
         </aside>
 
@@ -523,9 +428,11 @@ const RestitutionCurvePage = ({ onBack }) => {
                 
                 {/* Gráfico de Restituição */}
                 <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 min-h-100">
-                    <h3 className="text-lg font-bold text-slate-700 mb-4 pl-2 border-l-4 border-emerald-500">{t("chart.chart_restitution")}</h3>
+                    <h3 className="text-lg font-bold text-slate-700 mb-4 pl-2 border-l-4 border-emerald-500">
+                      {curveType === 'apd' ? t("chart.chart_restitution") : "Curva de Restituição: dV/dt Máximo"}
+                    </h3>
                     {restitutionData.length > 0 || analyticalData.length > 0 ? (
-                         <RestitutionChart data={restitutionData} analyticalData={analyticalData} />
+                         <RestitutionChart data={chartRestitutionData} analyticalData={chartAnalyticalData} />
                     ) : (
                         <div className="h-87.5 w-full flex flex-col items-center justify-center text-slate-400">
                              <i className="bi bi-graph-up text-6xl mb-4 opacity-50"></i>

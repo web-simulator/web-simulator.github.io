@@ -41,6 +41,19 @@ function calculateAPD90(v, dt) {
   return (repolarizacaoIdx - despolarizacaoIdx) * dt;
 }
 
+//Função para calcular a derivada máxima
+function calculateDvDtMax(v, dt) {
+  if (!v || v.length < 2) return 0;
+  let maxDvDt = 0;
+  for (let i = 1; i < v.length; i++) {
+    const dvdt = (v[i] - v[i - 1]) / dt;
+    if (dvdt > maxDvDt) {
+      maxDvDt = dvdt;
+    }
+  }
+  return maxDvDt;
+}
+
 // Executada quando o worker recebe uma mensagem
 self.onmessage = (e) => {
   // Extrai todos os parâmetros
@@ -128,13 +141,17 @@ self.onmessage = (e) => {
       const janela_medicao_passos = Math.round(2 * CI / dt); 
       const v_pulso = v.slice(passo_inicio_pulso, passo_inicio_pulso + janela_medicao_passos);
       const apd_atual = calculateAPD90(v_pulso, dt);
+  
+      // Calcula o dV/dt máx do pulso atual
+      const dvdt_max_atual = calculateDvDtMax(v_pulso, dt);
       
       // Apenas no último batimento de um CI, calcula o APD para gerar a curva de restituição
       if (beat === nbeats - 1) {
         if (apd_atual > 0 && apd_anterior > 0) { 
           const di = CI - apd_anterior;
           if (di > 0) {
-             restitutionData.push({ bcl: di, apd: apd_atual });
+             // Incluindo dvdt_max no payload
+             restitutionData.push({ bcl: di, apd: apd_atual, dvdt_max: dvdt_max_atual });
           }
         }
       }

@@ -36,6 +36,19 @@ function calculateAPD90(v, dt, u_rest, u_amp) {
   return (repolarizacaoIdx - despolarizacaoIdx) * dt;
 }
 
+// Função para calcular
+function calculateDvDtMax(v, dt) {
+  if (!v || v.length < 2) return 0;
+  let maxDvDt = 0;
+  for (let i = 1; i < v.length; i++) {
+    const dvdt = (v[i] - v[i - 1]) / dt;
+    if (dvdt > maxDvDt) {
+      maxDvDt = dvdt;
+    }
+  }
+  return maxDvDt;
+}
+
 // Parâmetros padrão para os tipos de célula
 const CELL_PARAMS = {
   endo: {
@@ -220,11 +233,14 @@ self.onmessage = (e) => {
     // Calcular APD
     const apd_s1 = calculateAPD90(u_s1, dt, 0.0);
     const apd_s2 = calculateAPD90(u_s2, dt, 0.0);
+    
+    // Calcula o dV/dt máx
+    const dvdt_max_s2 = calculateDvDtMax(u_s2, dt);
 
     if (apd_s1 > 0 && apd_s2 > 0) {
       const di = intervalo_S2 - apd_s1;
       if (di > 0) {
-        restitutionData.push({ bcl: di, apd: apd_s2 });
+        restitutionData.push({ bcl: di, apd: apd_s2, dvdt_max: dvdt_max_s2 });
       }
     }
 

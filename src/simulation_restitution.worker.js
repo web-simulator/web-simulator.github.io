@@ -46,6 +46,20 @@ function calculateAPD90(v, dt) {
   return (repolarizacaoIdx - despolarizacaoIdx) * dt;
 }
 
+// Função para calcular a derivada máxima
+function calculateDvDtMax(v, dt) {
+  if (!v || v.length < 2) {
+    return 0;
+  }
+  let maxDvDt = 0;
+  for (let i = 1; i < v.length; i++) {
+    const dvdt = (v[i] - v[i - 1]) / dt;
+    if (dvdt > maxDvDt) {
+      maxDvDt = dvdt;
+    }
+  }
+  return maxDvDt;
+}
 
 // Executa um ciclo de simulação
 function runSingleCycle(params) {
@@ -155,7 +169,7 @@ self.onmessage = (e) => {
   for (let ciclo = 0; ciclo < num_ciclos; ciclo++) {
     // Calcula o intervalo S2 para o ciclo atual
     const intervalo_S2 = BCL_S2_inicial - (ciclo * delta_CL);
-    if (intervalo_S2 < BCL_S2_final) continue; // Garante que não ultrapasse o limite final
+    if (intervalo_S2 < BCL_S2_final) continue; 
 
     const cycleParams = { ...params, intervalo_S2 };
     const { v_s1, v_s2, full_v, full_h, full_tempo } = runSingleCycle(cycleParams);
@@ -163,11 +177,14 @@ self.onmessage = (e) => {
     // Calcula APD90 do último S1 e do S2
     const apd_s1 = calculateAPD90(v_s1, params.dt);
     const apd_s2 = calculateAPD90(v_s2, params.dt);
+    
+    // Calcula o dV/dt máx do S2
+    const dvdt_max_s2 = calculateDvDtMax(v_s2, params.dt);
 
     if (apd_s1 > 0 && apd_s2 > 0) {
-      const di = intervalo_S2 - apd_s1; // Calcula o DI
+      const di = intervalo_S2 - apd_s1; 
       if (di > 0) {
-        restitutionData.push({ bcl: di, apd: apd_s2 }); 
+        restitutionData.push({ bcl: di, apd: apd_s2, dvdt_max: dvdt_max_s2 }); 
       }
     }
 
