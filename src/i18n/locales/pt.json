@@ -74,7 +74,10 @@
     "reentry": "Reentrada",
     "initial_condition": "Condição Inicial",
     "export_result": "Exportar Resultado",
-    "generating_gif": "Gerando GIF..."
+    "generating_gif": "Gerando GIF...",
+    "restitution_metric": "Métrica do Gráfico de Restituição:",
+    "metric_apd": "Duração do Potencial",
+    "metric_cv": "Vel. de Condução"
   },
   "chart": {
     "potential_unit": "Potencial (V)",
@@ -85,7 +88,8 @@
     "simulated_restitution": "Curva de Restituição (Simulada)",
     "theoretical_restitution": "Curva de Restituição (Analítica)",
     "dvdtMax": "dV/dt Máximo",
-    "metrics": "Métricas"
+    "metrics": "Métricas",
+    "chart_restitution_cv": "Curva de Restituição: dV/dt Máximo"
   },
   "bistableChart": {
     "title": "Modelo Bistable 1D",
