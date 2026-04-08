@@ -340,12 +340,34 @@ self.onmessage = (e) => {
         
         // Condições de contorno
         for (let i = 0; i < N; i++) {
-            v[i*N] = v[i*N+1]; v[i*N+N-1] = v[i*N+N-2];
-            h[i*N] = h[i*N+1]; h[i*N+N-1] = h[i*N+N-2];
+            v[i*N] = v[i*N+1]; 
+            v[i*N+N-1] = v[i*N+N-2];
+            h[i*N] = h[i*N+1]; 
+            h[i*N+N-1] = h[i*N+N-2];
+
+            activationTimes[i*N] = activationTimes[i*N+1]; 
+            activationTimes[i*N+N-1] = activationTimes[i*N+N-2];
+            apd[i*N] = apd[i*N+1]; 
+            apd[i*N+N-1] = apd[i*N+N-2];
+            activationState[i*N] = activationState[i*N+1]; 
+            activationState[i*N+N-1] = activationState[i*N+N-2];
+            activationStartTime[i*N] = activationStartTime[i*N+1]; 
+            activationStartTime[i*N+N-1] = activationStartTime[i*N+N-2];
         }
         for (let j = 0; j < N; j++) {
-            v[j] = v[N+j]; v[(N-1)*N+j] = v[(N-2)*N+j];
-            h[j] = h[N+j]; h[(N-1)*N+j] = h[(N-2)*N+j];
+            v[j] = v[N+j]; 
+            v[(N-1)*N+j] = v[(N-2)*N+j];
+            h[j] = h[N+j]; 
+            h[(N-1)*N+j] = h[(N-2)*N+j];
+
+            activationTimes[j] = activationTimes[N+j]; 
+            activationTimes[(N-1)*N+j] = activationTimes[(N-2)*N+j];
+            apd[j] = apd[N+j]; 
+            apd[(N-1)*N+j] = apd[(N-2)*N+j];
+            activationState[j] = activationState[N+j]; 
+            activationState[(N-1)*N+j] = activationState[(N-2)*N+j];
+            activationStartTime[j] = activationStartTime[N+j]; 
+            activationStartTime[(N-1)*N+j] = activationStartTime[(N-2)*N+j];
         }
 
         // Downsampling

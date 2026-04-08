@@ -11,15 +11,17 @@ const hslToRgb = (h, s, l) => {
   return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
 };
 
-const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fibrosisConductivity }) => {
+const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fibrosisConductivity, unit = 'V', tooltipLabel }) => {
   const canvasRef = useRef(null);
   const { t } = useTranslation();
   
   // tooltip
   const [tooltip, setTooltip] = useState({
     visible: false, 
+    x: 0,
     y: 0,           
-    value: 0,       
+    value: 0,
+    isValid: true
   });
 
   //Pré-calcula a tabela de cores para evitar contas repetidas no loop
@@ -70,9 +72,19 @@ const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fi
             pixels[idx + 2] = 0; // B
             pixels[idx + 3] = 255; // Alpha
         } else {
-            const val = data[i];
+            let val = data[i];
+        
+            if (isNaN(val) || val < 0) {
+                val = 0; 
+            }
+
             const safeVal = Math.max(0, Math.min(maxValue, val));
-            const colorIndex = Math.floor((safeVal / maxValue) * 255);
+            
+            let colorIndex = 0;
+            if (maxValue > 0) {
+                colorIndex = Math.floor((safeVal / maxValue) * 255);
+                if (colorIndex > 255) colorIndex = 255;
+            }
             
             pixels[idx] = colorMap[colorIndex * 3];     
             pixels[idx + 1] = colorMap[colorIndex * 3 + 1]; 
@@ -106,11 +118,15 @@ const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fi
 
     if (index >= 0 && index < data.length) {
       const value = data[index];
+      const isValid = !isNaN(value) && value >= 0;
+      const displayValue = isValid ? value.toFixed(2) : '-';
+
       setTooltip({
         visible: true,
         x: event.clientX + 15, 
         y: event.clientY,
-        value: value.toFixed(2), 
+        value: displayValue, 
+        isValid: isValid
       });
     } else {
       // Mouse fora dos limites
@@ -156,10 +172,10 @@ const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fi
         onClick={handleCanvasClick} 
       ></canvas>
 
-      {/* Mostra o tooltip*/}
+      {/* Mostra o tooltip de acordo com a unidade passada */}
       {tooltip.visible && (
         <div className="heatmap-tooltip" style={{ top: `${tooltip.y}px`, left: `${tooltip.x}px` }}>
-          {t('chart.tooltip')} {tooltip.value} {'V'}
+          {tooltipLabel || t('chart.tooltip')} {tooltip.value} {tooltip.isValid ? unit : ''}
         </div>
       )}
     </div>

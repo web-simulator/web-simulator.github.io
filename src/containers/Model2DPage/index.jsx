@@ -9,7 +9,7 @@ import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation_2d.worker.js?worker';
 import MinimalWorker from '../../simulation_minimal_2d.worker.js?worker';
 import { useTranslation } from 'react-i18next';
-import { export2DToGif } from '../../utils/export';
+import { export2DToGif, exportToPng } from '../../utils/export';
 
 const SettingsSection = ({ title, children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -57,6 +57,7 @@ const Model2DPage = ({ onBack }) => {
   const [remainingTime, setRemainingTime] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [viewMode, setViewMode] = useState('potential');
+  const chartContainerRef = useRef(null);
   
   // Player
   const [isPlaying, setIsPlaying] = useState(false);
@@ -295,6 +296,17 @@ const Model2DPage = ({ onBack }) => {
     }, 100);
   }, [simulationResult, params, selectedModel, t, viewMode]);
 
+  // Função para exportar PNG
+  const handleExportImage = useCallback(async () => {
+    if (!chartContainerRef.current) return;
+    setExporting(true);
+    
+    setTimeout(async () => {
+        await exportToPng(chartContainerRef, `2d_${viewMode}_${selectedModel}`);
+        setExporting(false);
+    }, 100);
+  }, [selectedModel, viewMode]);
+
   let currentChartData = null;
   let currentFibrosisMap = null;
   let N_dimension = simulationResult ? simulationResult.N : Math.round((parseFloat(params.L) || 10.0) / (parseFloat(params.dx) || 0.1));
@@ -324,6 +336,18 @@ const Model2DPage = ({ onBack }) => {
           if (maxValue <= 0) maxValue = 1;
       }
       currentFibrosisMap = fibrosis; 
+  }
+
+  // define unidade do tooltip
+  let chartUnit = 'V';
+  let chartLabel = t('chart.tooltip');
+
+  if (viewMode === 'lat') {
+      chartUnit = 'ms';
+      chartLabel = `${t('common.lat_map')}: `;
+  } else if (viewMode === 'apd') {
+      chartUnit = 'ms';
+      chartLabel = `${t('common.apd_map')}: `;
   }
 
   const timeseriesData = useMemo(() => {
@@ -560,7 +584,7 @@ const Model2DPage = ({ onBack }) => {
 
         <main className="flex-1 bg-slate-100 relative flex flex-col min-h-[50vh] lg:min-h-0">
           <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
-            <div className="flex items-center justify-center gap-4 w-full h-full">
+            <div ref={chartContainerRef} className="flex items-center justify-center gap-4 w-full h-full">
               {(() => {
                 return (
                   <>
@@ -572,6 +596,8 @@ const Model2DPage = ({ onBack }) => {
                         onPointClick={(point) => { setSelectedPoint(point); setIsChartModalOpen(true); }}
                         fibrosisMap={currentFibrosisMap} 
                         fibrosisConductivity={params.fibrosisConductivity}
+                        unit={chartUnit} 
+                        tooltipLabel={chartLabel}
                       />
                       {!simulationResult && !calculating && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/80 text-slate-400 pointer-events-none">
@@ -626,9 +652,9 @@ const Model2DPage = ({ onBack }) => {
 
                             {/* Botão de Exportar */}
                             <ExportButton 
-                                onClick={handleExportGif}
-                                label={exporting ? t('common.generating_gif') : t('common.export_result')}
-                                disabled={exporting || viewMode !== 'potential'}
+                                onClick={viewMode === 'potential' ? handleExportGif : handleExportImage}
+                                label={exporting ? (viewMode === 'potential' ? t('common.generating_gif') : 'Exportando...') : t('common.export_result')}
+                                disabled={exporting || (viewMode !== 'potential' && !currentChartData)}
                             />
                         </>
                     )}
