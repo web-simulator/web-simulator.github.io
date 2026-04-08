@@ -77,7 +77,11 @@
     "generating_gif": "Generating GIF...",
     "restitution_metric": "Restitution Chart Metric:",
     "metric_apd": "Action Potential Duration",
-    "metric_cv": "Conduction Velocity"
+    "metric_cv": "Conduction Velocity",
+    "map_type": "View Type:",
+    "potential_map": "Transmembrane Potential",
+    "lat_map": "Local Activation Time",
+    "apd_map": "Action Potential Duration"
   },
   "chart": {
     "potential_unit": "Potential (V)",
@@ -261,8 +265,9 @@
         "2": "Add stimuli and position them.",
         "3": "Configure fibrosis to create obstacles.",
         "4": "Click **Simulate**.",
-        "5": "Use the player to view the result.",
-        "6": "Click on the chart to see the action potential at that point."
+        "5": "Use the player to view the animated result.",
+        "6": "Use the view options to switch to LAT or APD static maps.",
+        "7": "Click on the map to see the action potential at that point."
       },
       "math_intro": "The simulation solves the monodomain reaction-diffusion equation, which describes how transmembrane potential propagates through the tissue.",
       "eq_diffusion": "∂V/∂t = ∇ · (D ∇V) - I_ion / Cm",
@@ -336,7 +341,7 @@
         "desc": "Standard protocol to determine the Effective Refractory Period. A series of basic stimuli (S1) conditions the cell, followed by a premature stimulus (S2) to test excitability at different repolarization phases."
       }, 
       "minimal": { 
-        "desc": "Investigates vulnerability and the refractory window in human cells. The premature S2 stimulus reveals the recovery dynamics of slow and fast channels in the Minimal Model." 
+        "desc": "Investiga vulnerability and the refractory window in human cells. The premature S2 stimulus reveals the recovery dynamics of slow and fast channels in the Minimal Model." 
       },
       "s1_desc": "S1: Stabilization",
       "s2_desc": "S2: Coupling Test"

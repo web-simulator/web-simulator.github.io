@@ -209,6 +209,13 @@ self.onmessage = (e) => {
   const framesBuffer = new Float32Array(expectedFrames * size);
   const timesBuffer = new Float32Array(expectedFrames);
   
+  // arrays para LAT e APD
+  const activationTimes = new Float32Array(size).fill(-1);
+  const apd = new Float32Array(size).fill(-1);
+  const activationState = new Uint8Array(size).fill(0);
+  const activationStartTime = new Float32Array(size).fill(-1);
+  const activationThreshold = 0.3;
+
   let frameCount = 0;
   const inv_dx2 = 1.0 / (dx * dx);
   const inv_4dx2 = 1.0 / (4.0 * dx * dx);
@@ -343,6 +350,26 @@ self.onmessage = (e) => {
         // Limita u entre 0 e 2
         if (u[idx] < 0) u[idx] = 0;
         if (u[idx] > 2.0) u[idx] = 2.0;
+
+        // Cálculo de LAT e APD
+        const volt = u[idx];
+        
+        // Primeiro tempo de ativação
+        if (activationTimes[idx] < 0 && volt >= activationThreshold) {
+            activationTimes[idx] = currentTime;
+        }
+
+        if (activationState[idx] === 0) { // Em repouso
+            if (volt >= activationThreshold) {
+                activationState[idx] = 1; // Ativado
+                activationStartTime[idx] = currentTime;
+            }
+        } else if (activationState[idx] === 1) { // Ativado
+            if (volt < activationThreshold) {
+                activationState[idx] = 2; // Recuperado
+                apd[idx] = currentTime - activationStartTime[idx];
+            }
+        }
       }
     }
 
@@ -367,9 +394,11 @@ self.onmessage = (e) => {
         frames: framesBuffer, 
         times: timesBuffer,
         fibrosis: fibrosisMap,
+        activationTimes,
+        apd,
         N,
         totalFrames: frameCount
     }, 
-    [framesBuffer.buffer, timesBuffer.buffer, fibrosisMap.buffer]
+    [framesBuffer.buffer, timesBuffer.buffer, fibrosisMap.buffer, activationTimes.buffer, apd.buffer]
   );
 };

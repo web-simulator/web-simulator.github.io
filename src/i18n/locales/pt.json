@@ -77,7 +77,11 @@
     "generating_gif": "Gerando GIF...",
     "restitution_metric": "Métrica do Gráfico de Restituição:",
     "metric_apd": "Duração do Potencial",
-    "metric_cv": "Vel. de Condução"
+    "metric_cv": "Vel. de Condução",
+    "map_type": "Tipo de visualização:",
+    "potential_map": "Potencial Transmembrana",
+    "lat_map": "Tempo de Ativação Local ",
+    "apd_map": "Duração do Potencial de Ação"
   },
   "chart": {
     "potential_unit": "Potencial (V)",
@@ -257,8 +261,9 @@
         "2": "Adicione estímulos e posicione-os.",
         "3": "Configure a fibrose para criar obstáculos.",
         "4": "Clique em Simular.",
-        "5": "Use o player para ver o resultado.",
-        "6": "Clique no gráfico para ver o potencial de ação daquele ponto."
+        "5": "Use o player para ver o resultado animado.",
+        "6": "Use as opções de visualização para alternar para os mapas de ativação local ou duração do potencial de ação.",
+        "7": "Clique no mapa para ver o gráfico do potencial de ação daquele ponto."
       },
       "math_intro": "A simulação resolve a equação de reação-difusão monodomínio, que descreve como o potencial transmembrânico se propaga pelo tecido.",
       "eq_diffusion": "∂V/∂t = ∇ · (D ∇V) - I_ion / Cm",

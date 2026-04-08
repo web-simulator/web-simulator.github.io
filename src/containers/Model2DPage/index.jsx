@@ -56,6 +56,7 @@ const Model2DPage = ({ onBack }) => {
   const [progress, setProgress] = useState(0);
   const [remainingTime, setRemainingTime] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [viewMode, setViewMode] = useState('potential');
   
   // Player
   const [isPlaying, setIsPlaying] = useState(false);
@@ -116,13 +117,13 @@ const Model2DPage = ({ onBack }) => {
     else simWorker = new SimulationWorker();
     
     simWorker.onmessage = (e) => {
-      const { type, value, remaining, frames, times, fibrosis, N, totalFrames } = e.data;
+      const { type, value, remaining, frames, times, fibrosis, activationTimes, apd, N, totalFrames } = e.data;
       
       if (type === 'progress') {
         setProgress(value);
         if (remaining !== undefined) setRemainingTime(remaining);
       } else if (type === 'result') {
-        setSimulationResult({ frames, times, fibrosis, N, totalFrames });
+        setSimulationResult({ frames, times, fibrosis, activationTimes, apd, N, totalFrames });
         setCalculating(false);
         setCurrentFrame(0);
         setIsPlaying(true);
@@ -139,7 +140,8 @@ const Model2DPage = ({ onBack }) => {
     const interval = Math.max(0, (100 - playbackSpeed) * 2);
 
     const animate = (time) => {
-      if (!isPlaying || !simulationResult) return;
+      // Se sair da visualização de potencial a animação é pausada
+      if (!isPlaying || !simulationResult || viewMode !== 'potential') return;
 
       if (time - lastTime >= interval) {
         setCurrentFrame((prev) => {
@@ -152,9 +154,11 @@ const Model2DPage = ({ onBack }) => {
       animationFrameId = requestAnimationFrame(animate);
     };
 
-    if (isPlaying && simulationResult) animationFrameId = requestAnimationFrame(animate);
+    if (isPlaying && simulationResult && viewMode === 'potential') {
+      animationFrameId = requestAnimationFrame(animate);
+    }
     return () => cancelAnimationFrame(animationFrameId);
-  }, [isPlaying, simulationResult, playbackSpeed]);
+  }, [isPlaying, simulationResult, playbackSpeed, viewMode]);
 
   // Atualiza Parâmetros
   const handleChange = useCallback((e, name) => {
@@ -265,16 +269,16 @@ const Model2DPage = ({ onBack }) => {
       if (worker) worker.terminate();
       let simWorker = selectedModel === 'minimal' ? new MinimalWorker() : new SimulationWorker();
       simWorker.onmessage = (e) => {
-          const { type, value, remaining, frames, times, fibrosis, N, totalFrames } = e.data;
+          const { type, value, remaining, frames, times, fibrosis, activationTimes, apd, N, totalFrames } = e.data;
           if (type === 'progress') { setProgress(value); if (remaining) setRemainingTime(remaining); }
-          else if (type === 'result') { setSimulationResult({ frames, times, fibrosis, N, totalFrames }); setCalculating(false); setCurrentFrame(0); setIsPlaying(true); }
+          else if (type === 'result') { setSimulationResult({ frames, times, fibrosis, activationTimes, apd, N, totalFrames }); setCalculating(false); setCurrentFrame(0); setIsPlaying(true); }
       };
       setWorker(simWorker); setCalculating(false); setProgress(0);
   };
 
   // Função para exportar GIF
   const handleExportGif = useCallback(async () => {
-    if (!simulationResult) return;
+    if (!simulationResult || viewMode !== 'potential') return;
     setExporting(true);
     
     const labels = {
@@ -289,18 +293,36 @@ const Model2DPage = ({ onBack }) => {
         await export2DToGif(simulationResult, exportParams, `2d_simulation_${selectedModel}`, labels);
         setExporting(false);
     }, 100);
-  }, [simulationResult, params, selectedModel, t]);
+  }, [simulationResult, params, selectedModel, t, viewMode]);
 
   let currentChartData = null;
   let currentFibrosisMap = null;
   let N_dimension = simulationResult ? simulationResult.N : Math.round((parseFloat(params.L) || 10.0) / (parseFloat(params.dx) || 0.1));
+  let maxValue = selectedModel === 'minimal' ? 2.0 : 1.0;
 
   if (simulationResult) {
-      const { frames, fibrosis, N } = simulationResult;
+      const { frames, fibrosis, N, activationTimes, apd } = simulationResult;
       N_dimension = N;
-      const start = currentFrame * N * N;
-      const end = start + N * N;
-      currentChartData = frames.subarray(start, end);
+    
+      if (viewMode === 'potential') {
+          const start = currentFrame * N * N;
+          const end = start + N * N;
+          currentChartData = frames.subarray(start, end);
+      } else if (viewMode === 'lat') {
+          currentChartData = activationTimes;
+          maxValue = 0;
+          for (let i = 0; i < activationTimes.length; i++) {
+              if (activationTimes[i] > maxValue) maxValue = activationTimes[i];
+          }
+          if (maxValue <= 0) maxValue = 1;
+      } else if (viewMode === 'apd') {
+          currentChartData = apd;
+          maxValue = 0;
+          for (let i = 0; i < apd.length; i++) {
+              if (apd[i] > maxValue) maxValue = apd[i];
+          }
+          if (maxValue <= 0) maxValue = 1;
+      }
       currentFibrosisMap = fibrosis; 
   }
 
@@ -346,7 +368,25 @@ const Model2DPage = ({ onBack }) => {
           <div className="p-6 pb-24 lg:pb-6">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">{t('common.configuration')}</p>
 
-            <SettingsSection title={t('common.geometry')} defaultOpen={true}>
+            {/* Seletor de tipo de gráfico */}
+            <SettingsSection title={t('common.view_options')} defaultOpen={true}>
+              <div className="mb-2 border-b border-slate-100 pb-2">
+                <label className="text-sm font-bold text-slate-700 mb-2 block">
+                  {t('common.map_type')}
+                </label>
+                <select 
+                  value={viewMode} 
+                  onChange={(e) => { setViewMode(e.target.value); setIsPlaying(false); }}
+                  className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer"
+                >
+                  <option value="potential">{t('common.potential_map')}</option>
+                  <option value="lat">{t('common.lat_map')}</option>
+                  <option value="apd">{t('common.apd_map')}</option>
+                </select>
+              </div>
+            </SettingsSection>
+
+            <SettingsSection title={t('common.geometry')} defaultOpen={false}>
               <div className="grid grid-cols-2 gap-3">
                 <Input label="dx" value={params.dx} onChange={(e) => handleChange(e, 'dx')} type="number" />
                 <Input label={t('params.L')} value={params.L} onChange={(e) => handleChange(e, 'L')} type="number" />
@@ -356,14 +396,14 @@ const Model2DPage = ({ onBack }) => {
               </div>
             </SettingsSection>
 
-            <SettingsSection title={t('common.tissue_properties')} defaultOpen={true}>
+            <SettingsSection title={t('common.tissue_properties')} defaultOpen={false}>
                 <Input label={t('params.sigma_l')} value={params.sigma_l} onChange={(e) => handleChange(e, 'sigma_l')} type="number" />
                 <Input label={t('params.sigma_t')} value={params.sigma_t} onChange={(e) => handleChange(e, 'sigma_t')} type="number" />
                 <Input label={t('params.angle')} value={params.angle} onChange={(e) => handleChange(e, 'angle')} type="number" />
             </SettingsSection>
 
             {selectedModel === 'ms' ? (
-                <SettingsSection title={t('common.ms_model')}>
+                <SettingsSection title={t('common.ms_model')} defaultOpen={false}>
                     <div className="grid grid-cols-2 gap-3">
                         <Input label={t('params.Tau_in')} value={params.tau_in} onChange={(e) => handleChange(e, 'tau_in')} type="number" />
                         <Input label={t('params.Tau_out')} value={params.tau_out} onChange={(e) => handleChange(e, 'tau_out')} type="number" />
@@ -375,7 +415,7 @@ const Model2DPage = ({ onBack }) => {
                     </div>
                 </SettingsSection>
             ) : (
-                <SettingsSection title={t('common.minimal_model')}>
+                <SettingsSection title={t('common.minimal_model')} defaultOpen={false}>
                       {!params.transmurality && (
                           <div className="mb-3">
                               <label className="text-sm font-medium text-slate-700">{t('common.cell_type')}</label>
@@ -397,7 +437,7 @@ const Model2DPage = ({ onBack }) => {
                 </SettingsSection>
             )}
 
-            <SettingsSection title={t('common.stimuli')}>
+            <SettingsSection title={t('common.stimuli')} defaultOpen={true}>
                {stimuli.map((stim, idx) => (
                    <div key={stim.id} className="mb-4 p-3 bg-slate-50 rounded border border-slate-200 relative">
                        <div className="flex justify-between items-center mb-2">
@@ -435,7 +475,7 @@ const Model2DPage = ({ onBack }) => {
                <Button onClick={addStimulus} className="w-full text-sm py-1 bg-slate-200 text-slate-700 hover:bg-slate-300"> + {t('common.add_stimulus')} </Button>
             </SettingsSection>
 
-            <SettingsSection title={t('common.heterogeneity')}>
+            <SettingsSection title={t('common.heterogeneity')} defaultOpen={false}>
                 <div className="space-y-4">
                     <div className="flex items-center gap-2">
                         <input type="checkbox" checked={params.fibrosis} onChange={(e) => handleChange(e, 'fibrosis')} id="chk-fib" className="rounded text-emerald-600 cursor-pointer" />
@@ -522,7 +562,6 @@ const Model2DPage = ({ onBack }) => {
           <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
             <div className="flex items-center justify-center gap-4 w-full h-full">
               {(() => {
-                const maxValue = selectedModel === 'minimal' ? 2.0 : 1.0;
                 return (
                   <>
                     <div className="relative shadow-lg rounded-lg overflow-hidden bg-white border border-slate-200 aspect-square w-full h-auto lg:h-full lg:w-auto max-w-full max-h-full">
@@ -579,21 +618,23 @@ const Model2DPage = ({ onBack }) => {
                     {simulationResult && (
                         <>
                             <div className="h-8 w-px bg-slate-300 mx-2"></div>
-                            <button onClick={() => setIsPlaying(!isPlaying)} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-md transition-transform active:scale-95">
-                                <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} text-2xl ml-${isPlaying ? '0' : '1'}`}></i>
-                            </button>
+                            {viewMode === 'potential' && (
+                                <button onClick={() => setIsPlaying(!isPlaying)} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-md transition-transform active:scale-95">
+                                    <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} text-2xl ml-${isPlaying ? '0' : '1'}`}></i>
+                                </button>
+                            )}
 
                             {/* Botão de Exportar */}
                             <ExportButton 
                                 onClick={handleExportGif}
                                 label={exporting ? t('common.generating_gif') : t('common.export_result')}
-                                disabled={exporting}
+                                disabled={exporting || viewMode !== 'potential'}
                             />
                         </>
                     )}
                 </div>
 
-                {simulationResult && (
+                {simulationResult && viewMode === 'potential' && (
                     <div className="flex-1 w-full flex items-center gap-3">
                         <span className="text-xs font-mono text-slate-500 w-12 text-right">{(simulationResult.times[currentFrame] || 0).toFixed(0)}ms</span>
                         <input type="range" min="0" max={simulationResult.totalFrames - 1} value={currentFrame} onChange={(e) => { setIsPlaying(false); setCurrentFrame(parseInt(e.target.value)); }} className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" />
