@@ -75,13 +75,17 @@
     "initial_condition": "Condição Inicial",
     "export_result": "Exportar Resultado",
     "generating_gif": "Gerando GIF...",
+    "exporting": "Exportando...",
     "restitution_metric": "Métrica do Gráfico de Restituição:",
     "metric_apd": "Duração do Potencial",
     "metric_cv": "Vel. de Condução",
     "map_type": "Tipo de visualização:",
     "potential_map": "Potencial Transmembrana",
     "lat_map": "Tempo de Ativação Local ",
-    "apd_map": "Duração do Potencial de Ação"
+    "apd_map": "Duração do Potencial de Ação",
+    "simulation_mode": "Modo de Simulação",
+    "standard_propagation": "Propagação Padrão",
+    "cv_restitution_curve": "Curva de Restituição (CV)"
   },
   "chart": {
     "potential_unit": "Potencial (V)",
@@ -93,7 +97,8 @@
     "theoretical_restitution": "Curva de Restituição (Analítica)",
     "dvdtMax": "dV/dt Máximo",
     "metrics": "Métricas",
-    "chart_restitution_cv": "Curva de Restituição: dV/dt Máximo"
+    "chart_restitution_cv": "dV/dt Máximo",
+    "conduction_velocity": "Velocidade de Condução"
   },
   "bistableChart": {
     "title": "Modelo Bistable 1D",
@@ -104,7 +109,7 @@
     "ViewStimuli": "Visualização do estímulo",
     "potentialModal": "Potencial em X"
   },
-    "fhnChart": {
+  "fhnChart": {
     "title": "Modelo FitzHugh-Nagumo 1D",
     "value": "Valor",
     "simulating": "Simulando..."
@@ -421,7 +426,7 @@
       "eq_h_open": "Se v < v_gate: ∂h/∂t = (1 - h) / τ_open",
       "eq_h_close": "Se v > v_gate: ∂h/∂t = -h / τ_close"
     },
-"source_sink": {
+    "source_sink": {
       "desc": "A simulação Source-Sink Mismatch investiga o fator de segurança da propagação cardíaca. Ela modela a passagem de uma onda elétrica por um istmo estreito (fenda) em direção a uma região de tecido expandido. Se a corrente da fonte for insuficiente para carregar o sumidouro, ocorre bloqueio.",
       "geometry_desc": "A geometria utiliza barreiras isolantes para criar uma fenda de largura variável, permitindo estudar os efeitos da curvatura da frente de onda.",
       "eq": "∂V/∂t = ∇·(D∇V) - I_ion/Cm",

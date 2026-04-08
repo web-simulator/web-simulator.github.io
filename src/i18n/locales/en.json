@@ -75,13 +75,17 @@
     "initial_condition": "Initial Condition",
     "export_result": "Export Result",
     "generating_gif": "Generating GIF...",
+    "exporting": "Exporting...",
     "restitution_metric": "Restitution Chart Metric:",
     "metric_apd": "Action Potential Duration",
     "metric_cv": "Conduction Velocity",
     "map_type": "View Type:",
     "potential_map": "Transmembrane Potential",
     "lat_map": "Local Activation Time",
-    "apd_map": "Action Potential Duration"
+    "apd_map": "Action Potential Duration",
+    "simulation_mode": "Simulation Mode",
+    "standard_propagation": "Standard Propagation",
+    "cv_restitution_curve": "Restitution Curve (CV)"
   },
   "chart": {
     "potential_unit": "Potential (V)",
@@ -93,7 +97,8 @@
     "theoretical_restitution": "Restitution Curve (Analytical)",
     "dvdtMax": "Max dV/dt",
     "metrics": "Metrics",
-    "chart_restitution_cv": "Restitution Curve: Max dV/dt"
+    "chart_restitution_cv": "Max dV/dt",
+    "conduction_velocity": "Conduction Velocity"
   },
   "bistableChart": {
     "title": "Bistable Model 1D",
