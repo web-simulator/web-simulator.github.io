@@ -85,7 +85,10 @@
     "apd_map": "Action Potential Duration",
     "simulation_mode": "Simulation Mode",
     "standard_propagation": "Standard Propagation",
-    "cv_restitution_curve": "Restitution Curve (CV)"
+    "cv_restitution_curve": "Restitution Curve",
+    "x_axis_metric": "X-Axis Metric",
+    "coupling_interval": "Coupling Interval",
+    "diastolic_interval": "Diastolic Interval"
   },
   "chart": {
     "potential_unit": "Potential (V)",

@@ -280,14 +280,14 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
                     </div>
                     {simulationMode === 'cv' && (
                         <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-slate-700">Métrica do Eixo X</span>
+                            <span className="text-sm font-medium text-slate-700">{t('common.x_axis_metric')}</span>
                             <select 
                                 value={xAxisMetric} 
                                 onChange={(e) => setXAxisMetric(e.target.value)}
                                 className="px-2 py-1 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                             >
-                                <option value="ci">Coupling Interval (CI)</option>
-                                <option value="di">Diastolic Interval (DI)</option>
+                                <option value="ci">{t('common.coupling_interval')}</option>
+                                <option value="di">{t('common.diastolic_interval')}</option>
                             </select>
                         </div>
                     )}
