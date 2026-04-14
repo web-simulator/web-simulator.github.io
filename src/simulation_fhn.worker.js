@@ -53,15 +53,22 @@ self.onmessage = (e) => {
 
   // Loop principal da simulação
   for (let t = 0; t < steps; t++) {
-    // Funções de derivada para o método RK4
-        function f_v(vv, ww, i) { // Derivada de V
-      const v_left = (i === 0) ? vv[N - 1] : vv[i - 1];
-      const v_right = (i === N - 1) ? vv[0] : vv[i + 1];
-      
+
+    function f_v(vv, ww, i) { // Derivada de V
+      let v_left, v_right;
+
+      if (initialCondition === 'reentry') {
+        v_left = (i === 0) ? vv[N - 1] : vv[i - 1];
+        v_right = (i === N - 1) ? vv[0] : vv[i + 1];
+      } else {
+        v_left = (i === 0) ? vv[0] : vv[i - 1];
+        v_right = (i === N - 1) ? vv[N - 1] : vv[i + 1];
+      }
+
       const diffusion = k * (v_right - 2 * vv[i] + v_left) / (dx * dx);
       const reaction_v = A * vv[i] * (1 - vv[i]) * (vv[i] - alpha);
       return diffusion + reaction_v - ww[i];
-    }
+  }
     
     function f_w(vv, ww, i) { // Derivada de W
       return epsilon * (vv[i] - gamma * ww[i]);
