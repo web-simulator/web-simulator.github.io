@@ -9,7 +9,6 @@ import MinimalWorker from '../../simulation_minimal_0d.worker.js?worker';
 import { useTranslation } from 'react-i18next';
 import { exportToPng } from '../../utils/export';
 import './styles.css';
-import { t } from 'i18next';
 
 /* Componente para seções expansíveis na sidebar de configurações */
 const SettingsSection = ({ title, children, defaultOpen = false }) => {
@@ -66,22 +65,26 @@ const MODEL_VARIABLES = {
   minimal: ['v', 'gate_v', 'gate_w', 'gate_s']
 };
 
-const VARIABLE_LABELS = {
-  v: t('chart.potential_unit'),
-  h: 'Gate h',
-  gate_v: 'Gate v',
-  gate_w: 'Gate w',
-  gate_s: 'Gate s'
-};
-
 const SingleStimulusPage = ({ onBack }) => {
   const { t } = useTranslation();
+  const VARIABLE_LABELS = {
+    v: t('chart.potential_unit'),
+    h: "Gate h",
+    gate_v: "Gate v",
+    gate_w: "Gate w",
+    gate_s: "Gate s"
+  };
+
   const [data, setData] = useState([]);
   const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState('ms');
   const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
+  
+  // Estado para gerenciar as abas do modal de informação
+  const [activeTab, setActiveTab] = useState('basic');
+  
   const chartRef = useRef(null);
 
   const [visibleVars, setVisibleVars] = useState({
@@ -209,6 +212,88 @@ const SingleStimulusPage = ({ onBack }) => {
   const currentParams = editableParams[selectedModel];
   const currentVariables = MODEL_VARIABLES[selectedModel];
 
+  // Função para renderizar o conteúdo do modal de informações em diferentes abas
+  const renderModalContent = () => {
+    const modelKey = selectedModel;
+
+    if (activeTab === 'basic') {
+      return (
+        <div className="space-y-4 animate-fadeIn">
+          <h3 className="text-xl font-bold text-slate-700">{t(`modals.single.${modelKey}.basic.title`)}</h3>
+          <p className="text-slate-600 leading-relaxed text-justify">{t(`modals.single.${modelKey}.basic.desc`)}</p>
+          
+          <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4 mt-4">
+             <h4 className="font-semibold text-emerald-800 mb-2">
+                <i className="bi bi-lightbulb mr-2"></i>
+                {t(`modals.single.${modelKey}.basic.why_use`) || t(`modals.single.${modelKey}.basic.types`)}
+             </h4>
+             <p className="text-sm text-emerald-700 leading-relaxed text-justify">
+                {t(`modals.single.${modelKey}.basic.why_use_desc`) || t(`modals.single.${modelKey}.basic.types_desc`)}
+             </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeTab === 'advanced') {
+      return (
+        <div className="space-y-4 animate-fadeIn">
+          <h3 className="text-xl font-bold text-slate-700">{t(`modals.single.${modelKey}.advanced.title`)}</h3>
+          <p className="text-slate-600 leading-relaxed text-justify">{t(`modals.single.${modelKey}.advanced.desc`)}</p>
+          
+          {modelKey === 'minimal' && (
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-2">
+               <pre className="whitespace-pre-wrap font-sans text-sm text-slate-600 leading-relaxed">
+                  {t(`modals.single.${modelKey}.advanced.currents_list`)}
+               </pre>
+            </div>
+          )}
+
+          {modelKey === 'ms' && (
+             <div className="mt-4">
+                <h4 className="font-semibold text-slate-700 mb-2">{t(`modals.single.${modelKey}.advanced.gate_h`)}</h4>
+                <p className="text-sm text-slate-600 text-justify">{t(`modals.single.${modelKey}.advanced.gate_h_desc`)}</p>
+             </div>
+          )}
+
+          <div className="mt-6 border-t border-slate-200 pt-4">
+             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{t('modals.references')}</h4>
+             <p className="text-xs text-slate-500 italic">{t(`modals.single.${modelKey}.advanced.ref`)}</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeTab === 'math') {
+      return (
+        <div className="space-y-4 animate-fadeIn">
+          <h3 className="text-xl font-bold text-slate-700">{t(`modals.single.${modelKey}.math.title`)}</h3>
+          <p className="text-slate-600 text-sm">{t(`modals.single.${modelKey}.math.desc`)}</p>
+          
+          <div className="bg-slate-50 border border-slate-200 border-l-4 border-l-emerald-500 text-slate-700 p-4 rounded-r-lg rounded-l-sm font-mono text-sm space-y-2 shadow-sm overflow-x-auto custom-scrollbar">
+             {modelKey === 'ms' ? (
+                <>
+                   <p>{t('modals.single.ms.math.eq_v')}</p>
+                   <p>{t('modals.single.ms.math.eq_h1')}</p>
+                   <p>{t('modals.single.ms.math.eq_h2')}</p>
+                </>
+             ) : (
+                <>
+                   <p>{t('modals.single.minimal.math.eq_u')}</p>
+                   <p>{t('modals.single.minimal.math.eq_v')}</p>
+                   <p>{t('modals.single.minimal.math.eq_w')}</p>
+                   <p>{t('modals.single.minimal.math.eq_s')}</p>
+                </>
+             )}
+          </div>
+
+          <h4 className="font-bold text-slate-700 mt-6">{t(`modals.single.${modelKey}.math.numerical`)}</h4>
+          <p className="text-sm text-slate-600 text-justify">{t(`modals.single.${modelKey}.math.numerical_desc`)}</p>
+        </div>
+      );
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-auto lg:overflow-hidden">
       
@@ -228,7 +313,7 @@ const SingleStimulusPage = ({ onBack }) => {
               className="bg-slate-100 border-none text-sm font-medium text-slate-700 py-2 px-4 rounded-lg cursor-pointer focus:ring-2 focus:ring-emerald-500"
             >
                 <option value="ms">Mitchell-Schaeffer</option>
-                <option value="minimal">{t('modals.restitution.minimal.title')}</option>
+                <option value="minimal">{t('common.minimal_model') || 'Minimal Model'}</option>
             </select>
         </div>
       </header>
@@ -266,7 +351,7 @@ const SingleStimulusPage = ({ onBack }) => {
               <div className="grid grid-cols-2 gap-3">
                  <Input label={t('params.tempo_total')} value={currentParams.tempo_total} onChange={(e) => handleChange(e, 'tempo_total')} type="number" />
                  <Input label={t('params.dt')} value={currentParams.dt} onChange={(e) => handleChange(e, 'dt')} type="number" />
-                 <Input label="Downsampling" value={currentParams.downsamplingFactor} onChange={(e) => handleChange(e, 'downsamplingFactor')} type="number" className="col-span-2" />
+                 <Input label={t('common.save_stride')} value={currentParams.downsamplingFactor} onChange={(e) => handleChange(e, 'downsamplingFactor')} type="number" className="col-span-2" />
               </div>
             </SettingsSection>
 
@@ -286,12 +371,12 @@ const SingleStimulusPage = ({ onBack }) => {
                         <Input label={t('params.Tau_open')} value={currentParams.recuperação} onChange={(e) => handleChange(e, 'recuperação')} type="number" />
                         <Input label={t('params.Tau_close')} value={currentParams.inativação} onChange={(e) => handleChange(e, 'inativação')} type="number" />
                         <Input label={t('params.gate')} value={currentParams.gate} onChange={(e) => handleChange(e, 'gate')} type="number" />
-                        <Input label="V Inicial" value={currentParams.v_inicial} onChange={(e) => handleChange(e, 'v_inicial')} type="number" />
-                        <Input label="h Inicial" value={currentParams.h_inicial} onChange={(e) => handleChange(e, 'h_inicial')} type="number" />
+                        <Input label={t('params.v_inicial')} value={currentParams.v_inicial} onChange={(e) => handleChange(e, 'v_inicial')} type="number" />
+                        <Input label={t('params.h_inicial')} value={currentParams.h_inicial} onChange={(e) => handleChange(e, 'h_inicial')} type="number" />
                     </div>
                 </SettingsSection>
             ) : (
-                <SettingsSection title={t('modals.restitution.minimal.title')} defaultOpen={true}>
+                <SettingsSection title={t('common.minimal_model') || 'Minimal Model'} defaultOpen={true}>
                      <div className="mb-3">
                          <label className="text-sm font-medium text-slate-700">{t('params.cellType')}</label>
                          <select 
@@ -373,58 +458,34 @@ const SingleStimulusPage = ({ onBack }) => {
 
       {/* Modal de Informações */}
       <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
-        <div className="info-modal-content text-slate-800 space-y-6 max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
-          <section>
-            <h2 className="text-2xl font-bold text-emerald-800 mb-2">{t('home.models.single_stimulus.title')}</h2>
+        <div className="info-modal-content max-h-[80vh] flex flex-col bg-white">
             
-            {selectedModel === 'ms' ? (
-                <>
-                <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.single.ms.title')}</h3>
-                <p className="text-slate-600 leading-relaxed mb-4">{t('modals.single.ms.desc')}</p>
-                
-                <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.math_model')}</h3>
-                <p className="text-sm text-slate-600 mb-2">{t('modals.ms_desc_base')}</p>
-                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm space-y-2">
-                    <p>{t('modals.single.ms.eq_v')}</p>
-                    <p>{t('modals.single.ms.eq_h1')}</p>
-                    <p>{t('modals.single.ms.eq_h2')}</p>
-                </div>
-                </>
-            ) : (
-                <>
-                <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.single.minimal.title')}</h3>
-                <p className="text-slate-600 leading-relaxed mb-4">{t('modals.single.minimal.desc')}</p>
-                
-                <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.math_model')}</h3>
-                <p className="text-sm text-slate-600 mb-2">{t('modals.minimal_desc_base')}</p>
-                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm space-y-2 mb-4">
-                    <p>{t('modals.eq_u_minimal')}</p>
-                    <p>{t('modals.eq_v_minimal')}</p>
-                    <p>{t('modals.eq_w_minimal')}</p>
-                    <p>{t('modals.eq_s_minimal')}</p>
-                </div>
-                <p className="text-sm font-bold text-slate-700">{t('modals.single.minimal.vars')}</p>
-                <p className="text-sm text-slate-600">{t('modals.single.minimal.currents')}</p>
-                </>
-            )}
-          </section>
-
-          <section>
-             <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.numerical_method')}</h3>
-             <p className="text-slate-600 text-sm">{t('modals.single.method')}</p>
-          </section>
-
-          <section>
-            <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.param_meaning')}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600">
-                {Object.keys(currentParams).map(key => (
-                 <div key={key} className="flex gap-1">
-                     <span className="font-bold">{t(`params.${key}`) || key}:</span>
-                     <span>{t(`params.${key}_desc`)|| key}</span>
-                 </div>
-                ))}
+            {/* Header das aba */}
+            <div className="flex-none border-b border-slate-200 mb-4 px-2">
+               <h2 className="text-2xl font-bold text-emerald-800 mb-4">
+                  {selectedModel === 'ms' ? 'Mitchell-Schaeffer' : 'Minimal Model'}
+               </h2>
+               <div className="flex gap-6 overflow-x-auto custom-scrollbar">
+                  {['basic', 'advanced', 'math'].map((tab) => (
+                     <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`pb-3 text-sm font-semibold transition-colors whitespace-nowrap ${
+                           activeTab === tab 
+                           ? 'border-b-2 border-emerald-500 text-emerald-700' 
+                           : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                     >
+                        {t(`modals.tabs.${tab}`)}
+                     </button>
+                  ))}
+               </div>
             </div>
-          </section>
+
+            {/* Conteúdo */}
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar pb-4">
+                {renderModalContent()}
+            </div>
         </div>
       </Modal>
     </div>

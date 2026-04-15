@@ -318,21 +318,61 @@
         "tau_constants": "τ_v, τ_w, τ_s: Gate time constants"
       }
     },
+    "tabs": {
+      "basic": "Basic",
+      "advanced": "Advanced",
+      "math": "Mathematical"
+    },
+    "references": "References:",
     "single": {
-      "ms": { 
-        "title": "Mitchell-Schaeffer", 
-        "desc": "Simulates the basic electrophysiological response of an excitable cell. This phenomenological model captures essential excitability and refractoriness properties using only two variables (potential and h-gate)."
+      "ms": {
+        "basic": {
+          "title": "What is the Mitchell-Schaeffer Model?",
+          "desc": "The Mitchell-Schaeffer model is a simplified representation of the electrical activity of a cardiac cell. Instead of calculating all individual ion currents (like sodium, potassium, and calcium), it groups this behavior into just two main variables: the membrane potential (cell voltage) and a 'gate' that controls the cell's resting period.",
+          "why_use": "Why use this model?",
+          "why_use_desc": "It is ideal for understanding fundamental concepts such as depolarization (contraction), repolarization (relaxation), and the refractory period (time the cell needs to recover before a new stimulus), requiring much less computational power than complex models."
+        },
+        "advanced": {
+          "title": "Action Potential Dynamics",
+          "desc": "In this model, the shape of the Action Potential (AP) is molded by the time constants ('Tau' parameters). By changing Tau_in, you modify the upstroke velocity of the AP. By changing Tau_out, you prolong or shorten the AP duration (APD).",
+          "gate_h": "The role of the 'h' Gate",
+          "gate_h_desc": "The 'h' variable represents the availability of fast ion channels. When the cell is activated (V > V_gate), 'h' quickly drops to zero (governed by Tau_close), making the cell refractory. It only gradually recovers (governed by Tau_open) when the voltage drops below V_gate.",
+          "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane. Bulletin of mathematical biology, 65(5), 767-793."
+        },
+        "math": {
+          "title": "Mathematical Formulation",
+          "desc": "The model is defined by a system of two coupled ordinary differential equations.",
+          "eq_v": "dv/dt = (h · v² · (1-v))/τ_in - v/τ_out + I_stim",
+          "eq_h1": "If v < v_gate: dh/dt = (1-h)/τ_open",
+          "eq_h2": "If v > v_gate: dh/dt = -h/τ_close",
+          "numerical": "Numerical Solution Method",
+          "numerical_desc": "Temporal integration is performed using a hybrid approach: the Explicit Euler method is used for the voltage variable (v), while the gate variable (h) is integrated using the Rush-Larsen method. The use of Rush-Larsen ensures high numerical stability for the opening and closing of the gate, as it uses an exact exponential solution for this step."
+        }
       },
-      "eq_v": "dv/dt = (h v² (1-v))/τ_in - v/τ_out",
-      "eq_h1": "dh/dt = (1-h)/τ_open",
-      "eq_h2": "dh/dt = -h/τ_close",
-      "minimal": { 
-        "title": "Minimal Model", 
-        "desc": "Simulates a realistic Action Potential for human tissue. The model reproduces the detailed morphology of Epicardial, Endocardial, and Mid-myocardial (M-cells) cells, allowing the study of APD heterogeneity.",
-        "vars": "Variables u, v, w, s",
-        "currents": "Currents J_fi, J_so, J_si"
-      },
-      "method": "Explicit Euler and Rush-Larsen Methods."
+      "minimal": {
+        "basic": {
+          "title": "What is the Minimal Model?",
+          "desc": "The Minimal Model (Bueno-Orovio Minimal Model) is an advanced simulation designed specifically to replicate human cardiac tissue. Unlike simpler models, it can highly accurately reproduce the realistic shape of the heartbeat in different parts of the heart.",
+          "why_use": "Why Use the Minimal Model?",
+          "why_use_desc": "The Minimal Model is useful for studying the behavior of cardiac cells under various conditions and for understanding the underlying mechanisms of heart rhythm."
+        },
+        "advanced": {
+          "title": "Phenomenological Currents",
+          "desc": "Instead of dozens of biological variables, the model uses 4 state variables (u, v, w, s) that control three main aggregated currents:",
+          "currents_list": "1. Fast inward current (J_fi): Responsible for rapid depolarization (phase 0).\n2. Slow outward current (J_so): Controls repolarization and the plateau shape.\n3. Slow inward current (J_si): Balances the plateau and interacts with implicit calcium dynamics.",
+          "ref": "Bueno-Orovio, A., Cherry, E. M., & Fenton, F. H. (2008). Minimal model for human ventricular action potentials in tissue. Journal of theoretical biology, 253(3), 544-560."
+        },
+        "math": {
+          "title": "System Equations",
+          "desc": "The model calculates the evolution of the transmembrane potential (u) and three gating variables (v, w, s) through the following main equations:",
+          "eq_u": "∂u/∂t = - (J_fi + J_so + J_si) + I_stim",
+          "eq_v": "∂v/∂t = (1 - H(u - θ_v))(1 - v)/τ_v⁻ - H(u - θ_v)v/τ_v⁺",
+          "eq_w": "∂w/∂t = (1 - H(u - θ_w))(1 - w)/τ_w⁻ - H(u - θ_w)w/τ_w⁺",
+          "eq_s": "∂s/∂t = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
+          "numerical": "Numerical Integration Method",
+          "numerical_desc": "To ensure stability with reasonable time steps, the voltage variable (u) is integrated by the Explicit Euler Method, while the gate variables (v, w, s) use the Rush-Larsen method, which is ideal for linear differential equations of gating variables."
+        }
+      }
     },
     "multiple": { 
       "protocol_title": "Protocol",
