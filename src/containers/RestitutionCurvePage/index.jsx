@@ -89,6 +89,7 @@ const RestitutionCurvePage = ({ onBack }) => {
   const [selectedModel, setSelectedModel] = useState('mms');
   const [curveType, setCurveType] = useState('apd');
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false); 
+  const [activeTab, setActiveTab] = useState('basic');
   const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
   const [visibleVars, setVisibleVars] = useState({ v: true, gate_v: true, gate_w: true, gate_s: true });
   const chartRef = useRef(null);
@@ -281,23 +282,76 @@ const RestitutionCurvePage = ({ onBack }) => {
 
   const renderInfoModalContent = () => {
     const modelKey = selectedModel;
-    const steps = t(`modals.restitution.${modelKey}.steps`, { returnObjects: true });
-    
-    // Lista de parâmetros relevantes para exibir no modal
-    const currentParamsList = Object.keys(editableParams[selectedModel]);
 
-    return (
-      <div className="info-modal-content text-slate-800 space-y-6 max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
-        <section>
-          <h2 className="text-2xl font-bold text-emerald-800 mb-2">{t(`modals.restitution.${modelKey}.title`)}</h2>
-          <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.restitution.what_is')}</h3>
-          <p className="text-slate-600 leading-relaxed mb-4">{t('modals.restitution.what_is_desc')}</p>
-        </section>
-      </div>
-    );
+    if (activeTab === 'basic') {
+      return (
+        <div className="space-y-4 animate-fadeIn">
+          <h3 className="text-xl font-bold text-slate-700">{t(`modals.restitution.${modelKey}.basic.title`)}</h3>
+          <p className="text-slate-600 leading-relaxed text-justify">{t(`modals.restitution.${modelKey}.basic.desc`)}</p>
+          
+          <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4 mt-4">
+             <h4 className="font-semibold text-emerald-800 mb-2">
+                <i className="bi bi-graph-up mr-2"></i>
+                {t(`modals.restitution.${modelKey}.basic.goal`)}
+             </h4>
+             <p className="text-sm text-emerald-700 leading-relaxed text-justify">
+                {t(`modals.restitution.${modelKey}.basic.goal_desc`)}
+             </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeTab === 'advanced') {
+      return (
+        <div className="space-y-4 animate-fadeIn">
+          <h3 className="text-xl font-bold text-slate-700">{t(`modals.restitution.${modelKey}.advanced.title`)}</h3>
+          <p className="text-slate-600 leading-relaxed text-justify">{t(`modals.restitution.${modelKey}.advanced.desc`)}</p>
+          
+          <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+             <h4 className="font-semibold text-slate-700 mb-2">{t(`modals.restitution.${modelKey}.advanced.kinetics`)}</h4>
+             <p className="text-sm text-slate-600 text-justify">{t(`modals.restitution.${modelKey}.advanced.kinetics_desc`)}</p>
+          </div>
+
+          <div className="mt-6 border-t border-slate-200 pt-4">
+             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{t('modals.references')}</h4>
+             <p className="text-xs text-slate-500 italic">{t(`modals.restitution.${modelKey}.advanced.ref`)}</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeTab === 'math') {
+      return (
+        <div className="space-y-4 animate-fadeIn">
+          <h3 className="text-xl font-bold text-slate-700">{t(`modals.restitution.${modelKey}.math.title`)}</h3>
+          <p className="text-slate-600 text-sm">{t(`modals.restitution.${modelKey}.math.desc`)}</p>
+          
+          <div className="bg-slate-50 border border-slate-200 border-l-4 border-l-emerald-500 text-slate-700 p-4 rounded-r-lg font-mono text-sm space-y-2 overflow-x-auto custom-scrollbar">
+             {modelKey === 'minimal' ? (
+                <>
+                   <p>{t('modals.single.minimal.math.eq_u')}</p>
+                   <p>{t('modals.single.minimal.math.eq_v')}</p>
+                   <p>{t('modals.single.minimal.math.eq_w')}</p>
+                   <p>{t('modals.single.minimal.math.eq_s')}</p>
+                </>
+             ) : (
+                <>
+                   <p>{t('modals.single.ms.math.eq_v')}</p>
+                   <p>{t('modals.single.ms.math.eq_h1')}</p>
+                   <p>{t('modals.single.ms.math.eq_h2')}</p>
+                </>
+             )}
+          </div>
+          <p className="text-sm text-slate-600 italic mt-2">{t(`modals.restitution.${modelKey}.math.stim_term`)}</p>
+
+          <h4 className="font-bold text-slate-700 mt-6">{t(`modals.restitution.${modelKey}.math.numerical`)}</h4>
+          <p className="text-sm text-slate-600 text-justify">{t(`modals.restitution.${modelKey}.math.numerical_desc`)}</p>
+        </div>
+      );
+    }
   };
   
-  // Parâmetros atuais baseados no modelo selecionado
   const currentParams = editableParams[selectedModel];
   const currentVariables = MODEL_VARIABLES[selectedModel];
 
@@ -490,7 +544,33 @@ const RestitutionCurvePage = ({ onBack }) => {
       </div>
 
       <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
-        {renderInfoModalContent()}
+        <div className="info-modal-content max-h-[80vh] flex flex-col bg-white">
+            
+            <div className="flex-none border-b border-slate-200 mb-4 px-2">
+               <h2 className="text-2xl font-bold text-emerald-800 mb-4">
+                  {t(`modals.restitution.${selectedModel}.title`)}
+               </h2>
+               <div className="flex gap-6 overflow-x-auto custom-scrollbar">
+                  {['basic', 'advanced', 'math'].map((tab) => (
+                     <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`pb-3 text-sm font-semibold transition-colors whitespace-nowrap ${
+                           activeTab === tab 
+                           ? 'border-b-2 border-emerald-500 text-emerald-700' 
+                           : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                     >
+                        {t(`modals.tabs.${tab}`)}
+                     </button>
+                  ))}
+               </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar pb-4">
+                {renderInfoModalContent()}
+            </div>
+        </div>
       </Modal>
     </div>
   );
