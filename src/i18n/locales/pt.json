@@ -371,13 +371,47 @@
       }
     },
     "multiple": { 
-      "protocol_title": "Protocolo",
-      "ms": { 
-        "desc": "Aplica uma sequência de 8 pulsos consecutivos com intervalo fixo. Permite observar a adaptação da célula ao ritmo imposto e a estabilidade da captura estímulo-a-estímulo." 
-      }, 
-      "minimal": { 
-        "desc": "Submete a célula do Minimal Model a uma frequência cardíaca fixa. Útil para analisar o acúmulo de inativação e a adaptação da duração do potencial de ação (APD) em regime estacionário." 
-      } 
+      "ms": {
+        "basic": {
+          "title": "Protocolo: Múltiplos Estímulos (Mitchell-Schaeffer)",
+          "desc": "Este protocolo aplica uma sequência de estímulos consecutivos com um Comprimento de Ciclo Básico (BCL) fixo. É essencial para observar como a célula se adapta a um ritmo e verificar a estabilidade estímulo a estímulo.",
+          "why_use": "Influência dos Parâmetros",
+          "why_use_desc": "O 'BCL' (intervalo entre estímulos) e o 'Nº de Estímulos' definem a sequência de estímulos que atuará na célula. Se o BCL for menor que o período refratário da célula (controlado por Tau_open), ela não conseguirá responder a todos os estímulos, resultando em bloqueios de condução."
+        },
+        "advanced": {
+          "title": "Dinâmicas Avançadas e Alternância",
+          "desc": "Durante um ritmo acelerado (BCL baixo), o gate 'h' pode não se recuperar completamente para o seu estado de repouso entre os batimentos. Essa recuperação incompleta pode levar à alternância cardíaca, onde a duração do potencial alterna entre batimentos longos e curtos.",
+          "gate_h": "Memória e Restituição",
+          "gate_h_desc": "O ritmo contínuo revela as propriedades de restituição do modelo. O equilíbrio entre Tau_out (repolarização) e Tau_open (recuperação) controla a frequência máxima que a célula consegue sustentar antes de falhar.",
+          "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane."
+        },
+        "math": {
+          "title": "Formulação Matemática",
+          "desc": "As equações base são idênticas às do estímulo único, contudo o termo de corrente de excitação (I_stim) atua agora como uma função periódica com base no BCL.",
+          "numerical": "Método de Solução Numérica",
+          "numerical_desc": "A integração utiliza o método de Euler Explícito para a voltagem e o método de Rush-Larsen para a variável de gate. Essa combinação garante a estabilidade do sistema ao longo de milhares de iterações durante os repetitivos estímulos."
+        }
+      },
+      "minimal": {
+        "basic": {
+          "title": "Protocolo: Múltiplos Estímulos (Minimal Model)",
+          "desc": "Submete o Minimal Model a uma frequência contínua de estimulação. Isso é vital para analisar o acúmulo de inativação das variáveis lentas e observar como o tecido cardíaco humano adapta a Duração do seu Potencial de Ação (APD) ao entrar em regime estacionário.",
+          "why_use": "Influência dos Parâmetros",
+          "why_use_desc": "O 'BCL' influencia fortemente o estresse e APD final. Ritmos mais rápidos (BCL menor) encurtam naturalmente o APD. Dependendo do Tipo Celular, essa adaptação ocorre em taxas diferentes devido às constantes de tempo específicas para as correntes de entrada e saída."
+        },
+        "advanced": {
+          "title": "Adaptação de Frequência e Correntes",
+          "desc": "A adaptação de frequência no Minimal Model está profundamente conectada às variáveis de recuperação lenta ('w' e 's').",
+          "currents_list": "Com os estímulos consecutivos, a corrente lenta de entrada (J_si) não tem tempo de se recuperar totalmente, encurtando progressivamente a fase de platô. Células do tipo M tipicamente demonstram um prolongamento de APD muito mais acentuado em frequências lentas comparado às 'epi' ou 'endo'.",
+          "ref": "Bueno-Orovio, A., Cherry, E. M., & Fenton, F. H. (2008). Minimal model for human ventricular action potentials in tissue."
+        },
+        "math": {
+          "title": "Equações do Sistema",
+          "desc": "A aplicação periódica da corrente externa atua como uma perturbação contínua no sistema fisiológico de 4 variáveis.",
+          "numerical": "Método de Integração Numérica",
+          "numerical_desc": "O método de Euler Explícito manipula a variável de voltagem (u) enquanto o algoritmo de Rush-Larsen assegura altíssima precisão e estabilidade para as variáveis de gating (v, w, s) durante todo o processo."
+        }
+      }
     },
     "s1s2": { 
       "protocol_title": "Protocolo S1-S2",

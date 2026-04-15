@@ -374,14 +374,48 @@
         }
       }
     },
-    "multiple": { 
-      "protocol_title": "Protocol",
-      "ms": { 
-        "desc": "Applies a train of 8 consecutive pulses with a fixed interval (Basic Cycle Length). Allows observation of cell adaptation to the imposed rhythm and stability of stimulus capture." 
-      }, 
-      "minimal": { 
-        "desc": "Subjects the Minimal Model cell to a fixed heart rate. Useful for analyzing inactivation accumulation and Action Potential Duration (APD) rate adaptation in a steady state." 
-      } 
+    "multiple": {
+      "ms": {
+        "basic": {
+          "title": "Protocol: Multiple Stimuli (Mitchell-Schaeffer)",
+          "desc": "This protocol applies a train of consecutive pulses with a fixed Basic Cycle Length (BCL). It is essential for observing how the cardiac cell adapts to an imposed rhythm and verifying the stability of capture over time.",
+          "why_use": "Parameter Influence",
+          "why_use_desc": "The 'BCL' (Basic Cycle Length) and 'No. of Stimuli' define the stress placed on the cell. If the BCL is shorter than the refractory period (governed by Tau_open), the cell will fail to respond to every stimulus, resulting in conduction blocks."
+        },
+        "advanced": {
+          "title": "Advanced Dynamics & Alternans",
+          "desc": "During rapid pacing (low BCL), the 'h' gate might not fully recover to its resting state between beats. This incomplete recovery can lead to alternans, where the action potential duration alternates between long and short beats.",
+          "gate_h": "Memory and Restitution",
+          "gate_h_desc": "The continuous pacing reveals the restitution properties of the model. The balance between Tau_out (repolarization) and Tau_open (recovery) dictates the minimum pacing frequency the cell can sustain.",
+          "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane."
+        },
+        "math": {
+          "title": "Mathematical Formulation",
+          "desc": "The underlying equations remain the same as the single stimulus, but the excitation current term (I_stim) is now a periodic function based on the BCL.",
+          "numerical": "Numerical Solution Method",
+          "numerical_desc": "Integration uses Explicit Euler for the voltage and Rush-Larsen for the gate variable, ensuring high stability over thousands of iterations during the repetitive pacing protocol."
+        }
+      },
+      "minimal": {
+        "basic": {
+          "title": "Protocol: Multiple Stimuli (Minimal Model)",
+          "desc": "Subjects the Minimal Model to a continuous pacing frequency. This is vital for analyzing the accumulation of slow variable inactivation and observing how human cardiac tissue adapts its Action Potential Duration (APD) in a steady state.",
+          "why_use": "Parameter Influence",
+          "why_use_desc": "The 'BCL' heavily influences the stress and the final APD. Faster rhythms (lower BCL) naturally shorten the APD. Depending on the Cell Type (epi, endo, myo), this adaptation happens at different rates due to specific time constants for the outward and inward currents."
+        },
+        "advanced": {
+          "title": "Rate Adaptation & Current Dynamics",
+          "desc": "Rate adaptation in the Minimal Model is deeply connected to the slow recovery variables ('w' and 's').",
+          "currents_list": "With consecutive pacing, the slow inward current (J_si) does not fully recover, progressively shortening the plateau phase. The 'myo' (M-cells) typically show a more pronounced APD prolongation at slow heart rates compared to 'epi' or 'endo' cells.",
+          "ref": "Bueno-Orovio, A., Cherry, E. M., & Fenton, F. H. (2008). Minimal model for human ventricular action potentials in tissue."
+        },
+        "math": {
+          "title": "System Equations",
+          "desc": "The periodic application of external current acts as a continuous physiological perturbance to the 4-variable reaction system.",
+          "numerical": "Numerical Integration Method",
+          "numerical_desc": "Explicit Euler handles the voltage (u) while Rush-Larsen ensures high accuracy for the gating variables (v, w, s) throughout the repetitive pacing protocol."
+        }
+      }
     },
     "s1s2": { 
       "protocol_title": "S1-S2 Protocol",
