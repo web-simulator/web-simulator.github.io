@@ -337,7 +337,7 @@
           "desc": "In this model, the shape of the Action Potential (AP) is molded by the time constants ('Tau' parameters). By changing Tau_in, you modify the upstroke velocity of the AP. By changing Tau_out, you prolong or shorten the AP duration (APD).",
           "gate_h": "The role of the 'h' Gate",
           "gate_h_desc": "The 'h' variable represents the availability of fast ion channels. When the cell is activated (V > V_gate), 'h' quickly drops to zero (governed by Tau_close), making the cell refractory. It only gradually recovers (governed by Tau_open) when the voltage drops below V_gate.",
-          "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane. Bulletin of mathematical biology, 65(5), 767-793."
+          "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane."
         },
         "math": {
           "title": "Mathematical Formulation",

@@ -330,10 +330,10 @@
         },
         "advanced": {
           "title": "Dinâmica do Potencial de Ação",
-          "desc": "Neste modelo, o formato do Potencial de Ação (PA) é moldado pelas constantes de tempo (os parâmetros 'Tau'). Alterando o Tau_in, você modifica a velocidade de subida do PA. Alterando o Tau_out, você prolonga ou encurta a duração do PA (APD).",
+          "desc": "Neste modelo, o formato do Potencial de Ação é moldado pelas constantes de tempo (os parâmetros 'Tau'). Alterando o Tau_in, você modifica a velocidade de subida do PA. Alterando o Tau_out, você prolonga ou encurta a duração do APD.",
           "gate_h": "O papel do Gate 'h'",
-          "gate_h_desc": "A variável 'h' representa a disponibilidade dos canais iônicos rápidos. Quando a célula é ativada (V > V_gate), 'h' cai para zero rapidamente (governado por Tau_close), tornando a célula refratária. Ela só se recupera gradualmente (governado por Tau_open) quando a voltagem cai abaixo do V_gate.",
-          "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane. Bulletin of mathematical biology, 65(5), 767-793."
+          "gate_h_desc": "A variável h representa a disponibilidade dos canais iônicos rápidos. Quando a célula é ativada (V > V_gate), 'h' cai para zero rapidamente (governado por Tau_close), tornando a célula refratária. Ela só se recupera gradualmente (governado por Tau_open) quando a voltagem cai abaixo do V_gate.",
+          "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane."
         },
         "math": {
           "title": "Formulação Matemática",
