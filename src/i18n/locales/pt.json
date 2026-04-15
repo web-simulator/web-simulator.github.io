@@ -205,6 +205,7 @@
     "tau_close": "Tau Close",
     "v_gate": "V Gate",
     "BCL_S1": "BCL S1",
+    "BCL_S2": "BCL S2",
     "posição_do_estímulo": "Posição Estímulo",
     "tamanho_do_estímulo": "Tamanho Estímulo",
     "epsilon": "Taxa de Recuperação (ε)",
@@ -413,16 +414,51 @@
         }
       }
     },
-    "s1s2": { 
-      "protocol_title": "Protocolo S1-S2",
-      "ms": { 
-        "desc": "Protocolo padrão para determinar o Período Refratário Efetivo. Uma série de estímulos básicos (S1) condiciona a célula, seguida por um estímulo prematuro (S2) para testar a excitabilidade em diferentes fases da repolarização."
-      }, 
-      "minimal": { 
-        "desc": "Investiga a vulnerabilidade e a janela de refratariedade em células humanas. O estímulo S2 prematuro revela a dinâmica de recuperação dos canais lentos e rápidos no Minimal Model." 
+    "s1s2": {
+      "ms": {
+        "basic": {
+          "title": "Protocolo S1-S2",
+          "desc": "O protocolo S1-S2 é uma simulação comum na cardiologia computacional e experimental. Ele consiste na aplicação de uma sequência de estímulos regulares (S1), para estabilizar a célula em um estado de batimento regular contínuo. Após essa estabilização, um único estímulo prematuro (S2) é injetado. O intervalo de tempo entre o último S1 e o S2 (intervalo de acoplamento) é progressivamente encurtado até que a célula pare de responder. Essa falha na resposta mapeia o limite fisiológico da célula.",
+          "goal": "O Período Refratário Efetivo",
+          "goal_desc": "O objetivo primário deste protocolo é encontrar o Período Refratário Efetivo (ERP): o intervalo de tempo mais curto no qual o tecido ainda consegue montar um segundo potencial de ação. Se o estímulo S2 for entregue durante o ERP, os canais responsáveis pela despolarização ainda estarão bloqueados (inativos) e a resposta da célula será nula, resultando naquilo que chamamos de perda de captura."
+        },
+        "advanced": {
+          "title": "Dinâmica de Recuperação e o Papel do Gate 'h'",
+          "desc": "Apesar de ter apenas duas variáveis, o modelo Mitchell-Schaeffer retrata com precisão a dinâmica de 'tudo-ou-nada' das células cardíacas. A excitabilidade é inteiramente determinada pela variável de gate 'h'. Durante o platô do potencial de ação gerado pelos estímulos S1, a voltagem é alta, fazendo com que o valor de 'h' decaia exponencialmente para próximo de zero, refletindo o fechamento (inativação) dos canais iônicos.",
+          "kinetics": "A Cinética da Refratariedade (Tau_open e Tau_close)",
+          "kinetics_desc": "Quando a célula começa a se repolarizar e a voltagem transmembranica cai abaixo do limiar (V_gate), o gate 'h' inicia sua recuperação em direção a 1 (estado totalmente aberto) a uma taxa de velocidade controlada por Tau_open. Se o estímulo S2 for aplicado cedo demais, o gate 'h' pode não ter se recuperado o suficiente para que o fluxo de entrada de corrente consiga superar a corrente de saída, resultando em bloqueio. Alterar Tau_open prolonga ou encurta diretamente o tamanho do Período Refratário Efetivo.",
+          "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane."
+        },
+        "math": {
+          "title": "Formulação e Resolução Computacional",
+          "desc": "Na formulação do sistema, o estímulo extra (S2) é introduzido nas EDOs através de um pulso na variável de corrente externa (I_stim), aplicado no instante T_s2 = (N_s1 * BCL_S1) + BCL_S2.",
+          "stim_term": "Onde BCL_S2 é o intervalo de acoplamento variável testado nesta simulação.",
+          "numerical": "Métodos Numéricos: Euler e Rush-Larsen",
+          "numerical_desc": "Para garantir a estabilidade do modelo, utilizamos uma abordagem numérica híbrida. A equação diferencial que governa a voltagem transmembrana (v) é resolvida pelo método de Euler Explícito. Em contrapartida, a variável de inativação (h) é integrada pelo método de Rush-Larsen, que soluciona a parte linear da EDO de forma exata, fornecendo estabilidade incondicional contra transições bruscas que normalmente causariam instabilidade ou explosão de erro acumulado nos passos temporais."
+        }
       },
-      "s1_desc": "S1: Estabilização",
-      "s2_desc": "S2: Teste de acoplamento"
+      "minimal": {
+        "basic": {
+          "title": "Protocolo S1-S2",
+          "desc": "Aplicando o protocolo S1-S2 sobre o Minimal Model, permite-se investigar como o tecido ventricular humano responde a batimentos prematuros. O modelo acomoda as complexidades de quatro variáveis interligadas para espelhar com exatidão a verdadeira janela de tempo na qual as células musculares do coração recuperam a capacidade de propagar um pulso sem falhas.",
+          "goal": "Significância Clínica e Arritmias",
+          "goal_desc": "Na prática clínica, este protocolo é empregado durante os estudos eletrofisiológicos para quantificar a vulnerabilidade de um paciente a arritmias. Intervalos S2 extremamente precoces podem não falhar totalmente, mas disparar frentes de onda deprimidas e de condução letárgica. Em tecidos 2D ou 3D reais, essas frentes são os gatilhos clássicos para o desenvolvimento de ondas espirais e episódios de fibrilação."
+        },
+        "advanced": {
+          "title": "Interação Entre Múltiplos Gates",
+          "desc": "Ao contrário da abordagem de uma única variável de bloqueio, a refratariedade no Minimal Model emerge da competição entre a inativação rápida (variável 'v', análoga ao sódio) e a inativação lenta (variáveis 'w' e 's', que representam o cálcio e o potássio).",
+          "kinetics": "Mecanismos de Bloqueio Diferencial",
+          "kinetics_desc": "Para que um pulso prematuro S2 seja bem-sucedido em criar um novo potencial, o sistema exige disponibilidade tanto da corrente rápida interna (J_fi) quanto da corrente lenta interna (J_si). Se a constante Tau_v_minus ou Tau_w_minus for alongada pelo usuário, a reciclagem dessas correntes críticas após o encerramento do batimento S1 sofrerá atrasos severos. Esse acúmulo de inativação estica exponencialmente a barreira do ERP e achata a magnitude da fase de despolarização caso um S2 seja aplicado no limite da janela estimulável.",
+          "ref": "Bueno-Orovio, A., Cherry, E. M., & Fenton, F. H. (2008). Minimal model for human ventricular action potentials in tissue."
+        },
+        "math": {
+          "title": "Acoplamento e Precisão Numérica",
+          "desc": "As quatro equações de estado do Minimal Model fundem as contribuições das correntes somadas (J_fi, J_so e J_si). A injeção instantânea do estímulo S2 serve como teste final para o sistema. O estímulo só causará reentrada se o vetor das três variáveis de gate (v, w, s) estiver devidamente condicionado e fora de seus respectivos valores de inativação.",
+          "stim_term": "A resposta não linear ao estímulo obedece uma função presente nos termos de ativação e inativação de u.",
+          "numerical": "Métodos Numéricos: Euler e Rush-Larsen",
+          "numerical_desc": "Devido à complexidade do Minimal Model, usamos o método de Euler Explícito para calcular a voltagem (u). Já as variáveis de controle (v, w, s) são calculadas pelo método de Rush-Larsen. Essa combinação é perfeita para manter a simulação estável e precisa, mesmo lidando com os estímulos curtos e rápidos do protocolo S1-S2."
+        }
+      }
     },
     "restitution": {
       "desc": "Curvas de Restituição APD vs DI",
