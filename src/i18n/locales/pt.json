@@ -264,55 +264,52 @@
     "eq_w_minimal": "∂w/∂t = (1 - p)(1 - w)/τ_wminus - w/τ_wplus",
     "eq_s_minimal": "∂s/∂t = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
     "model_2d": {
-      "desc": "Esta ferramenta simula a propagação elétrica em um tecido cardíaco 2D utilizando modelos matemáticos de reação-difusão. Ela permite investigar fenômenos como formação de ondas espirais, reentrada e bloqueios de condução causados por heterogeneidades.",
-      "steps": {
-        "1": "Configure a geometria e tecido na barra lateral.",
-        "2": "Adicione estímulos e posicione-os.",
-        "3": "Configure a fibrose para criar obstáculos.",
-        "4": "Clique em Simular.",
-        "5": "Use o player para ver o resultado animado.",
-        "6": "Use as opções de visualização para alternar para os mapas de ativação local ou duração do potencial de ação.",
-        "7": "Clique no mapa para ver o gráfico do potencial de ação daquele ponto."
-      },
-      "math_intro": "A simulação resolve a equação de reação-difusão monodomínio, que descreve como o potencial transmembrânico se propaga pelo tecido.",
-      "eq_diffusion": "∂V/∂t = ∇ · (D ∇V) - I_ion / Cm",
-      "eq_diffusion_desc": "Onde V é o potencial, D é o tensor de condutividade (difusão) e I_ion representa as correntes iônicas do modelo celular escolhido.",
       "ms": {
-        "title": "Modelo Mitchell-Schaeffer",
-        "eq_v": "dv/dt = (h · v² · (1-v))/τ_in - v/τ_out + I_stim",
-        "eq_h_open": "Se v < v_gate: dh/dt = (1-h)/τ_open",
-        "eq_h_close": "Se v > v_gate: dh/dt = -h/τ_close"
+        "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane.",
+        "basic": {
+          "title": "Entendendo a simulação 2D - Mitchell-Schaeffer",
+          "desc": "Essa é a seção dedicada às simulações espaciais. Diferentemente das outras simulações, aqui trabalhamos com uma representação do tecido cardiáco. Isso permite ver como os estímulos elétricos viajam pelas células e criam ondas de batimentos. Nesta representação é utilizado o modelo Mitchell-Schaeffer para simular as reações elétricas."
+        },
+        "math": {
+          "title": "A Matemática por Trás do 2D",
+          "cell_desc": "No nível celular, o modelo Mitchell-Schaeffer usa duas equações básicas para decidir se a célula se excita (v) e quando ela se recupera (h):"
+        }
       },
       "minimal": {
-        "title": "Minimal Model",
-        "eq_u": "∂u/∂t = ∇·(D∇u) - (J_fi + J_so + J_si)",
-        "vars": "4 variáveis de estado: u (potencial), v, w, s (gates)",
-        "currents": "3 correntes: J_fi (rápida interna), J_so (lenta externa), J_si (lenta interna)"
+        "ref": "Bueno-Orovio, A., Cherry, E. M., & Fenton, F. H. (2008). Minimal model for human ventricular action potentials in tissue.",
+        "basic": {
+          "title": "Entendendo a simulação 2D - Minimal Model",
+          "desc": "Essa é a seção dedicada às simulações espaciais. Diferentemente das outras simulações, aqui trabalhamos com uma representação do tecido cardíaco. Diferentemente dos modelos simplificados, com o Minimal Model podemos representar melhor o comportamento do coração real, permitindo identificar a formação de ondas de reentrada e identificar padrões de reentrada."
+        },
+        "math": {
+          "title": "A Matemática por Trás do 2D",
+          "cell_desc": "No nível celular, o Minimal Model usa quatro equações completas para gerenciar de forma independente as correntes de sódio, cálcio e potássio no tecido humano:"
+        }
       },
-      "numerical_details": [
-        "Discretização Espacial: Método de Diferenças Finitas.",
-        "Integração Temporal: Método de Euler Explícito.",
-        "Rush-Larsen: Utilizado para integração das variáveis de gate (h, v, w, s).",
-        "Condições de Contorno: Neumann 0."
-      ],
-      "features": {
-        "fibrosis_title": "Fibrosis e Heterogeneidade",
-        "fibrosis_desc": "Permite definir regiões do tecido com condutividade zero ou reduzida, simulando cicatrizes ou fibrose difusa.",
-        "transmurality_title": "Transmuralidade",
-        "transmurality_desc": "Simula as diferenças eletrofisiológicas entre as camadas do coração (Endocárdio, Miocárdio-M e Epicárdio) alterando parâmetros locais das células."
+      "basic": {
+        "views_title": "Tipos de Visualização",
+        "view_potential": "O 'Potencial Transmenbrana' mostra a onda viajando em tempo real. Você pode clicar em qualquer ponto do vídeo para abrir um gráfico de linha exato daquele ponto.",
+        "view_lat": "O 'Tempo de Ativação Local' mostra as cores indicando quando a onda chegou em cada lugar. O azul escuro é o lugar onde a onda começou, e o vermelho escuro mostra onde ela chegou por último.",
+        "view_apd": "O 'Duração do Potencial de Ação' mostra quanto tempo cada pedaço do tecido demorou para relaxar após bater.",
+        "stimuli_title": "Como iniciar um estímulo?",
+        "stimuli_desc": "Você pode adicionar quantos estímulos quiser no tecido. Basta escolher se será no formato de um quadrado ou de um círculo, dizer em qual posição ele deve estimular (coordenadas X e Y) e em que momento de tempo. Usar dois estímulos em momentos diferentes é a forma clássica de criar ondas espirais."
       },
-      "glossary": {
-        "general": "Parâmetros Gerais",
-        "L_N": "L: Tamanho do tecido",
-        "dt": "dt: Passo de tempo da simulação (ms)",
-        "sigma": "σ_l / σ_t: Condutividade longitudinal e transversal",
-        "angle": "Ângulo: Orientação das fibras do tecido",
-        "ms_params": "Mitchell-Schaeffer",
-        "tau_in_out": "τ_in: Tempo de despolarização | τ_out: Tempo de repolarização",
-        "tau_gates": "τ_open/close: Tempos de recuperação do gate h",
-        "minimal_params": "Minimal Model",
-        "u_levels": "u_o / u_u: Níveis de potencial de repouso e limiar",
-        "tau_constants": "τ_v, τ_w, τ_s: Constantes de tempo dos gates"
+      "advanced": {
+        "title": "Fisiologia Avançada e Arritmias",
+        "desc": "Nesta seção você descobre como simular problemas e características reais do tecido cardíaco para criar ambientes propensos a doenças.",
+        "tissue_title": "Condutividade e Ângulo das fibras",
+        "tissue_desc": "O coração não possui condutividade igual para todos os lados. Ele tem fibras, onde a eletricidade viaja muito mais rápido na direção longitudinal (Sigma_L) do que na transversal (Sigma_T). Alterar o ângulo muda a direção dessas fibras, fazendo a onda assumir formatos ovais em vez de circulares.",
+        "fibrosis_title": "Representando Fibroses",
+        "fib_compact": "Mostra uma cicatriz sólida (redonda ou quadrada) em uma posição definida. A onda elétrica será forçada a contornar esse obstáculo, criando atrasos.",
+        "fib_diffuse": "Em vez de um bloco sólido, espalha pequenos pontinhos por uma área escolhida. É a principal causa de Fibrilação, pois esses pontinhos destroem a frente da onda.",
+        "transmurality_title": "Camadas do Coração - Transmuralidade",
+        "transmurality_desc": "A parede muscular do coração tem três camadas reais: Endocárdio, Miocárdio e Epicárdio. Ao ligar a Transmuralidade, você divide a representação em 3 faixas. Cada pedaço do tecido passará a ter tempos de repouso diferentes."
+      },
+      "math": {
+        "diffusion_desc": "A equação fundamental utilizada é a equação da difusão. Ela diz matematicamente como a energia é transferida de uma célula cheia para os seus vizinhos vazios:",
+        "eq_diffusion": "∂V/∂t = ∇ · (D ∇V) - I_ion/Cm",
+        "numerical_title": "Como o sistema é resolvido",
+        "numerical_desc": "A simulação usa uma malha quadrada onde calcula-se a posição usando as vizinhanças de 5 pontos no Método das Diferenças Finitas. A voltagem no espaço é resolvido pelo método de Euler Explícito, enquanto a inativação dos canais celulares é resolvida por Rush-Larsen. Como são muitos pontos sendo calculados, essa combinação de métodos alinhada com uma estratégia de processamento multithreaded permite que a simulação rode suavemente."
       }
     },
     "tabs": {

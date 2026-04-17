@@ -267,55 +267,52 @@
     "eq_w_minimal": "∂w/∂t = (1 - p)(1 - w)/τ_wminus - w/τ_wplus",
     "eq_s_minimal": "∂s/∂t = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
     "model_2d": {
-      "desc": "This tool simulates electrical propagation in 2D cardiac tissue using reaction-diffusion mathematical models. It allows investigating phenomena such as spiral wave formation, reentry, and conduction blocks caused by heterogeneities.",
-      "steps": {
-        "1": "Configure geometry and tissue properties in the sidebar.",
-        "2": "Add stimuli and position them.",
-        "3": "Configure fibrosis to create obstacles.",
-        "4": "Click **Simulate**.",
-        "5": "Use the player to view the animated result.",
-        "6": "Use the view options to switch to LAT or APD static maps.",
-        "7": "Click on the map to see the action potential at that point."
-      },
-      "math_intro": "The simulation solves the monodomain reaction-diffusion equation, which describes how transmembrane potential propagates through the tissue.",
-      "eq_diffusion": "∂V/∂t = ∇ · (D ∇V) - I_ion / Cm",
-      "eq_diffusion_desc": "Where V is potential, D is the conductivity tensor (diffusion), and I_ion represents the ionic currents of the chosen cell model.",
       "ms": {
-        "title": "Mitchell-Schaeffer Model",
-        "eq_v": "dv/dt = (h · v² · (1-v))/τ_in - v/τ_out + I_stim",
-        "eq_h_open": "If v < v_gate: dh/dt = (1-h)/τ_open",
-        "eq_h_close": "If v > v_gate: dh/dt = -h/τ_close"
+        "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane.",
+        "basic": {
+          "title": "Understanding the 2D simulation - Mitchell-Schaeffer",
+          "desc": "This is the section dedicated to spatial simulations. Unlike the other simulations, here we work with a representation of the cardiac tissue. This allows us to see how electrical stimuli travel through the cells and create beat waves. In this representation, the Mitchell-Schaeffer model is used to simulate the electrical reactions."
+        },
+        "math": {
+          "title": "The Math Behind 2D",
+          "cell_desc": "At the cellular level, the Mitchell-Schaeffer model uses two basic equations to decide if the cell becomes excited (v) and when it recovers (h):"
+        }
       },
       "minimal": {
-        "title": "Minimal Model",
-        "eq_u": "∂u/∂t = ∇·(D∇u) - (J_fi + J_so + J_si)",
-        "vars": "4 state variables: u (potential), v, w, s (gates)",
-        "currents": "3 phenomenological currents: J_fi (fast inward), J_so (slow outward), J_si (slow inward)"
+        "ref": "Bueno-Orovio, A., Cherry, E. M., & Fenton, F. H. (2008). Minimal model for human ventricular action potentials in tissue.",
+        "basic": {
+          "title": "Understanding the 2D simulation - Minimal Model",
+          "desc": "This is the section dedicated to spatial simulations. Unlike the other simulations, here we work with a representation of the cardiac tissue. Unlike simplified models, with the Minimal Model we can better represent the behavior of the real heart, allowing us to identify the formation of reentry waves and identify reentry patterns."
+        },
+        "math": {
+          "title": "The Math Behind 2D",
+          "cell_desc": "At the cellular level, the Minimal Model uses four complete equations to independently manage the sodium, calcium, and potassium currents in human tissue:"
+        }
       },
-      "numerical_details": [
-        "Spatial Discretization: Finite Difference Method.",
-        "Temporal Integration: Explicit Euler Method.",
-        "Rush-Larsen: Used for integration of gate variables (h, v, w, s).",
-        "Boundary Conditions: Neumann 0."
-      ],
-      "features": {
-        "fibrosis_title": "Fibrosis and Heterogeneity",
-        "fibrosis_desc": "Allows defining tissue regions with zero or reduced conductivity, simulating scars or diffuse fibrosis.",
-        "transmurality_title": "Transmurality",
-        "transmurality_desc": "Simulates electrophysiological differences between heart layers (Endocardium, Mid-Myocardium, and Epicardium) by altering local cell parameters."
+      "basic": {
+        "views_title": "Visualization Types",
+        "view_potential": "The 'Transmembrane Potential' shows the wave traveling in real-time. You can click anywhere on the video to open an exact line graph of that point.",
+        "view_lat": "The 'Local Activation Time' uses colors to indicate when the wave arrived at each location. Dark blue is where the wave started, and dark red shows where it arrived last.",
+        "view_apd": "The 'Action Potential Duration' shows how long each piece of tissue took to relax after beating.",
+        "stimuli_title": "How to start a stimulus?",
+        "stimuli_desc": "You can add as many stimuli as you want to the tissue. Just choose whether it will be in the shape of a square or a circle, specify the position it should stimulate (X and Y coordinates), and at what point in time. Using two stimuli at different times is the classic way to create spiral waves."
       },
-      "glossary": {
-        "general": "General Parameters",
-        "L_N": "L: Tissue size",
-        "dt": "dt: Simulation time step (ms)",
-        "sigma": "σ_l / σ_t: Longitudinal and Transverse Conductivity (diffusion)",
-        "angle": "Angle: Fiber orientation angle",
-        "ms_params": "Mitchell-Schaeffer",
-        "tau_in_out": "τ_in: Depolarization time | τ_out: Repolarization time",
-        "tau_gates": "τ_open/close: h gate recovery times",
-        "minimal_params": "Minimal Model",
-        "u_levels": "u_o / u_u: Resting potential and threshold levels",
-        "tau_constants": "τ_v, τ_w, τ_s: Gate time constants"
+      "advanced": {
+        "title": "Advanced Physiology and Arrhythmias",
+        "desc": "In this section, you discover how to simulate real problems and characteristics of cardiac tissue to create disease-prone environments.",
+        "tissue_title": "Conductivity and Fiber Angle",
+        "tissue_desc": "The heart does not have equal conductivity in all directions. It has fibers, where electricity travels much faster in the longitudinal direction (Sigma_L) than in the transverse direction (Sigma_T). Changing the angle shifts the direction of these fibers, making the wave take oval shapes instead of circular ones.",
+        "fibrosis_title": "Representing Fibrosis",
+        "fib_compact": "Shows a solid scar (round or square) in a defined position. The electrical wave will be forced to bypass this obstacle, creating delays.",
+        "fib_diffuse": "Instead of a solid block, it scatters tiny dots over a chosen area. It is the main cause of Fibrillation, as these dots destroy the wavefront.",
+        "transmurality_title": "Heart Layers - Transmurality",
+        "transmurality_desc": "The muscular wall of the heart has three real layers: Endocardium, Myocardium, and Epicardium. By turning on Transmurality, you divide the representation into 3 bands. Each piece of tissue will then have different resting times."
+      },
+      "math": {
+        "diffusion_desc": "The fundamental equation used is the diffusion equation. It states mathematically how energy is transferred from an excited cell to its empty neighbors:",
+        "eq_diffusion": "∂V/∂t = ∇ · (D ∇V) - I_ion/Cm",
+        "numerical_title": "How the system is solved",
+        "numerical_desc": "The simulation uses a square mesh where the position is calculated using 5-point neighborhoods in the Finite Difference Method. Spatial voltage is solved by the Explicit Euler method, while the inactivation of cellular channels is solved by Rush-Larsen. Because many points are being calculated, this combination of methods, aligned with a multithreaded processing strategy, allows the simulation to run smoothly."
       }
     },
     "tabs": {

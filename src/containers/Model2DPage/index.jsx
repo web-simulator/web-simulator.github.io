@@ -41,14 +41,6 @@ const DEFAULT_MINIMAL_PARAMS = {
 const Model2DPage = ({ onBack }) => {
   const { t } = useTranslation();
 
-  // Evita problemas caso alguma tradução falte
-  const safeList = (key) => {
-    const res = t(key, { returnObjects: true });
-    if (Array.isArray(res)) return res;
-    if (typeof res === 'object' && res !== null) return Object.values(res);
-    return [];
-  };
-
   // Estados de Controle
   const [worker, setWorker] = useState(null);
   const [calculating, setCalculating] = useState(false); 
@@ -70,6 +62,7 @@ const Model2DPage = ({ onBack }) => {
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [isChartModalOpen, setIsChartModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('basic'); // Estado para as abas do modal
 
   // Parâmetros
   const [params, setParams] = useState({
@@ -368,6 +361,105 @@ const Model2DPage = ({ onBack }) => {
      </>
   ), [timeseriesData, t]);
 
+  // Modal de informações
+  const renderModalContent = () => {
+    const modelKey = selectedModel;
+
+    if (activeTab === 'basic') {
+      return (
+        <div className="space-y-4 animate-fadeIn">
+          <h3 className="text-xl font-bold text-slate-700">{t(`modals.model_2d.${modelKey}.basic.title`)}</h3>
+          <p className="text-slate-600 leading-relaxed text-justify">{t(`modals.model_2d.${modelKey}.basic.desc`)}</p>
+          
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mt-4 space-y-3">
+             <h4 className="font-bold text-slate-700"><i className="bi bi-display mr-2 text-emerald-600"></i>{t('modals.model_2d.basic.views_title')}</h4>
+             <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
+                <li><strong>{t('common.potential_map')}:</strong> {t('modals.model_2d.basic.view_potential')}</li>
+                <li><strong>{t('common.lat_map')}:</strong> {t('modals.model_2d.basic.view_lat')}</li>
+                <li><strong>{t('common.apd_map')}:</strong> {t('modals.model_2d.basic.view_apd')}</li>
+             </ul>
+          </div>
+
+          <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4 mt-2">
+             <h4 className="font-semibold text-emerald-800 mb-2">
+                <i className="bi bi-lightning-charge mr-2"></i>
+                {t('modals.model_2d.basic.stimuli_title')}
+             </h4>
+             <p className="text-sm text-emerald-700 leading-relaxed text-justify">
+                {t('modals.model_2d.basic.stimuli_desc')}
+             </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeTab === 'advanced') {
+      return (
+        <div className="space-y-4 animate-fadeIn">
+          <h3 className="text-xl font-bold text-slate-700">{t('modals.model_2d.advanced.title')}</h3>
+          <p className="text-slate-600 leading-relaxed text-justify">{t('modals.model_2d.advanced.desc')}</p>
+          
+          <div className="space-y-4 mt-4">
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                 <h4 className="font-semibold text-slate-700 mb-2 text-sm uppercase tracking-wider">{t('modals.model_2d.advanced.tissue_title')}</h4>
+                 <p className="text-sm text-slate-600 text-justify">{t('modals.model_2d.advanced.tissue_desc')}</p>
+              </div>
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                 <h4 className="font-semibold text-slate-700 mb-2 text-sm uppercase tracking-wider">{t('modals.model_2d.advanced.fibrosis_title')}</h4>
+                 <p className="text-sm text-slate-600 text-justify mb-2"><strong>Compacta:</strong> {t('modals.model_2d.advanced.fib_compact')}</p>
+                 <p className="text-sm text-slate-600 text-justify"><strong>Difusa:</strong> {t('modals.model_2d.advanced.fib_diffuse')}</p>
+              </div>
+          </div>
+
+          <div className="bg-white border-l-4 border-emerald-500 p-4 mt-2 shadow-sm">
+             <h4 className="font-bold text-slate-700 mb-1">{t('modals.model_2d.advanced.transmurality_title')}</h4>
+             <p className="text-sm text-slate-600 text-justify">{t('modals.model_2d.advanced.transmurality_desc')}</p>
+          </div>
+
+          <div className="mt-6 border-t border-slate-200 pt-4">
+             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{t('modals.references')}</h4>
+             <p className="text-xs text-slate-500 italic">{t(`modals.model_2d.${modelKey}.ref`)}</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeTab === 'math') {
+      return (
+        <div className="space-y-4 animate-fadeIn">
+          <h3 className="text-xl font-bold text-slate-700">{t(`modals.model_2d.${modelKey}.math.title`)}</h3>
+          <p className="text-slate-600 text-sm mb-2">{t('modals.model_2d.math.diffusion_desc')}</p>
+          
+          <div className="bg-slate-50 border border-slate-200 text-slate-700 p-3 rounded-lg font-mono text-sm text-center shadow-inner overflow-x-auto">
+             {t('modals.model_2d.math.eq_diffusion')}
+          </div>
+
+          <p className="text-slate-600 text-sm mt-4">{t(`modals.model_2d.${modelKey}.math.cell_desc`)}</p>
+
+          <div className="bg-slate-50 border border-slate-200 border-l-4 border-l-emerald-500 text-slate-700 p-4 rounded-r-lg font-mono text-sm space-y-2 overflow-x-auto custom-scrollbar mt-2">
+             {modelKey === 'ms' ? (
+                <>
+                   <p>{t('modals.single.ms.math.eq_v')}</p>
+                   <p>{t('modals.single.ms.math.eq_h1')}</p>
+                   <p>{t('modals.single.ms.math.eq_h2')}</p>
+                </>
+             ) : (
+                <>
+                   <p>{t('modals.single.minimal.math.eq_u')}</p>
+                   <p>{t('modals.single.minimal.math.eq_v')}</p>
+                   <p>{t('modals.single.minimal.math.eq_w')}</p>
+                   <p>{t('modals.single.minimal.math.eq_s')}</p>
+                </>
+             )}
+          </div>
+
+          <h4 className="font-bold text-slate-700 mt-6">{t('modals.model_2d.math.numerical_title')}</h4>
+          <p className="text-sm text-slate-600 text-justify">{t('modals.model_2d.math.numerical_desc')}</p>
+        </div>
+      );
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-auto lg:overflow-hidden">
       
@@ -649,7 +741,6 @@ const Model2DPage = ({ onBack }) => {
                                     <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} text-2xl ml-${isPlaying ? '0' : '1'}`}></i>
                                 </button>
                             )}
-
                             {/* Botão de Exportar */}
                             <ExportButton 
                                 onClick={viewMode === 'potential' ? handleExportGif : handleExportImage}
@@ -685,99 +776,34 @@ const Model2DPage = ({ onBack }) => {
          {chartModalContent}
       </Modal>
 
-      {/* Modal para Informações */}
+      {/* Modal de Informações */}
       <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
-        <div className="info-modal-content text-slate-800 space-y-6 max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="info-modal-content max-h-[80vh] flex flex-col bg-white">
             
-            <section>
-                <h2 className="text-2xl font-bold text-emerald-800 mb-2">{t('home.models.model_2d.title')}</h2>
-                <p className="text-slate-600 leading-relaxed">
-                    {t('modals.model_2d.desc')}
-                </p>
-            </section>
+            <div className="flex-none border-b border-slate-200 mb-4 px-2">
+               <h2 className="text-2xl font-bold text-emerald-800 mb-4">
+                  {selectedModel === 'ms' ? 'Modelo 2D: Mitchell-Schaeffer' : 'Modelo 2D: Minimal Model'}
+               </h2>
+               <div className="flex gap-6 overflow-x-auto custom-scrollbar">
+                  {['basic', 'advanced', 'math'].map((tab) => (
+                     <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`pb-3 text-sm font-semibold transition-colors whitespace-nowrap ${
+                           activeTab === tab 
+                           ? 'border-b-2 border-emerald-500 text-emerald-700' 
+                           : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                     >
+                        {t(`modals.tabs.${tab}`)}
+                     </button>
+                  ))}
+               </div>
+            </div>
 
-            <section>
-                <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">
-                    {t('modals.math_model')} ({selectedModel === 'ms' ? 'Mitchell-Schaeffer' : 'Minimal Model'})
-                </h3>
-                <p className="mb-2 text-sm text-slate-600">
-                    {t('modals.model_2d.math_intro')}
-                </p>
-                
-                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm text-center my-3 overflow-x-auto">
-                    {t('modals.model_2d.eq_diffusion')}
-                </div>
-                <p className="text-xs text-slate-500 italic mb-4">{t('modals.model_2d.eq_diffusion_desc')}</p>
-                
-                {selectedModel === 'ms' ? (
-                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm space-y-2">
-                        <div className="text-center font-bold mb-2">{t('modals.model_2d.ms.title')}</div>
-                        <p>{t('modals.model_2d.ms.eq_v')}</p>
-                        <p>{t('modals.model_2d.ms.eq_h_open')}</p>
-                        <p>{t('modals.model_2d.ms.eq_h_close')}</p>
-                    </div>
-                ) : (
-                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm space-y-2">
-                        <div className="text-center font-bold mb-2">{t('modals.model_2d.minimal.title')}</div>
-                        <p>{t('modals.model_2d.minimal.eq_u')}</p>
-                        <hr className="border-slate-200 my-2"/>
-                        <p><strong>{t('modals.model_2d.minimal.vars')}</strong></p>
-                        <p><strong>{t('modals.model_2d.minimal.currents')}</strong></p>
-                    </div>
-                )}
-            </section>
-
-            <section>
-                <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.numerical_method')}</h3>
-                <ul className="list-disc pl-5 text-sm space-y-2 text-slate-600">
-                    {safeList('modals.model_2d.numerical_details').map((item, i) => (
-                        <li key={i}>{item}</li>
-                    ))}
-                </ul>
-            </section>
-
-            <section>
-                <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.advanced_features')}</h3>
-                <div className="space-y-3 text-sm text-slate-600">
-                    <p><strong>{t('modals.model_2d.features.fibrosis_title')}:</strong> {t('modals.model_2d.features.fibrosis_desc')}</p>
-                    <p><strong>{t('modals.model_2d.features.transmurality_title')}:</strong> {t('modals.model_2d.features.transmurality_desc')}</p>
-                </div>
-            </section>
-
-            <section>
-                <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.param_meaning')}</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-600">
-                    <div className="col-span-2 font-bold text-slate-800 border-b border-slate-100 pb-1 mb-1">{t('modals.model_2d.glossary.general')}</div>
-                    <div>{t('modals.model_2d.glossary.L_N')}</div>
-                    <div>{t('modals.model_2d.glossary.dt')}</div>
-                    <div>{t('modals.model_2d.glossary.sigma')}</div>
-                    <div>{t('modals.model_2d.glossary.angle')}</div>
-                    
-                    {selectedModel === 'ms' ? (
-                        <>
-                            <div className="col-span-2 font-bold text-slate-800 border-b border-slate-100 pb-1 mb-1 mt-2">{t('modals.model_2d.glossary.ms_params')}</div>
-                            <div>{t('modals.model_2d.glossary.tau_in_out')}</div>
-                            <div>{t('modals.model_2d.glossary.tau_gates')}</div>
-                        </>
-                    ) : (
-                        <>
-                            <div className="col-span-2 font-bold text-slate-800 border-b border-slate-100 pb-1 mb-1 mt-2">{t('modals.model_2d.glossary.minimal_params')}</div>
-                            <div>{t('modals.model_2d.glossary.u_levels')}</div>
-                            <div>{t('modals.model_2d.glossary.tau_constants')}</div>
-                        </>
-                    )}
-                </div>
-            </section>
-
-            <section>
-                <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.how_to_use')}</h3>
-                <ol className="list-decimal pl-5 text-slate-700 space-y-1 text-sm">
-                    {safeList('modals.model_2d.steps').map((step, i) => (
-                        <li key={i}>{step}</li>
-                    ))}
-                </ol>
-            </section>
-
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar pb-4">
+                {renderModalContent()}
+            </div>
         </div>
       </Modal>
     </div>
