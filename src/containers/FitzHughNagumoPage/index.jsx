@@ -53,6 +53,7 @@ const FitzHughNagumoPage = ({ onBack }) => {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedX, setSelectedX] = useState(null);
   const chartRef = useRef(null);
+  const [activeTab, setActiveTab] = useState('basic');
 
   // Parâmetros da simulação
   const [editableParams, setEditableParams] = useState({
@@ -164,53 +165,99 @@ const FitzHughNagumoPage = ({ onBack }) => {
   }, [selectedX, simulationData]);
 
   const currentChartData = simulationData[currentFrame]?.data || [];
+  
+  // Modal de informações
+  const renderInfoModalContent = () => {
+    return (
+      <div className="flex flex-col h-full max-h-[80vh]">
+        {/* Cabeçalho do Modal */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-emerald-800">{t('modals.fhn.title')}</h2>
+          <p className="text-slate-500 text-sm mt-1">{t('home.models.fhn.desc')}</p>
+        </div>
 
-  const renderInfoModalContent = () => (
-    <div className="info-modal-content text-slate-800 space-y-4">
-      <h2 className="text-2xl font-bold text-emerald-800 mb-4">{t('home.models.fhn.title')}</h2>
+        {/* Navegação por Abas */}
+        <div className="flex border-b border-slate-200 mb-6 overflow-x-auto custom-scrollbar">
+          {['basic', 'advanced', 'math'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-6 py-2 font-medium text-sm transition-colors relative whitespace-nowrap ${
+                activeTab === tab ? 'text-emerald-600' : 'text-slate-500 hover:text-emerald-500'
+              }`}
+            >
+              {t(`modals.fhn.tabs.${tab}`)}
+              {activeTab === tab && (
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 animate-slideInRight" />
+              )}
+            </button>
+          ))}
+        </div>
 
-      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">
-        {t('modals.math_model')}
-      </h3>
-      <p className="text-slate-600 text-justify">
-        {t('modals.fhn.desc')}
-      </p>
-      
-      <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm my-2 space-y-2 shadow-sm">
-        <p>{t('modals.fhn.eq_v')}</p>
-        <p className="border-t border-slate-200 pt-2 mt-2">{t('modals.fhn.eq_w')}</p>
+        {/* Conteúdo das Abas */}
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+          
+          {activeTab === 'basic' && (
+            <div className="space-y-4 animate-fadeIn">
+              <h3 className="text-xl font-bold text-slate-700">{t('modals.fhn.basic.title')}</h3>
+              <p className="text-slate-600 leading-relaxed text-justify">{t('modals.fhn.basic.desc')}</p>
+
+              <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4 mt-4">
+                 <h4 className="font-semibold text-emerald-800 mb-2">
+                    <i className="bi bi-heart-pulse mr-2"></i>
+                    {t('modals.fhn.basic.goal')}
+                 </h4>
+                 <p className="text-sm text-emerald-700 leading-relaxed text-justify">
+                    {t('modals.fhn.basic.goal_desc')}
+                 </p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'advanced' && (
+            <div className="space-y-4 animate-fadeIn">
+              <h3 className="text-xl font-bold text-slate-700">{t('modals.fhn.advanced.title')}</h3>
+              <p className="text-slate-600 leading-relaxed text-justify">{t('modals.fhn.advanced.desc')}</p>
+
+              {/* Box de Espaço de Fase */}
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                 <h4 className="font-semibold text-slate-700 mb-2">{t('modals.fhn.advanced.kinetics')}</h4>
+                 <p className="text-sm text-slate-600 text-justify">{t('modals.fhn.advanced.kinetics_desc')}</p>
+              </div>
+
+              {/* NOVO Box: Condições de Contorno e Reentrada */}
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-4">
+                 <h4 className="font-semibold text-slate-700 mb-2">{t('modals.fhn.advanced.boundaries')}</h4>
+                 <p className="text-sm text-slate-600 text-justify">{t('modals.fhn.advanced.boundaries_desc')}</p>
+              </div>
+
+              <div className="mt-6 border-t border-slate-200 pt-4">
+                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{t('modals.references')}</h4>
+                 <p className="text-xs text-slate-500 italic">{t('modals.fhn.advanced.ref')}</p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'math' && (
+            <div className="space-y-4 animate-fadeIn">
+              <h3 className="text-xl font-bold text-slate-700">{t('modals.fhn.math.title')}</h3>
+              <p className="text-slate-600 text-sm mb-4">{t('modals.fhn.math.desc')}</p>
+              
+              <div className="bg-slate-50 border border-slate-200 border-l-4 border-l-emerald-500 text-slate-700 p-4 rounded-r-lg font-mono text-sm space-y-2 overflow-x-auto custom-scrollbar mb-2">
+                 <p>{t('modals.fhn.math.eq_v')}</p>
+                 <p>{t('modals.fhn.math.eq_w')}</p>
+              </div>
+              <p className="text-sm text-slate-600 italic mt-2 mb-6">{t('modals.fhn.math.stim_term')}</p>
+
+              <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.fhn.math.methods')}</h3>
+              <p className="text-sm text-slate-600 text-justify">{t('modals.fhn.math.methods_desc')}</p>
+            </div>
+          )}
+        </div>
       </div>
-      <p className="text-slate-500 text-ms text-left mt-1">{t('modals.fhn.reentry')}</p>
-      
-      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">
-        {t('modals.numerical_method')}
-      </h3>
-      <p className="text-slate-600 text-sm text-justify">
-        {t('modals.fhn.method')}
-      </p>
+    );
+  };
 
-      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">
-        {t('modals.param_meaning')}
-      </h3>
-      <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600">
-         {Object.keys(editableParams).map(key => {
-            const isSymbol = key.length <= 7;
-            
-            return (
-                <li key={key}>
-                    {isSymbol ? (
-                        <>
-                            <strong className="text-slate-700">{key}:</strong> {t(`params.${key}`) || key}
-                        </>
-                    ) : (
-                        <strong className="text-slate-700">{t(`params.${key}`) || key}</strong>
-                    )}
-                </li>
-            );
-         })}
-      </ul>
-    </div>
-  );
   const chartModalContent = useMemo(() => (
     <>
       <h2 className="text-lg font-bold text-slate-700 mb-4">{t('bistableChart.potentialModal')} = {selectedX !== null ? (selectedX * editableParams.dx).toFixed(2) + ' cm' : ''}</h2>

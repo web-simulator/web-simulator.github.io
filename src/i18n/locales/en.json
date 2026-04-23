@@ -565,11 +565,36 @@
     },
     
     "fhn": {
-      "desc": "The FitzHugh-Nagumo model is a simplification of the Hodgkin-Huxley model. It reduces the complexity of ionic currents to two main variables: the transmembrane potential (v), responsible for fast excitation, and a recovery variable (w), which mimics slow refractoriness. It is widely used to study the excitable nature of biological tissues.",
-      "reentry": "The 'Reentry' initial condition creates a spiral wave simulating an arrhythmia.",
-      "method": "The system is solved spatially using the Finite Difference Method and temporally via the Explicit Euler method.",
-      "eq_v": "∂v/∂t = k·∇²v + A·v·(1-v)·(v-α) - w",
-      "eq_w": "∂w/∂t = ε·(v - γ·w)"
+      "title": "FitzHugh-Nagumo Model (FHN)",
+      "tabs": {
+        "basic": "Basic",
+        "advanced": "Advanced",
+        "math": "Math"
+      },
+      "basic": {
+        "title": "Fundamental Concepts",
+        "desc": "The FitzHugh-Nagumo model is a simplification of the Hodgkin-Huxley model. It is essential for understanding how excitable cells (like neurons and cardiac cells) generate a pulse and, most importantly, how they need a resting time before the next firing.",
+        "goal": "The Role of Refractoriness",
+        "goal_desc": "Unlike the Bistable model, the FHN has a recovery variable. This means that after being excited, the cell enters a 'refractory period' where it cannot be stimulated again. In the simulator, you will see that the wave has an inhibitory 'tail' that prevents it from traveling backward."
+      },
+      "advanced": {
+        "title": "Dynamics and Tissue Topology",
+        "desc": "The model uses two main variables: voltage (v) and a recovery variable (w). The interaction between them allows for simulating highly complex behaviors.",
+        "kinetics": "Phase Space and Stability",
+        "kinetics_desc": "By adjusting parameters 'a' and 'b', you change the resting state. If the system is highly excitable, it can oscillate on its own (pacemaker behavior). If it is less excitable, it will only respond to external stimuli.",
+        "boundaries": "Boundary Conditions and Reentry",
+        "boundaries_desc": "The simulation allows testing two initial conditions. 'Left Pulse' simulates a linear fiber with closed ends (Neumann boundary). 'Reentry' connects the start and end of the cable forming a ring (periodic boundary) and applies an initial asymmetry (unidirectional block), creating a wave that circles the ring infinitely.",
+        "ref": "FitzHugh R. (1961). Impulses and physiological states in theoretical models of nerve membrane."
+      },
+      "math": {
+        "title": "Model Equations",
+        "desc": "The system is described by two coupled differential equations governing activation and inactivation/recovery.",
+        "eq_v": "∂v/∂t = D · ∇²v + v - v³/3 - w + I_ext",
+        "eq_w": "∂w/∂t = ε(v + a - bw)",
+        "methods": "RK4 Numerical Implementation",
+        "methods_desc": "The spatial part uses Finite Differences. For time integration, it is used the 4th-order Runge-Kutta (RK4) method, ensuring accuracy in coupling the 'v' and 'w' variables. It also includes dynamic 'dt' limitation to guarantee CFL stability.",
+        "stim_term": "Where 'ε' (epsilon) defines the slow time scale of recovery relative to rapid activation."
+      }
     },
     "bistable": {
       "title": "1D Bistable Model",

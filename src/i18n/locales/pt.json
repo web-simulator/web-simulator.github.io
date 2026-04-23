@@ -561,11 +561,36 @@
       }
     },
     "fhn": {
-      "desc": "O modelo FitzHugh-Nagumo é uma simplificação do modelo de Hodgkin-Huxley. Ele reduz a complexidade das correntes iônicas a duas variáveis principais: o potencial transmembrânico (v), responsável pela excitação rápida, e uma variável de recuperação (w), que simula a refratariedade lenta. É amplamente utilizado para estudar a natureza excitável de tecidos biológicos.",
-      "reentry": "A condição inicial de Reentrada cria uma onda espiral simulando uma arritmia.",
-      "method": "O sistema é resolvido espacialmente usando o Método de Diferenças Finitas e temporalmente através do método de Euler Explícito.",
-      "eq_v": "∂v/∂t = k·∇²v + A·v·(1-v)·(v-α) - w",
-      "eq_w": "∂w/∂t = ε·(v - γ·w)"
+      "title": "Modelo FitzHugh-Nagumo (FHN)",
+      "tabs": {
+        "basic": "Básico",
+        "advanced": "Avançado",
+        "math": "Matemático"
+      },
+      "basic": {
+        "title": "Conceitos Fundamentais",
+        "desc": "O modelo FitzHugh-Nagumo é uma simplificação do modelo de Hodgkin-Huxley. Ele é essencial para entender como as células excitáveis (como neurônios e células cardíacas) geram um pulso e, o mais importante, como elas precisam de um tempo de repouso antes do próximo estímulo.",
+        "goal": "O Papel da Refratariedade",
+        "goal_desc": "Diferente do modelo Bistable, o FHN possui uma variável de recuperação. Isso significa que, após ser excitada, a célula entra em um 'período refratário' onde não pode ser estimulada novamente. No simulador, você verá que a onda tem uma 'cauda' que impede que ela volte para trás."
+      },
+      "advanced": {
+        "title": "Dinâmica e Topologia do Tecido",
+        "desc": "O modelo utiliza duas variáveis principais: o potencial (v) e uma variável de recuperação (w). A interação entre elas permite simular comportamentos muito complexos.",
+        "kinetics": "Espaço de Fase e Estabilidade",
+        "kinetics_desc": "Ao ajustar os parâmetros 'a' e 'b', você altera o estado de repouso. Se o sistema for muito excitável, ele pode oscilar sozinho. Se for pouco excitável, ele apenas responderá a estímulos externos.",
+        "boundaries": "Condições de Contorno e Reentrada",
+        "boundaries_desc": "A simulação permite testar duas condições iniciais. O 'Pulso à Esquerda' simula uma fibra linear com extremidades fechadas (condição de Neumann). Já a 'Reentrada' conecta o início ao fim do cabo formando um anel e aplica um bloqueio unidirecional, criando uma onda que circula o anel infinitamente.",
+        "ref": "FitzHugh R. (1961). Impulses and physiological states in theoretical models of nerve membrane."
+      },
+      "math": {
+        "title": "Equações do Modelo",
+        "desc": "O sistema é composto por duas equações diferenciais acopladas que governam a ativação e a inativação/recuperação.",
+        "eq_v": "∂v/∂t = D · ∇²v + v - v³/3 - w + I_ext",
+        "eq_w": "∂w/∂t = ε(v + a - bw)",
+        "methods": "Implementação Numérica",
+        "methods_desc": "A parte espacial utiliza Diferenças Finitas. Para a integração no tempo, é utilizado o  método de Runge-Kutta de 4ª ordem (RK4), garantindo precisão no acoplamento das variáveis 'v' e 'w'. Também inclui limitação dinâmica de 'dt' para garantir a estabilidade de CFL.",
+        "stim_term": "Onde 'ε' (epsilon) define a escala de tempo lenta da recuperação em relação à ativação rápida."
+      }
     },
     "bistable": {
       "title": "Modelo Bistable 1D",
