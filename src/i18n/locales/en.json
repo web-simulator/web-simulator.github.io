@@ -461,6 +461,14 @@
       }
     },
     "restitution": { 
+      "desc": "Restitution Curves APD vs DI",
+      "what_is": "What is a Restitution Curve?",
+      "what_is_desc": "The restitution curve describes the relationship between the Action Potential Duration (APD) and the Diastolic Interval (DI). It is crucial for understanding cardiac stability and the mechanism of alternans.",
+      "what_is_for": "What is it used for?",
+      "what_is_for_desc": "The restitution curve is a crucial analytical tool for predicting the stability of the cardiac rhythm. If the slope of the curve is too steep (typically greater than 1), it indicates a strong propensity for developing cardiac alternans and transitioning into fibrillation.",
+      "measuring": "How is it measured?",
+      "apd_def": "APD (Action Potential Duration): Time the cell remains depolarized.",
+      "di_def": "DI (Diastolic Interval): Resting time between the end of an AP and the start of the next.",
       "s1s2": {
         "title": "Standard Restitution (S1-S2 Protocol)",
         "basic": {

@@ -288,6 +288,18 @@ const RestitutionCurvePage = ({ onBack }) => {
         <div className="space-y-4 animate-fadeIn">
           <h3 className="text-xl font-bold text-slate-700">{t(`modals.restitution.${modelKey}.basic.title`)}</h3>
           <p className="text-slate-600 leading-relaxed text-justify">{t(`modals.restitution.${modelKey}.basic.desc`)}</p>
+
+          <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.restitution.what_is')}</h3>
+          <p className="text-slate-600 leading-relaxed mb-4">{t('modals.restitution.what_is_desc')}</p>
+
+          <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.restitution.what_is_for')}</h3>
+          <p className="text-slate-600 leading-relaxed mb-4">{t('modals.restitution.what_is_for_desc')}</p>
+          
+          <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.restitution.measuring')}</h3>
+          <ul className="list-disc ml-5 text-slate-600 mb-4">
+            <li>{t('modals.restitution.apd_def')}</li>
+            <li>{t('modals.restitution.di_def')}</li>
+          </ul>
           
           <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4 mt-4">
              <h4 className="font-semibold text-emerald-800 mb-2">
