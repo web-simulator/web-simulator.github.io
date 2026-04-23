@@ -303,6 +303,7 @@
         "tissue_title": "Conductivity and Fiber Angle",
         "tissue_desc": "The heart does not have equal conductivity in all directions. It has fibers, where electricity travels much faster in the longitudinal direction (Sigma_L) than in the transverse direction (Sigma_T). Changing the angle shifts the direction of these fibers, making the wave take oval shapes instead of circular ones.",
         "fibrosis_title": "Representing Fibrosis",
+        "fibrosis_desc": "Fibrosis is the formation of non-conductive scar tissue in the heart. It acts as an electrical insulator that blocks or diverts the propagation of the action potential, serving as a major trigger for complex arrhythmias.",
         "fib_compact": "Shows a solid scar (round or square) in a defined position. The electrical wave will be forced to bypass this obstacle, creating delays.",
         "fib_diffuse": "Instead of a solid block, it scatters tiny dots over a chosen area. It is the main cause of Fibrillation, as these dots destroy the wavefront.",
         "transmurality_title": "Heart Layers - Transmurality",
@@ -493,7 +494,7 @@
         }
       },
       "mms": {
-        "title": "MMS Model (Alternative Restitution)",
+        "title": "MMS Model",
         "basic": {
           "title": "Modified Mitchell-Schaeffer (MMS)",
           "desc": "This variation of the Mitchell-Schaeffer model focuses on correcting a mathematical flaw at high frequencies. The goal is to reproduce restitution curves that are more accurate and less prone to the immediate collapse observed in some simplified cardiac simulations.",

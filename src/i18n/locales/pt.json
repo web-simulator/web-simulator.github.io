@@ -300,6 +300,7 @@
         "tissue_title": "Condutividade e Ângulo das fibras",
         "tissue_desc": "O coração não possui condutividade igual para todos os lados. Ele tem fibras, onde a eletricidade viaja muito mais rápido na direção longitudinal (Sigma_L) do que na transversal (Sigma_T). Alterar o ângulo muda a direção dessas fibras, fazendo a onda assumir formatos ovais em vez de circulares.",
         "fibrosis_title": "Representando Fibroses",
+        "fibrosis_desc": "A fibrose é a formação de tecido cicatricial não condutor no coração. Ela atua como um isolante elétrico que bloqueia ou desvia a propagação do potencial de ação, sendo um dos principais gatilhos para arritmias complexas.",
         "fib_compact": "Mostra uma cicatriz sólida (redonda ou quadrada) em uma posição definida. A onda elétrica será forçada a contornar esse obstáculo, criando atrasos.",
         "fib_diffuse": "Em vez de um bloco sólido, espalha pequenos pontinhos por uma área escolhida. É a principal causa de Fibrilação, pois esses pontinhos destroem a frente da onda.",
         "transmurality_title": "Camadas do Coração - Transmuralidade",

@@ -404,8 +404,14 @@ const Model2DPage = ({ onBack }) => {
                  <h4 className="font-semibold text-slate-700 mb-2 text-sm uppercase tracking-wider">{t('modals.model_2d.advanced.tissue_title')}</h4>
                  <p className="text-sm text-slate-600 text-justify">{t('modals.model_2d.advanced.tissue_desc')}</p>
               </div>
+              
               <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                  <h4 className="font-semibold text-slate-700 mb-2 text-sm uppercase tracking-wider">{t('modals.model_2d.advanced.fibrosis_title')}</h4>
+                
+                 <p className="text-sm text-slate-600 text-justify mb-3 border-b border-slate-200 pb-2">
+                    {t('modals.model_2d.advanced.fibrosis_desc')}
+                 </p>
+                 
                  <p className="text-sm text-slate-600 text-justify mb-2"><strong>Compacta:</strong> {t('modals.model_2d.advanced.fib_compact')}</p>
                  <p className="text-sm text-slate-600 text-justify"><strong>Difusa:</strong> {t('modals.model_2d.advanced.fib_diffuse')}</p>
               </div>
@@ -423,7 +429,6 @@ const Model2DPage = ({ onBack }) => {
         </div>
       );
     }
-
     if (activeTab === 'math') {
       return (
         <div className="space-y-4 animate-fadeIn">
