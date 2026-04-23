@@ -660,56 +660,36 @@
         "stim_term": "The conditional equation for 'h' acts as a mathematical switch that decouples the depolarization phase from the repolarization phase."
       }
     },
-"modals": {
-    "source_sink": {
-      "desc": "The Source-Sink Mismatch simulation investigates the safety factor of cardiac propagation. It models the passage of an electrical wave through a narrow isthmus (slit) into an expanded tissue region. If source current is insufficient to charge the sink, block occurs.",
-      "geometry_desc": "The geometry uses insulating barriers to create a variable-width slit, allowing the study of wavefront curvature effects.",
-      "eq": "∂V/∂t = ∇·(D∇V) - I_ion/Cm",
-      "ms": {
-         "title": "Mitchell-Schaeffer Model",
-         "eq_v": "∂v/∂t = ∇·(D∇v) + (h·v²·(1-v))/τ_in - v/τ_out",
-         "eq_h": "h-gate dynamics (opening/closing)"
+    "sourcesink": {
+      "title": "Source-Sink Mismatch",
+      "tabs": {
+        "basic": "Basic",
+        "advanced": "Advanced",
+        "math": "Math"
       },
-      "minimal": {
-         "title": "Minimal Model (Bueno-Orovio)",
-         "eq_u": "∂u/∂t = ∇·(D∇u) - (J_fi + J_so + J_si)",
-         "vars": "Variables: u (potential), v, w, s",
-         "currents": "Currents: J_fi, J_so, J_si"
+      "basic": {
+        "title": "Fundamental Concepts",
+        "desc": "The 'Source-Sink Mismatch' phenomenon is a central principle in electrophysiology. It occurs when an electrical wave must pass from a narrow region of tissue (the 'Source', which generates current) to a much wider region (the 'Sink', which must be charged/excited by the current).",
+        "goal": "Geometric Conduction Block",
+        "goal_desc": "In this simulator, the wave travels through an isthmus (a slit). Upon exiting the slit and hitting the open tissue, the wavefront expands drastically. If the slit is too narrow, the few cells of the 'source' cannot provide enough electrical charge to excite the huge amount of cells in the 'sink', causing an abrupt block where the wave simply 'dies'."
       },
-      "numerical_details": [
-        "Spatial Discretization: Finite Difference Method.",
-        "Time Integration: Explicit Euler.",
-        "Boundary Conditions: Neumann on barriers.",
-        "Mesh: Regular rectangular grid with step dx."
-      ],
-      "features": {
-        "geometry_title": "Slit Geometry",
-        "geometry_desc": "Defines the passage width (Upper/Lower Gap) and presence of circular obstacles hindering propagation."
+      "advanced": {
+        "title": "Anisotropy and Obstacles",
+        "desc": "This 2D model allows testing conduction failure under real adverse conditions. Cardiac tissue has fibers, meaning electricity travels faster in one direction (longitudinal) than the other (transverse).",
+        "kinetics": "Fibrosis and Border Zone",
+        "kinetics_desc": "You can add compact or diffuse fibrosis. The algorithm supports 'Border Zones', where conductivity smoothly decays at the periphery of the scar (using linear interpolation), reproducing the heterogeneity of real infarct borders.",
+        "models": "Multiple Cellular Models",
+        "models_desc": "The page allows toggling between the Mitchell-Schaeffer model and the Minimal Model. This allows comparing how different calcium and potassium dynamics resist the same anatomical barrier.",
+        "ref": "Kléber, A. G., & Rudy, Y. (2004). Basic mechanisms of cardiac impulse propagation and associated arrhythmias."
       },
-      "glossary": {
-        "geometry": "Geometric Parameters",
-        "model": "Model Parameters",
-        "general": "General Parameters",
-        "model_ms": "Mitchell-Schaeffer Parameters",
-        "model_minimal": "Minimal Model Parameters",
-        "L_dx": "L / dx: Tissue size (cm) and spatial step",
-        "sigma": "σ_l / σ_t: Longitudinal and transverse conductivity",
-        "angle": "Angle: Fiber orientation",
-        "slit": "Slit: Upper and Lower widths",
-        "obstacle": "Obstacle: Radius and central barrier position",
-        "dt_time": "dt / Time: Time step and total simulation duration",
-        "ms_taus": "τ_in / τ_out: Depolarization and repolarization times",
-        "ms_gates": "τ_open / τ_close: Recovery and inactivation times (h-gate)",
-        "minimal_cells": "Cell Type: Defines parameters for Epicardium, Endocardium, or M-Cell"
-      },
-      "steps": [
-        "Choose the cell model (Mitchell-Schaeffer or Minimal).",
-        "Define gap and obstacle geometry in the 'Geometry' tab.",
-        "Position the stimulus (green circle) before the gap.",
-        "Click 'Simulate' and observe propagation through the isthmus.",
-        "Analyze if the wave successfully excites the tissue after expansion (Sink)."
-      ]
-    }
+      "math": {
+        "title": "Equations and Diffusion Tensor",
+        "desc": "To compute fiber direction, the traditional spatial Laplacian is replaced by a two-dimensional Anisotropic Diffusion Tensor.",
+        "eq_laplacian": "∇·(D∇v) = Dxx(∂²v/∂x²) + Dyy(∂²v/∂y²) + 2Dxy(∂²v/∂x∂y)",
+        "methods": "Integration and Performance",
+        "methods_desc": "For spatial discretization, the worker uses the Central Finite Difference Method. In time, integration uses Euler for voltage and the Rush-Larsen method for gating variables. The dynamic 'dt' calculation (CFL) relies on the maximum diffusion tensor to prevent instabilities.",
+        "stim_term": "Dxx, Dyy, and Dxy are the coefficients derived from the sigma_L, sigma_T velocities and the fiber angle."
   }
+    }
   }
 }

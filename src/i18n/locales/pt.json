@@ -656,54 +656,36 @@
         "stim_term": "A equação condicional do 'h' atua como um interruptor que desacopla a fase de despolarização da repolarização."
       }
     },
-    "source_sink": {
-      "desc": "A simulação Source-Sink Mismatch investiga o fator de segurança da propagação cardíaca. Ela modela a passagem de uma onda elétrica por um istmo estreito (fenda) em direção a uma região de tecido expandido. Se a corrente da fonte for insuficiente para carregar o sumidouro, ocorre bloqueio.",
-      "geometry_desc": "A geometria utiliza barreiras isolantes para criar uma fenda de largura variável, permitindo estudar os efeitos da curvatura da frente de onda.",
-      "eq": "∂V/∂t = ∇·(D∇V) - I_ion/Cm",
-      "ms": {
-         "title": "Modelo Mitchell-Schaeffer",
-         "eq_v": "∂v/∂t = ∇·(D∇v) + (h·v²·(1-v))/τ_in - v/τ_out",
-         "eq_h": "Dinâmica de gate h (abertura/fechamento)"
+    "sourcesink": {
+      "title": "Source-Sink Mismatch",
+      "tabs": {
+        "basic": "Básico",
+        "advanced": "Avançado",
+        "math": "Matemático"
       },
-      "minimal": {
-         "title": "Minimal Model",
-         "eq_u": "∂u/∂t = ∇·(D∇u) - (J_fi + J_so + J_si)",
-         "vars": "Variáveis: u (potencial), v, w, s",
-         "currents": "Correntes: J_fi, J_so, J_si"
+      "basic": {
+        "title": "Conceitos Fundamentais",
+        "desc": "O fenômeno do Source-Sink Mismatch ocorre quando uma onda elétrica precisa passar de uma região estreita de tecido (a 'Fonte', que gera a corrente) para uma região muito mais larga (o 'Sumidouro', que precisa ser estimulado pela corrente).",
+        "goal": "Bloqueio de Condução Geométrico",
+        "goal_desc": "Neste simulador, a onda viaja por um istmo (uma fenda). Ao sair da fenda e atingir o tecido aberto, a frente de onda se expande drasticamente. Se a fenda for muito estreita, as poucas células da 'fonte' não conseguem fornecer carga elétrica suficiente para excitar a enorme quantidade de células do 'sumidouro', causando um bloqueio onde a onda simplesmente morre."
       },
-      "numerical_details": [
-        "Discretização Espacial: Método de Diferenças Finitas.",
-        "Integração Temporal: Euler Explícito.",
-        "Condições de Contorno: Neumann nas barreiras.",
-        "Malha: Retangular regular com passo dx."
-      ],
-      "features": {
-        "geometry_title": "Geometria da Fenda",
-        "geometry_desc": "Define a largura da passagem (Fenda Superior/Inferior) e a presença de obstáculos circulares que dificultam a propagação."
+      "advanced": {
+        "title": "Anisotropia e Obstáculos",
+        "desc": "Este modelo 2D permite testar a falha de condução sob condições adversas reais. O tecido cardíaco possui fibras, ou seja, a eletricidade viaja mais rápido em uma direção (longitudinal) do que na outra (transversal).",
+        "kinetics": "Fibrose",
+        "kinetics_desc": "Você pode adicionar fibrose compacta ou difusa. O algoritmo suporta zonas de borda, onde a condutividade decai em áreas próximas às regiões de fibrose, reproduzindo a heterogeneidade das bordas de um infarto real.",
+        "models": "Múltiplos Modelos Celulares",
+        "models_desc": "A página permite alternar entre o modelo Mitchell-Schaeffer e o Minimal Model. Isso permite comparar como diferentes dinâmicas resistem à mesma barreira anatômica.",
+        "ref": "Kléber, A. G., & Rudy, Y. (2004). Basic mechanisms of cardiac impulse propagation and associated arrhythmias."
       },
-      "glossary": {
-        "geometry": "Parâmetros Geométricos",
-        "model": "Parâmetros do Modelo",
-        "general": "Parâmetros Gerais",
-        "model_ms": "Parâmetros Mitchell-Schaeffer",
-        "model_minimal": "Parâmetros Minimal Model",
-        "L_dx": "L / dx: Tamanho do tecido (cm) e passo espacial",
-        "sigma": "σ_l / σ_t: Condutividade longitudinal e transversal",
-        "angle": "Ângulo: Orientação das fibras do tecido",
-        "slit": "Fenda: Largura superior e inferior",
-        "obstacle": "Obstáculo: Raio e posição da barreira central",
-        "dt_time": "dt / Tempo: Passo de tempo e duração total da simulação",
-        "ms_taus": "τ_in / τ_out: Tempos de despolarização e repolarização",
-        "ms_gates": "τ_open / τ_close: Tempos de recuperação e inativação (gate h)",
-        "minimal_cells": "Tipo Celular: Define parâmetros para Epicárdio, Endocárdio ou M-Cell"
-      },
-      "steps": [
-        "Escolha o modelo celular (Mitchell-Schaeffer ou Minimal).",
-        "Defina a geometria da fenda e do obstáculo na aba Geometria.",
-        "Posicione o estímulo antes da fenda.",
-        "Clique em Simular.",
-        "Analise se a onda consegue excitar o tecido após a expansão."
-      ]
+      "math": {
+        "title": "Equações e Tensor de Difusão",
+        "desc": "Para calcular a direção das fibras, o Laplaciano espacial é substituído por um Tensor de Difusão Anisotrópico bidimensional.",
+        "eq_laplacian": "∇·(D∇v) = Dxx(∂²v/∂x²) + Dyy(∂²v/∂y²) + 2Dxy(∂²v/∂x∂y)",
+        "methods": "Métodos Numéricos",
+        "methods_desc": "Para a discretização espacial, é utilizado o Método das Diferenças Finitas Centrais. No tempo, a integração utiliza Euler para a tensão e o método de Rush-Larsen para as variáveis de gate. O cálculo dinâmico do 'dt' baseia-se no tensor máximo de difusão para evitar instabilidades (CFL).",
+        "stim_term": "Dxx, Dyy e Dxy são os coeficientes derivados das velocidades sigma_L, sigma_T e do ângulo da fibra."
+  }
     }
   }
 }
