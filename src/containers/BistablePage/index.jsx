@@ -163,12 +163,10 @@ const BistablePage = ({ onBack }) => {
   const renderInfoModalContent = () => {
     return (
       <div className="flex flex-col h-full max-h-[80vh]">
-        {/* Cabeçalho do Modal */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-emerald-800">{t('modals.bistable.title')}</h2>
         </div>
 
-        {/* Navegação por Abas */}
         <div className="flex border-b border-slate-200 mb-6 overflow-x-auto custom-scrollbar">
           {['basic', 'advanced', 'math'].map((tab) => (
             <button
@@ -186,7 +184,6 @@ const BistablePage = ({ onBack }) => {
           ))}
         </div>
 
-        {/* Conteúdo das Abas */}
         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
           
           {activeTab === 'basic' && (
@@ -216,7 +213,6 @@ const BistablePage = ({ onBack }) => {
                  <p className="text-sm text-slate-600 text-justify">{t('modals.bistable.advanced.kinetics_desc')}</p>
               </div>
 
-              {/* Bloco de Referências padronizado adicionado */}
               <div className="mt-6 border-t border-slate-200 pt-4">
                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{t('modals.references')}</h4>
                  <p className="text-xs text-slate-500 italic">{t('modals.bistable.advanced.ref')}</p>
@@ -228,13 +224,9 @@ const BistablePage = ({ onBack }) => {
             <div className="space-y-4 animate-fadeIn">
               <h3 className="text-xl font-bold text-slate-700">{t('modals.bistable.math.title')}</h3>
               <p className="text-slate-600 text-sm">{t('modals.bistable.math.desc')}</p>
-              
-              {/* Box de equações com a borda lateral verde (exato padrão) */}
               <div className="bg-slate-50 border border-slate-200 border-l-4 border-l-emerald-500 text-slate-700 p-4 rounded-r-lg font-mono text-sm space-y-2 overflow-x-auto custom-scrollbar">
                  <p>{t('modals.bistable.math.equation')}</p>
               </div>
-              
-              {/* Título de seção numérica padronizado */}
               <h4 className="font-bold text-slate-700 mt-6">{t('modals.bistable.math.methods')}</h4>
               <p className="text-sm text-slate-600 text-justify">{t('modals.bistable.math.methods_desc')}</p>
             </div>
