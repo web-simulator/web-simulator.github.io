@@ -268,7 +268,7 @@
         "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane.",
         "basic": {
           "title": "Entendendo a simulação 2D - Mitchell-Schaeffer",
-          "desc": "Essa é a seção dedicada às simulações espaciais. Diferentemente das outras simulações, aqui trabalhamos com uma representação do tecido cardiáco. Isso permite ver como os estímulos elétricos viajam pelas células e criam ondas de batimentos. Nesta representação é utilizado o modelo Mitchell-Schaeffer para simular as reações elétricas."
+          "desc": "Essa é a seção dedicada às simulações espaciais. Diferentemente das outras simulações, aqui trabalhamos com uma representação do tecido cardíaco. Isso permite ver como os estímulos elétricos viajam pelas células e criam ondas de batimentos. Nesta representação é utilizado o modelo Mitchell-Schaeffer para simular as reações elétricas."
         },
         "math": {
           "title": "A Matemática por Trás do 2D",
