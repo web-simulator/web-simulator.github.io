@@ -621,11 +621,40 @@
       }
     },
     "ms1d": {
-      "desc": "O modelo Mitchell-Schaeffer é uma formulação fenomenológica simplificada que descreve a propagação do potencial de ação cardíaco. Ele utiliza duas variáveis de estado: o potencial transmembrânico (v) e uma variável de 'gate' (h), que governa a refratariedade (semelhante à inativação dos canais de sódio). Apesar de simples, reproduz propriedades complexas como a curva de restituição do tecido cardíaco.",
-      "method": "A equação de difusão é resolvida espacialmente pelo Método de Diferenças Finitas. A integração temporal usa o método de Euler Explícito, com equações condicionais para a dinâmica do gate 'h'.",
-      "eq_v": "∂v/∂t = k·∇²v + (h·v²·(1-v))/τ_in - v/τ_out + J_stim",
-      "eq_h_open": "Se v < v_gate: ∂h/∂t = (1 - h) / τ_open",
-      "eq_h_close": "Se v > v_gate: ∂h/∂t = -h / τ_close"
+      "title": "Modelo Mitchell-Schaeffer 1D",
+      "tabs": {
+        "basic": "Básico",
+        "advanced": "Avançado",
+        "math": "Matemático"
+      },
+      "basic": {
+        "title": "Conceitos Fundamentais",
+        "desc": "O modelo de Mitchell-Schaeffer é uma representação focada especificamente nas células musculares cardíacas. Ao contrário de modelos simplificados, ele reproduz com precisão o formato real de um Potencial de Ação, capturando a rápida fase de despolarização seguida de um longo platô sustentado.",
+        "what_is_1d": "O que é um modelo 1D?",
+        "what_is_1d_desc": "Diferente de uma simulação de uma única célula isolada (0D), um modelo unidimensional (1D) arranja as células em uma linha, simulando um 'cabo' ou fibra de tecido cardíaco. Isso permite observar não apenas a forma da onda, mas também como a eletricidade se propaga através do espaço físico.",
+        "goal": "A Curva de Restituição",
+        "goal_desc": "O grande diferencial deste modelo é a sua capacidade de simular o comportamento de restituição cardíaca e a memória da célula. Se o coração for estimulado muito rápido (Intervalo Diastólico curto), o tempo de platô da próxima onda será reduzido. Ele é ideal para estudar as causas da fibrilação e da alternância elétrica."
+      },
+      "advanced": {
+        "title": "Cinética e Visualização",
+        "desc": "Este modelo agrupa os canais iônicos em duas grandes forças: uma corrente rápida de entrada despolarizante e uma lenta corrente de saída repolarizante.",
+        "kinetics": "Controle por Constantes de Tempo (Tau)",
+        "kinetics_desc": "Você pode moldar a duração da onda ajustando as variáveis Tau. 'Tau_in' controla a velocidade de subida; 'Tau_out' dita a duração da queda e do platô; e 'Tau_open/close' definem a memória de inativação dos canais. O parâmetro 'gate' é a voltagem de corte que alterna entre a abertura e o fechamento do canal.",
+        "visualizations": "Visualizações de Dados",
+        "visualizations_desc": "A página oferece duas formas de analisar a propagação: o 'Gráfico de Linha', que mostra a amplitude do potencial (v) e da porta de inativação (h) ao longo do cabo em um exato instante de tempo; e o 'Gráfico de Cores', que mostra o tempo no eixo vertical e a posição no eixo horizontal, permitindo visualizar a trajetória completa.",
+        "modes": "Modos de Simulação",
+        "modes_desc": "O simulador oferece duas abordagens. A 'Propagação Padrão' permite observar a evolução geral do potencial de ação. Já o modo 'Velocidade de Condução' mostra a frente de onda e calcula a rapidez exata com que o impulso viaja pelo tecido (cm/s). Isso permite estudar como alterações nos canais iónicos ou mudanças no limiar causam lentidão na condução elétrica.",
+        "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane."
+      },
+      "math": {
+        "title": "Equações do Modelo",
+        "desc": "O sistema é governado pela tensão transmembrana (v) e uma única porta de inativação celular (h) que controla a corrente rápida de entrada.",
+        "eq_v": "∂v/∂t = D · ∇²v + (h · v² · (1-v))/Tau_in - v/Tau_out + I_stim",
+        "eq_h": "∂h/∂t = (1-h)/Tau_open (se v < v_gate)  OU  -h/Tau_close (se v > v_gate)",
+        "methods": "Métodos Numéricos",
+        "methods_desc": "Para garantir máxima estabilidade e precisão, é utilizado uma solução híbrida. No tempo, aplica o Euler Explícito para a voltagem (v), mas para a váriavel de gate(h) utiliza o método de rush-larsen. Ele também conta com proteção ativa contra instabilidades limitando dinamicamente o 'dt' pela condição de CFL.",
+        "stim_term": "A equação condicional do 'h' atua como um interruptor que desacopla a fase de despolarização da repolarização."
+      }
     },
     "source_sink": {
       "desc": "A simulação Source-Sink Mismatch investiga o fator de segurança da propagação cardíaca. Ela modela a passagem de uma onda elétrica por um istmo estreito (fenda) em direção a uma região de tecido expandido. Se a corrente da fonte for insuficiente para carregar o sumidouro, ocorre bloqueio.",

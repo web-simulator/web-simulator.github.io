@@ -625,11 +625,40 @@
       }
     },
     "ms1d": {
-    "desc": "The Mitchell-Schaeffer model is a simplified phenomenological formulation describing cardiac action potential propagation. It uses two state variables: transmembrane potential (v) and a gate variable (h) governing refractoriness (similar to sodium channel inactivation). Despite its simplicity, it reproduces complex properties like the cardiac tissue restitution curve.",
-      "method": "The diffusion equation is solved spatially using the Finite Difference Method. Temporal integration uses the Explicit Euler method, with conditional equations for the 'h' gate dynamics.",
-      "eq_v": "∂v/∂t = k·∇²v + (h·v²·(1-v))/τ_in - v/τ_out + J_stim",
-      "eq_h_open": "If v < v_gate: ∂h/∂t = (1 - h) / τ_open",
-      "eq_h_close": "If v > v_gate: ∂h/∂t = -h / τ_close"
+      "title": "Mitchell-Schaeffer 1D Model",
+      "tabs": {
+        "basic": "Basic",
+        "advanced": "Advanced",
+        "math": "Math"
+      },
+      "basic": {
+        "title": "Fundamental Concepts",
+        "desc": "The Mitchell-Schaeffer model is a evolution focused specifically on cardiac muscle cells. Unlike nerve models, it accurately reproduces the real shape of an Action Potential, capturing the rapid depolarization phase followed by a long sustained plateau.",
+        "what_is_1d": "What is a 1D model?",
+        "what_is_1d_desc": "Unlike a single isolated cell simulation (0D), a one-dimensional (1D) model arranges cells in a line, simulating a 'cable' or fiber of cardiac tissue. This allows us to observe not only the shape of the wave but also how electricity propagates (conduction) across physical space.",
+        "goal": "The Restitution Curve",
+        "goal_desc": "The main differential of this model is its ability to simulate cardiac restitution behavior and cell memory. If the heart is stimulated too quickly (short Diastolic Interval), the plateau time of the next wave will be reduced. It is ideal for studying the causes of fibrillation and electrical alternans."
+      },
+      "advanced": {
+        "title": "Kinetics and Visualization",
+        "desc": "This model simplifies the complex Hodgkin-Huxley system by grouping the ion channels into two major forces: a rapid depolarizing inward current and a slow repolarizing outward current.",
+        "kinetics": "Time Constants (Tau) Control",
+        "kinetics_desc": "You can shape the wave duration by adjusting the Tau variables. 'Tau_in' controls the upstroke speed; 'Tau_out' dictates the repolarization and plateau duration; and 'Tau_open/close' define the channel inactivation memory. The 'gate' parameter is the cutoff voltage that toggles between channel opening and closing.",
+        "visualizations": "Data Visualizations (Line vs. Color Map)",
+        "visualizations_desc": "The page offers two ways to analyze propagation: the 'Line Chart', which shows the amplitude of the potential (v) and the inactivation gate (h) along the cable at an exact instant in time; and the 'Spatiotemporal Chart' (Color Map), which stacks time on the vertical axis and position on the horizontal axis, allowing you to visualize the complete trajectory.",
+        "modes": "Simulation Modes: Standard and Conduction Velocity",
+        "modes_desc": "The simulator offers two approaches. 'Standard Propagation' allows you to observe the general evolution of the action potential. The 'Conduction Velocity (CV)' mode activates an algorithm that tracks the wavefront and calculates the exact speed at which the impulse travels through the tissue (cm/s). This allows studying how alterations in ion channels or threshold changes slow down electrical conduction.",
+        "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane."
+      },
+      "math": {
+        "title": "Model Equations",
+        "desc": "The system is governed by the transmembrane voltage (v) and a single cellular inactivation gate (h) that controls the rapid inward current.",
+        "eq_v": "∂v/∂t = D · ∇²v + (h · v² · (1-v))/Tau_in - v/Tau_out + I_stim",
+        "eq_h": "∂h/∂t = (1-h)/Tau_open (if v < v_gate)  OR  -h/Tau_close (if v > v_gate)",
+        "methods": "Hybrid Integration: Rush-Larsen and Euler",
+        "methods_desc": "To ensure  stability and biological accuracy, this simulation uses a hybrid approximation. In time, it applies Explicit Euler for the voltage (v), but uses the Rush-Larsen method for the inactivation gate (h). It also features active protection against instabilities by dynamically capping 'dt' via the CFL criterion.",
+        "stim_term": "The conditional equation for 'h' acts as a mathematical switch that decouples the depolarization phase from the repolarization phase."
+      }
     },
 "modals": {
     "source_sink": {
