@@ -88,7 +88,9 @@
     "cv_restitution_curve": "Conduction Velocity",
     "x_axis_metric": "X-Axis Metric",
     "coupling_interval": "Coupling Interval",
-    "diastolic_interval": "Diastolic Interval"
+    "diastolic_interval": "Diastolic Interval",
+    "select_activation": "Select Activation",
+    "activation": "Activation"
   },
   "chart": {
     "potential_unit": "Potential (V)",

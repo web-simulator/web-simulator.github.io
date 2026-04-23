@@ -63,6 +63,7 @@ const Model2DPage = ({ onBack }) => {
   const [isChartModalOpen, setIsChartModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('basic'); // Estado para as abas do modal
+  const [selectedActivation, setSelectedActivation] = useState(0)
 
   // Parâmetros
   const [params, setParams] = useState({
@@ -199,7 +200,7 @@ const Model2DPage = ({ onBack }) => {
 
   const handleStart = () => {
     if (!worker) return;
-    setCalculating(true); setSimulationResult(null); setProgress(0); setRemainingTime(null); setIsPlaying(false);
+    setCalculating(true); setSimulationResult(null); setProgress(0); setRemainingTime(null); setIsPlaying(false);setSelectedActivation(0);
     
     const num = (v) => parseFloat(v) || 0;
     const int = (v) => parseInt(v, 10) || 0;
@@ -314,19 +315,25 @@ const Model2DPage = ({ onBack }) => {
           const end = start + N * N;
           currentChartData = frames.subarray(start, end);
       } else if (viewMode === 'lat') {
-          currentChartData = activationTimes;
-          maxValue = 0;
-          for (let i = 0; i < activationTimes.length; i++) {
-              if (activationTimes[i] > maxValue) maxValue = activationTimes[i];
+          if (activationTimes && activationTimes.length > 0) {
+              const idx = Math.min(selectedActivation, activationTimes.length - 1);
+              currentChartData = activationTimes[idx];
+              maxValue = 0;
+              for (let i = 0; i < currentChartData.length; i++) {
+                  if (currentChartData[i] > maxValue) maxValue = currentChartData[i];
+              }
+              if (maxValue <= 0) maxValue = 1;
           }
-          if (maxValue <= 0) maxValue = 1;
       } else if (viewMode === 'apd') {
-          currentChartData = apd;
-          maxValue = 0;
-          for (let i = 0; i < apd.length; i++) {
-              if (apd[i] > maxValue) maxValue = apd[i];
+          if (apd && apd.length > 0) {
+              const idx = Math.min(selectedActivation, apd.length - 1);
+              currentChartData = apd[idx];
+              maxValue = 0;
+              for (let i = 0; i < currentChartData.length; i++) {
+                  if (currentChartData[i] > maxValue) maxValue = currentChartData[i];
+              }
+              if (maxValue <= 0) maxValue = 1;
           }
-          if (maxValue <= 0) maxValue = 1;
       }
       currentFibrosisMap = fibrosis; 
   }
@@ -505,6 +512,31 @@ const Model2DPage = ({ onBack }) => {
                   <option value="apd">{t('common.apd_map')}</option>
                 </select>
               </div>
+
+              {/* Botoes de selecao de ativacao */}
+              {(viewMode === 'lat' || viewMode === 'apd') && simulationResult && simulationResult.activationTimes && simulationResult.activationTimes.length > 0 && (
+                <div className="mt-3">
+                  <label className="text-sm font-bold text-slate-700 mb-2 block">
+                    {t('common.select_activation')}
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {simulationResult.activationTimes.map((_, idx) => (
+                       <button
+                         key={idx}
+                         onClick={() => setSelectedActivation(idx)}
+                         className={`w-8 h-8 rounded-full text-xs font-bold transition-colors ${
+                           selectedActivation === idx 
+                             ? 'bg-emerald-600 text-white shadow' 
+                             : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                         }`}
+                         title={`${t('common.activation')} ${idx + 1}`}
+                       >
+                         {idx + 1}
+                       </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </SettingsSection>
 
             <SettingsSection title={t('common.geometry')} defaultOpen={false}>

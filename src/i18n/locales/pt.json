@@ -88,7 +88,9 @@
     "cv_restitution_curve": "Velocidade de Condução",
     "x_axis_metric": "Métrica do Eixo X",
     "coupling_interval": "Intervalo de Acoplamento",
-    "diastolic_interval": "Intervalo Diastólico"
+    "diastolic_interval": "Intervalo Diastólico",
+    "select_activation": "Selecionar Ativação",
+    "activation": "Ativação"
   },
   "chart": {
     "potential_unit": "Potencial (V)",
