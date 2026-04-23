@@ -312,7 +312,7 @@
         "diffusion_desc": "The fundamental equation used is the diffusion equation. It states mathematically how energy is transferred from an excited cell to its empty neighbors:",
         "eq_diffusion": "∂V/∂t = ∇ · (D ∇V) - I_ion/Cm",
         "numerical_title": "How the system is solved",
-        "numerical_desc": "The simulation uses a square mesh where the position is calculated using 5-point neighborhoods in the Finite Difference Method. Spatial voltage is solved by the Explicit Euler method, while the inactivation of cellular channels is solved by Rush-Larsen. Because many points are being calculated, this combination of methods, aligned with a multithreaded processing strategy, allows the simulation to run smoothly."
+        "numerical_desc": "The simulation uses a square mesh where the position is calculated using 5-point neighborhoods in the Finite Difference Method. Spatial potential is solved by the Explicit Euler method, while the inactivation of cellular channels is solved by Rush-Larsen. Because many points are being calculated, this combination of methods, aligned with a multithreaded processing strategy, allows the simulation to run smoothly."
       }
     },
     "tabs": {
@@ -325,7 +325,7 @@
       "ms": {
         "basic": {
           "title": "What is the Mitchell-Schaeffer Model?",
-          "desc": "The Mitchell-Schaeffer model is a simplified representation of the electrical activity of a cardiac cell. Instead of calculating all individual ion currents (like sodium, potassium, and calcium), it groups this behavior into just two main variables: the membrane potential (cell voltage) and a 'gate' that controls the cell's resting period.",
+          "desc": "The Mitchell-Schaeffer model is a simplified representation of the electrical activity of a cardiac cell. Instead of calculating all individual ion currents (like sodium, potassium, and calcium), it groups this behavior into just two main variables: the membrane potential (cell Potential) and a 'gate' that controls the cell's resting period.",
           "why_use": "Why use this model?",
           "why_use_desc": "It is ideal for understanding fundamental concepts such as depolarization (contraction), repolarization (relaxation), and the refractory period (time the cell needs to recover before a new stimulus), requiring much less computational power than complex models."
         },
@@ -333,7 +333,7 @@
           "title": "Action Potential Dynamics",
           "desc": "In this model, the shape of the Action Potential (AP) is molded by the time constants ('Tau' parameters). By changing Tau_in, you modify the upstroke velocity of the AP. By changing Tau_out, you prolong or shorten the AP duration (APD).",
           "gate_h": "The role of the 'h' Gate",
-          "gate_h_desc": "The 'h' variable represents the availability of fast ion channels. When the cell is activated (V > V_gate), 'h' quickly drops to zero (governed by Tau_close), making the cell refractory. It only gradually recovers (governed by Tau_open) when the voltage drops below V_gate.",
+          "gate_h_desc": "The 'h' variable represents the availability of fast ion channels. When the cell is activated (V > V_gate), 'h' quickly drops to zero (governed by Tau_close), making the cell refractory. It only gradually recovers (governed by Tau_open) when the Potential drops below V_gate.",
           "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane."
         },
         "math": {
@@ -343,7 +343,7 @@
           "eq_h1": "If v < v_gate: dh/dt = (1-h)/τ_open",
           "eq_h2": "If v > v_gate: dh/dt = -h/τ_close",
           "numerical": "Numerical Solution Method",
-          "numerical_desc": "Temporal integration is performed using a hybrid approach: the Explicit Euler method is used for the voltage variable (v), while the gate variable (h) is integrated using the Rush-Larsen method. The use of Rush-Larsen ensures high numerical stability for the opening and closing of the gate, as it uses an exact exponential solution for this step."
+          "numerical_desc": "Temporal integration is performed using a hybrid approach: the Explicit Euler method is used for the Potential variable (v), while the gate variable (h) is integrated using the Rush-Larsen method. The use of Rush-Larsen ensures high numerical stability for the opening and closing of the gate, as it uses an exact exponential solution for this step."
         }
       },
       "minimal": {
@@ -367,7 +367,7 @@
           "eq_w": "∂w/∂t = (1 - H(u - θ_w))(1 - w)/τ_w⁻ - H(u - θ_w)w/τ_w⁺",
           "eq_s": "∂s/∂t = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
           "numerical": "Numerical Integration Method",
-          "numerical_desc": "To ensure stability with reasonable time steps, the voltage variable (u) is integrated by the Explicit Euler Method, while the gate variables (v, w, s) use the Rush-Larsen method, which is ideal for linear differential equations of gating variables."
+          "numerical_desc": "To ensure stability with reasonable time steps, the Potential variable (u) is integrated by the Explicit Euler Method, while the gate variables (v, w, s) use the Rush-Larsen method, which is ideal for linear differential equations of gating variables."
         }
       }
     },
@@ -390,7 +390,7 @@
           "title": "Mathematical Formulation",
           "desc": "The underlying equations remain the same as the single stimulus, but the excitation current term (I_stim) is now a periodic function based on the BCL.",
           "numerical": "Numerical Solution Method",
-          "numerical_desc": "Integration uses Explicit Euler for the voltage and Rush-Larsen for the gate variable, ensuring high stability over thousands of iterations during the repetitive pacing protocol."
+          "numerical_desc": "Integration uses Explicit Euler for the Potential and Rush-Larsen for the gate variable, ensuring high stability over thousands of iterations during the repetitive pacing protocol."
         }
       },
       "minimal": {
@@ -410,7 +410,7 @@
           "title": "System Equations",
           "desc": "The periodic application of external current acts as a continuous physiological perturbance to the 4-variable reaction system.",
           "numerical": "Numerical Integration Method",
-          "numerical_desc": "Explicit Euler handles the voltage (u) while Rush-Larsen ensures high accuracy for the gating variables (v, w, s) throughout the repetitive pacing protocol."
+          "numerical_desc": "Explicit Euler handles the Potential (u) while Rush-Larsen ensures high accuracy for the gating variables (v, w, s) throughout the repetitive pacing protocol."
         }
       }
     },
@@ -424,9 +424,9 @@
         },
         "advanced": {
           "title": "Recovery Dynamics and the Role of the 'h' Gate",
-          "desc": "Despite having only two variables, the Mitchell-Schaeffer model accurately portrays the 'all-or-nothing' dynamics of cardiac cells. Excitability is entirely determined by the 'h' gate variable. During the action potential plateau generated by the S1 stimuli, the voltage is high, causing the value of 'h' to decay exponentially to near zero, reflecting the closing (inactivation) of the ion channels.",
+          "desc": "Despite having only two variables, the Mitchell-Schaeffer model accurately portrays the 'all-or-nothing' dynamics of cardiac cells. Excitability is entirely determined by the 'h' gate variable. During the action potential plateau generated by the S1 stimuli, the Potential is high, causing the value of 'h' to decay exponentially to near zero, reflecting the closing (inactivation) of the ion channels.",
           "kinetics": "The Kinetics of Refractoriness (Tau_open and Tau_close)",
-          "kinetics_desc": "When the cell begins to repolarize and the transmembrane voltage falls below the threshold (V_gate), the 'h' gate begins its recovery towards 1 (fully open state) at a rate controlled by Tau_open. If the S2 stimulus is applied too early, the 'h' gate may not have recovered enough for the inward current flow to overcome the outward current, resulting in a block. Changing Tau_open directly prolongs or shortens the length of the Effective Refractory Period.",
+          "kinetics_desc": "When the cell begins to repolarize and the transmembrane Potential falls below the threshold (V_gate), the 'h' gate begins its recovery towards 1 (fully open state) at a rate controlled by Tau_open. If the S2 stimulus is applied too early, the 'h' gate may not have recovered enough for the inward current flow to overcome the outward current, resulting in a block. Changing Tau_open directly prolongs or shortens the length of the Effective Refractory Period.",
           "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane."
         },
         "math": {
@@ -434,7 +434,7 @@
           "desc": "In the system's formulation, the extra stimulus (S2) is introduced into the ODEs through a pulse in the external current variable (I_stim), applied at time T_s2 = (N_s1 * BCL_S1) + BCL_S2.",
           "stim_term": "Where BCL_S2 is the variable coupling interval tested in this simulation.",
           "numerical": "Numerical Methods: Euler and Rush-Larsen",
-          "numerical_desc": "To ensure the stability of the model, we use a hybrid numerical approach. The differential equation governing the transmembrane voltage (v) is solved by the Explicit Euler method. In contrast, the inactivation variable (h) is integrated by the Rush-Larsen method, which solves the linear part of the ODE exactly, providing unconditional stability against abrupt transitions that would normally cause instability or explosion of accumulated error in the time steps."
+          "numerical_desc": "To ensure the stability of the model, we use a hybrid numerical approach. The differential equation governing the transmembrane Potential (v) is solved by the Explicit Euler method. In contrast, the inactivation variable (h) is integrated by the Rush-Larsen method, which solves the linear part of the ODE exactly, providing unconditional stability against abrupt transitions that would normally cause instability or explosion of accumulated error in the time steps."
         }
       },
       "minimal": {
@@ -456,7 +456,7 @@
           "desc": "The four state equations of the Minimal Model merge the contributions of the summed currents (J_fi, J_so, and J_si). The instantaneous injection of the S2 stimulus serves as a final test for the system. The stimulus will only cause reentry if the vector of the three gating variables (v, w, s) is properly conditioned and outside their respective inactivation values.",
           "stim_term": "The nonlinear response to the stimulus obeys a function present in the activation and inactivation terms of u.",
           "numerical": "Numerical Methods: Euler and Rush-Larsen",
-          "numerical_desc": "Due to the complexity of the Minimal Model, we use the Explicit Euler method to calculate the voltage (u). The control variables (v, w, s), on the other hand, are calculated by the Rush-Larsen method. This combination is perfect to keep the simulation stable and accurate, even when dealing with the short and fast stimuli of the S1-S2 protocol."
+          "numerical_desc": "Due to the complexity of the Minimal Model, we use the Explicit Euler method to calculate the Potential (u). The control variables (v, w, s), on the other hand, are calculated by the Rush-Larsen method. This combination is perfect to keep the simulation stable and accurate, even when dealing with the short and fast stimuli of the S1-S2 protocol."
         }
       }
     },
@@ -509,7 +509,7 @@
         },
         "math": {
           "title": "The New Gate Equation",
-          "desc": "The ODE controlling excitability (gate h) gains dynamic asymptotes and smoothly varying constants. Voltage continuously modulates the inactivation process, rather than being an 'on/off' trigger.",
+          "desc": "The ODE controlling excitability (gate h) gains dynamic asymptotes and smoothly varying constants. Potential continuously modulates the inactivation process, rather than being an 'on/off' trigger.",
           "stim_term": "The direct consequence is that the mathematical relationship (APD = function of DI) becomes severely more complex and nonlinear.",
           "numerical": "Real-Time Analytical Verification",
           "numerical_desc": "In the application graph, the dotted line shows exactly the closed formula proposed by Tolkacheva. The perfect alignment of the computed points with the line proves that our numerical approximations rigorously reproduce the altered physics."
