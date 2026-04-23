@@ -572,9 +572,32 @@
       "eq_w": "∂w/∂t = ε·(v - γ·w)"
     },
     "bistable": {
-      "desc": "The Bistable Model describes wave propagation in an excitable medium using cubic nonlinear dynamics. It simplifies ionic currents into a single variable 'v', featuring two stable states (rest and excited) separated by a threshold, capturing the essence of \"all-or-none\" propagation.",
-      "eq": "∂v/∂t = k * ∂²v/∂x² + A * v * (1 - v) * (v - α)",
-      "method": "The equation is solved using the Finite Difference Method for the diffusion term (Laplacian) and the Explicit Euler method for time integration."
+      "title": "1D Bistable Model",
+      "tabs": {
+        "basic": "Basic",
+        "advanced": "Advanced",
+        "math": "Math"
+      },
+      "basic": {
+        "title": "Fundamental Concepts",
+        "desc": "The Bistable model is the simplest representation of an excitable medium. It describes how an electrical disturbance (potential) propagates through a one-dimensional cable, such as a purified cardiac fiber.",
+        "goal": "All-or-None Phenomenon",
+        "goal_desc": "In this model, there is a critical threshold (alpha). If the stimulus is weak, the cell returns to rest. If it exceeds the threshold, a stable wave is generated and travels through the entire tissue. This is the basis of electrical communication in the heart."
+      },
+      "advanced": {
+        "title": "Wavefront Dynamics",
+        "desc": "Unlike more complex models, the Bistable focuses on wavefront stability. It demonstrates how diffusion (Sigma) and local reaction interact to keep the wave shape constant during propagation.",
+        "kinetics": "Stable Propagation vs Extinction",
+        "kinetics_desc": "The threshold parameter (alpha) defines excitability. If the threshold is too high or the conductivity is too low, the wave can undergo 'extinction' or conduction block, simulating failures that occur in diseased or ischemic tissues.",
+        "ref": "Keener, J., & Sneyd, J. (1998). Mathematical Physiology. Springer."
+      },
+      "math": {
+        "title": "Equation and Resolution",
+        "desc": "The model is governed by a reaction-diffusion Partial Differential Equation (PDE) with a non-linear cubic term.",
+        "equation": "∂v/∂t = D · ∇²v + A · v(1-v)(v-α)",
+        "methods": "Numerical Methods",
+        "methods_desc": "We use the Finite Difference Method for spatial discretization (Laplacian) and the 4th-order Runge-Kutta (RK4) method for time integration. The algorithm also implements an automatic check of the CFL condition, dynamically reducing the time step (dt) if its relationship with the spatial step (dx) exceeds the limit of numerical stability."
+      }
     },
     "ms1d": {
     "desc": "The Mitchell-Schaeffer model is a simplified phenomenological formulation describing cardiac action potential propagation. It uses two state variables: transmembrane potential (v) and a gate variable (h) governing refractoriness (similar to sodium channel inactivation). Despite its simplicity, it reproduces complex properties like the cardiac tissue restitution curve.",
