@@ -568,9 +568,32 @@
       "eq_w": "∂w/∂t = ε·(v - γ·w)"
     },
     "bistable": {
-      "desc": "O Modelo Bistable é uma das representações mais fundamentais de um meio excitável. Ele descreve a dinâmica de uma única variável de estado, o potencial transmembrana (V), utilizando um termo de reação cúbico não linear. O sistema possui dois estados estáveis (repouso e excitado) separados por um limiar instável, demonstrando a essência do princípio \"tudo ou nada\" da propagação do potencial de ação.",
-      "eq": "∂v/∂t = k * ∂²v/∂x² + A * v * (1 - v) * (v - α)",
-      "method": "A equação é resolvida numericamente utilizando o Método das Diferenças Finitas para discretizar o termo de difusão no espaço, e o método de Euler explícito para integração temporal."
+      "title": "Modelo Bistable 1D",
+      "tabs": {
+        "basic": "Básico",
+        "advanced": "Avançado",
+        "math": "Matemático"
+      },
+      "basic": {
+        "title": "Conceitos Fundamentais",
+        "desc": "O modelo Bistable é a representação mais simples de um meio excitável. Ele descreve como o potencial se propaga através de um cabo unidimensional, como uma fibra cardíaca.",
+        "goal": "Fenômeno de Tudo-ou-Nada",
+        "goal_desc": "Neste modelo, existe um limiar crítico (alfa). Se o estímulo for fraco, a célula volta ao repouso. Se ultrapassar o limiar, uma onda estável é gerada e viaja por todo o tecido."
+      },
+      "advanced": {
+        "title": "Dinâmica de Frente de Onda",
+        "desc": "Diferente de modelos mais complexos, o Bistable foca na estabilidade da frente de onda. Ele demonstra como a difusão (Sigma) e a reação local interagem para manter a forma da onda constante durante a propagação.",
+        "kinetics": "Propagação Estável vs Extinção",
+        "kinetics_desc": "O parâmetro de limiar (alfa) define a excitabilidade. Se o limiar for muito alto ou a condutividade for muito baixa, a onda pode sofrer 'extinção' ou bloqueio de condução, simulando falhas que ocorrem em tecidos doentes ou isquêmicos.",
+        "ref": "Keener, J., & Sneyd, J. (1998). Mathematical Physiology. Springer."
+      },
+      "math": {
+        "title": "Equação e Resolução",
+        "desc": "O modelo é regido por uma Equação Diferencial Parcial (EDP) de reação-difusão com um termo cúbico não-linear.",
+        "equation": "∂v/∂t = D · ∇²v + A · v(1-v)(v-α)",
+        "methods": "Métodos Numéricos",
+        "methods_desc": "Utilizamos o Método das Diferenças Finitas para o espaço (Laplaciano) e o método de Runge-Kutta de 4ª ordem para a integração no tempo. O algoritmo também implementa uma verificação automática da condição de CFL, reduzindo dinamicamente o passo de tempo (dt) caso a relação com o passo espacial (dx) ultrapasse o limite de estabilidade numérica."
+      }
     },
     "ms1d": {
       "desc": "O modelo Mitchell-Schaeffer é uma formulação fenomenológica simplificada que descreve a propagação do potencial de ação cardíaco. Ele utiliza duas variáveis de estado: o potencial transmembrânico (v) e uma variável de 'gate' (h), que governa a refratariedade (semelhante à inativação dos canais de sódio). Apesar de simples, reproduz propriedades complexas como a curva de restituição do tecido cardíaco.",

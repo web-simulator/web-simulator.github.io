@@ -52,6 +52,7 @@ const BistablePage = ({ onBack }) => {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedX, setSelectedX] = useState(null);
   const chartRef = useRef(null);
+  const [activeTab, setActiveTab] = useState('basic');
 
   // Parâmetros da simulação que o usuário pode alterar
   const [editableParams, setEditableParams] = useState({
@@ -159,47 +160,89 @@ const BistablePage = ({ onBack }) => {
   const currentChartData = simulationData[currentFrame]?.data;
 
   // Conteúdo do Modal de Informações
-const renderInfoModalContent = () => (
-    <div className="info-modal-content text-slate-800 space-y-4">
-      <h2 className="text-2xl font-bold text-emerald-800 mb-4">{t('home.models.bistable.title')}</h2>
+  const renderInfoModalContent = () => {
+    return (
+      <div className="flex flex-col h-full max-h-[80vh]">
+        {/* Cabeçalho do Modal */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-emerald-800">{t('modals.bistable.title')}</h2>
+        </div>
 
-      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">
-        {t('modals.math_model')}
-      </h3>
-      <p className="text-slate-600 text-justify">
-        {t('modals.bistable.desc')}
-      </p>
-      
-      <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm my-2">
-        <p>{t('modals.bistable.eq')}</p>
+        {/* Navegação por Abas */}
+        <div className="flex border-b border-slate-200 mb-6 overflow-x-auto custom-scrollbar">
+          {['basic', 'advanced', 'math'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-6 py-2 font-medium text-sm transition-colors relative whitespace-nowrap ${
+                activeTab === tab ? 'text-emerald-600' : 'text-slate-500 hover:text-emerald-500'
+              }`}
+            >
+              {t(`modals.bistable.tabs.${tab}`)}
+              {activeTab === tab && (
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 animate-slideInRight" />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Conteúdo das Abas */}
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+          
+          {activeTab === 'basic' && (
+            <div className="space-y-4 animate-fadeIn">
+              <h3 className="text-xl font-bold text-slate-700">{t('modals.bistable.basic.title')}</h3>
+              <p className="text-slate-600 leading-relaxed text-justify">{t('modals.bistable.basic.desc')}</p>
+
+              <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4 mt-4">
+                 <h4 className="font-semibold text-emerald-800 mb-2">
+                    <i className="bi bi-lightning-charge mr-2"></i>
+                    {t('modals.bistable.basic.goal')}
+                 </h4>
+                 <p className="text-sm text-emerald-700 leading-relaxed text-justify">
+                    {t('modals.bistable.basic.goal_desc')}
+                 </p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'advanced' && (
+            <div className="space-y-4 animate-fadeIn">
+              <h3 className="text-xl font-bold text-slate-700">{t('modals.bistable.advanced.title')}</h3>
+              <p className="text-slate-600 leading-relaxed text-justify">{t('modals.bistable.advanced.desc')}</p>
+
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                 <h4 className="font-semibold text-slate-700 mb-2">{t('modals.bistable.advanced.kinetics')}</h4>
+                 <p className="text-sm text-slate-600 text-justify">{t('modals.bistable.advanced.kinetics_desc')}</p>
+              </div>
+
+              {/* Bloco de Referências padronizado adicionado */}
+              <div className="mt-6 border-t border-slate-200 pt-4">
+                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{t('modals.references')}</h4>
+                 <p className="text-xs text-slate-500 italic">{t('modals.bistable.advanced.ref')}</p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'math' && (
+            <div className="space-y-4 animate-fadeIn">
+              <h3 className="text-xl font-bold text-slate-700">{t('modals.bistable.math.title')}</h3>
+              <p className="text-slate-600 text-sm">{t('modals.bistable.math.desc')}</p>
+              
+              {/* Box de equações com a borda lateral verde (exato padrão) */}
+              <div className="bg-slate-50 border border-slate-200 border-l-4 border-l-emerald-500 text-slate-700 p-4 rounded-r-lg font-mono text-sm space-y-2 overflow-x-auto custom-scrollbar">
+                 <p>{t('modals.bistable.math.equation')}</p>
+              </div>
+              
+              {/* Título de seção numérica padronizado */}
+              <h4 className="font-bold text-slate-700 mt-6">{t('modals.bistable.math.methods')}</h4>
+              <p className="text-sm text-slate-600 text-justify">{t('modals.bistable.math.methods_desc')}</p>
+            </div>
+          )}
+        </div>
       </div>
-
-      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">
-        {t('modals.numerical_method')}
-      </h3>
-      <p className="text-slate-600 text-sm text-justify">
-        {t('modals.bistable.method')}
-      </p>
-
-      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">
-        {t('modals.param_meaning')}
-      </h3>
-      <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600">
-        {Object.keys(editableParams).map(key => {
-            const isSymbol = key.length <= 5;
-            return (
-                <li key={key}>
-                    {isSymbol ? (
-                        <> <a className="text-slate-700">{key}:</a> {t(`params.${key}`) || key}</>
-                    ) : (
-                        <a className="text-slate-700">{t(`params.${key}`) || key}</a>
-                    )}
-                </li>
-            );
-        })}
-      </ul>
-    </div>
-  );
+    );
+  };
 
   // Memoriza o conteúdo do modal do gráfico
   const chartModalContent = useMemo(() => (
