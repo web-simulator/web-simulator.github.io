@@ -299,15 +299,15 @@
       },
       "advanced": {
         "title": "Advanced Physiology and Arrhythmias",
-        "desc": "In this section, you discover how to simulate real problems and characteristics of cardiac tissue to create disease-prone environments.",
+        "desc": "In this section, you will discover how to simulate real problems and characteristics of cardiac tissue to create disease-prone environments.",
         "tissue_title": "Conductivity and Fiber Angle",
-        "tissue_desc": "The heart does not have equal conductivity in all directions. It has fibers, where electricity travels much faster in the longitudinal direction (Sigma_L) than in the transverse direction (Sigma_T). Changing the angle shifts the direction of these fibers, making the wave take oval shapes instead of circular ones.",
+        "tissue_desc": "The heart does not have equal conductivity in all directions. It consists of fibers where electricity travels much faster in the longitudinal direction (Sigma_L) than in the transverse direction (Sigma_T). Changing the angle shifts the direction of these fibers, causing the wave to take on oval rather than circular shapes.",
         "fibrosis_title": "Representing Fibrosis",
-        "fibrosis_desc": "Fibrosis is the formation of non-conductive scar tissue in the heart. It acts as an electrical insulator that blocks or diverts the propagation of the action potential, serving as a major trigger for complex arrhythmias.",
-        "fib_compact": "Shows a solid scar (round or square) in a defined position. The electrical wave will be forced to bypass this obstacle, creating delays.",
-        "fib_diffuse": "Instead of a solid block, it scatters tiny dots over a chosen area. It is the main cause of Fibrillation, as these dots destroy the wavefront.",
+        "fibrosis_desc": "Fibrosis is the formation of non-conductive scar tissue in the heart. It acts as an electrical insulator that blocks or diverts the propagation of the action potential, serving as one of the primary triggers for complex arrhythmias.",
+        "fib_compact": "Shows a solid scar (round or square) at a defined position. The electrical wave will be forced to navigate around this obstacle, creating conduction delays.",
+        "fib_diffuse": "Instead of a solid block, it scatters small points across a chosen area. This is a leading cause of Fibrillation, as these points break up the wavefront.",
         "transmurality_title": "Heart Layers - Transmurality",
-        "transmurality_desc": "The muscular wall of the heart has three real layers: Endocardium, Myocardium, and Epicardium. By turning on Transmurality, you divide the representation into 3 bands. Each piece of tissue will then have different resting times."
+        "transmurality_desc": "The muscular wall of the heart is composed of three distinct layers: Endocardium, Mid-myocardium (M-cells), and Epicardium. By enabling Transmurality, the simulator alters the action potential model used at each point in the tissue to reflect region-specific electrophysiological properties. This creates real heterogeneity in action potential duration (APD) and recovery times, allowing for the study of repolarization dispersion and arrhythmias."
       },
       "math": {
         "diffusion_desc": "The fundamental equation used is the diffusion equation. It states mathematically how energy is transferred from an excited cell to its empty neighbors:",

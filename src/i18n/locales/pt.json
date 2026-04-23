@@ -304,7 +304,7 @@
         "fib_compact": "Mostra uma cicatriz sólida (redonda ou quadrada) em uma posição definida. A onda elétrica será forçada a contornar esse obstáculo, criando atrasos.",
         "fib_diffuse": "Em vez de um bloco sólido, espalha pequenos pontinhos por uma área escolhida. É a principal causa de Fibrilação, pois esses pontinhos destroem a frente da onda.",
         "transmurality_title": "Camadas do Coração - Transmuralidade",
-        "transmurality_desc": "A parede muscular do coração tem três camadas reais: Endocárdio, Miocárdio e Epicárdio. Ao ligar a Transmuralidade, você divide a representação em 3 faixas. Cada pedaço do tecido passará a ter tempos de repouso diferentes."
+        "transmurality_desc": "A parede muscular do coração é composta por três camadas distintas: Endocárdio, Miocárdio-M e Epicárdio. Ao ativar a Transmuralidade, o simulador altera o modelo de potencial de ação utilizado em cada ponto do tecido para refletir as propriedades eletrofisiológicas específicas de cada região. Isso cria uma heterogeneidade real na duração do potencial de ação (APD) e nos tempos de recuperação, permitindo o estudo da dispersão da repolarização e de arritmias."
       },
       "math": {
         "diffusion_desc": "A equação fundamental utilizada é a equação da difusão. Ela diz matematicamente como a energia é transferida de uma célula cheia para os seus vizinhos vazios:",
