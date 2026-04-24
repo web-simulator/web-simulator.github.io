@@ -214,6 +214,8 @@ self.onmessage = (e) => {
   const apd = new Float32Array(size).fill(-1);
   const activationState = new Uint8Array(size).fill(0);
   const activationStartTime = new Float32Array(size).fill(-1);
+  const activationCount = new Uint32Array(size).fill(0);
+  let maxActivations = 0; 
   const activationThreshold = 0.3;
 
   let frameCount = 0;
@@ -224,14 +226,13 @@ self.onmessage = (e) => {
 
   const { u_o, theta_v, theta_w, tau_vplus, tau_s1, k_s, u_s } = COMMON_MINIMAL;
 
-  // Seleção de parâmetros celulares
   const useTransmurality = transmuralityParams && transmuralityParams.enabled;
   let singleCellParams = null;
   if (!useTransmurality) {
     singleCellParams = minimalCellParams[cellType] || minimalCellParams.epi;
   }
 
-  // Loop Temporal
+  // Loop Temporal Principal
   for (let t = 0; t < steps; t++) {
     if (t % progressInterval === 0) {
       const progress = Math.round((t / steps) * 100);
@@ -245,7 +246,7 @@ self.onmessage = (e) => {
 
     // Variaveis anteriores
     const u_prev = new Float32Array(u); 
-    const h_prev = new Float32Array(v_gate);
+    const v_prev = new Float32Array(v_gate);
     const w_prev = new Float32Array(w_gate);
     const s_prev = new Float32Array(s_gate);
 
@@ -267,7 +268,6 @@ self.onmessage = (e) => {
       for (let j = 1; j < N - 1; j++) {
         const idx = i * N + j;
         
-        // Caso tenha transmuralidade
         let p;
         if (useTransmurality) {
             const ratio = j / N; 
@@ -282,7 +282,7 @@ self.onmessage = (e) => {
 
         // Variáveis locais
         const val_u = u_prev[idx];
-        const val_v = h_prev[idx];
+        const val_v = v_prev[idx];
         const val_w = w_prev[idx];
         const val_s = s_prev[idx];
 
@@ -328,7 +328,7 @@ self.onmessage = (e) => {
             v_gate[idx] = val_v;
         }
 
-        // Rush-Larsen para w
+        // Rush-Larsen para w_gate
         const w_inf = (1.0 - H_u_tho) * (1.0 - val_u / p.tau_winf) + H_u_tho * p.w_infstar;
         const tau_w_rl = (p.tau_wplus * tau_wminus) / (p.tau_wplus - p.tau_wplus * H_u_thw + tau_wminus * H_u_thw);
         const w_inf_rl = (p.tau_wplus * w_inf * (1 - H_u_thw)) / (p.tau_wplus - p.tau_wplus * H_u_thw + tau_wminus * H_u_thw);
@@ -339,7 +339,7 @@ self.onmessage = (e) => {
             w_gate[idx] = val_w;
         }
 
-        // Rush-Larsen para s
+        // Rush-Larsen para s_gate
         const s_inf_rl = (1.0 + Math.tanh(k_s * (val_u - u_s))) * 0.5;
         if (tau_s > 1e-10) {
             s_gate[idx] = s_inf_rl + (val_s - s_inf_rl) * Math.exp(-dt / tau_s);
@@ -347,27 +347,40 @@ self.onmessage = (e) => {
             s_gate[idx] = val_s;
         }
 
-        // Limita u entre 0 e 2
+        // Limites da Voltagem
         if (u[idx] < 0) u[idx] = 0;
         if (u[idx] > 2.0) u[idx] = 2.0;
 
-        // Cálculo de LAT e APD
         const volt = u[idx];
-        
-        // Primeiro tempo de ativação
-        if (activationTimes[idx] < 0 && volt >= activationThreshold) {
-            activationTimes[idx] = currentTime;
-        }
 
         if (activationState[idx] === 0) { // Em repouso
             if (volt >= activationThreshold) {
                 activationState[idx] = 1; // Ativado
                 activationStartTime[idx] = currentTime;
+                
+                let c = activationCount[idx];
+                activationCount[idx]++;
+                
+                // Expande os arrays dinamicamente se necessário
+                if (c >= maxActivations) {
+                    maxActivations++;
+                    activationTimes.push(new Float32Array(size).fill(-1));
+                    apd.push(new Float32Array(size).fill(-1));
+                }
+                activationTimes[c][idx] = currentTime;
             }
         } else if (activationState[idx] === 1) { // Ativado
             if (volt < activationThreshold) {
                 activationState[idx] = 2; // Recuperado
-                apd[idx] = currentTime - activationStartTime[idx];
+                let c = activationCount[idx] - 1;
+                if (c >= 0 && apd[c]) {
+                    apd[c][idx] = currentTime - activationStartTime[idx];
+                }
+            }
+        } else if (activationState[idx] === 2) { 
+            // Permite a célula descansar
+            if (volt < 0.05) {
+                activationState[idx] = 0;
             }
         }
       }
@@ -377,28 +390,50 @@ self.onmessage = (e) => {
     for (let i = 0; i < N; i++) {
         u[i*N] = u[i*N+1]; 
         u[i*N+N-1] = u[i*N+N-2];
-        
-        activationTimes[i*N] = activationTimes[i*N+1]; 
-        activationTimes[i*N+N-1] = activationTimes[i*N+N-2];
-        apd[i*N] = apd[i*N+1]; 
-        apd[i*N+N-1] = apd[i*N+N-2];
+        v_gate[i*N] = v_gate[i*N+1]; 
+        v_gate[i*N+N-1] = v_gate[i*N+N-2];
+        w_gate[i*N] = w_gate[i*N+1]; 
+        w_gate[i*N+N-1] = w_gate[i*N+N-2];
+        s_gate[i*N] = s_gate[i*N+1]; 
+        s_gate[i*N+N-1] = s_gate[i*N+N-2];
+
         activationState[i*N] = activationState[i*N+1]; 
         activationState[i*N+N-1] = activationState[i*N+N-2];
         activationStartTime[i*N] = activationStartTime[i*N+1]; 
         activationStartTime[i*N+N-1] = activationStartTime[i*N+N-2];
+        activationCount[i*N] = activationCount[i*N+1];
+        activationCount[i*N+N-1] = activationCount[i*N+N-2];
+
+        for (let c = 0; c < maxActivations; c++) {
+            activationTimes[c][i*N] = activationTimes[c][i*N+1];
+            activationTimes[c][i*N+N-1] = activationTimes[c][i*N+N-2];
+            apd[c][i*N] = apd[c][i*N+1];
+            apd[c][i*N+N-1] = apd[c][i*N+N-2];
+        }
     }
     for (let j = 0; j < N; j++) {
         u[j] = u[N+j]; 
         u[(N-1)*N+j] = u[(N-2)*N+j];
+        v_gate[j] = v_gate[N+j]; 
+        v_gate[(N-1)*N+j] = v_gate[(N-2)*N+j];
+        w_gate[j] = w_gate[N+j]; 
+        w_gate[(N-1)*N+j] = w_gate[(N-2)*N+j];
+        s_gate[j] = s_gate[N+j]; 
+        s_gate[(N-1)*N+j] = s_gate[(N-2)*N+j];
 
-        activationTimes[j] = activationTimes[N+j]; 
-        activationTimes[(N-1)*N+j] = activationTimes[(N-2)*N+j];
-        apd[j] = apd[N+j]; 
-        apd[(N-1)*N+j] = apd[(N-2)*N+j];
         activationState[j] = activationState[N+j]; 
         activationState[(N-1)*N+j] = activationState[(N-2)*N+j];
         activationStartTime[j] = activationStartTime[N+j]; 
         activationStartTime[(N-1)*N+j] = activationStartTime[(N-2)*N+j];
+        activationCount[j] = activationCount[N+j];
+        activationCount[(N-1)*N+j] = activationCount[(N-2)*N+j];
+
+        for (let c = 0; c < maxActivations; c++) {
+            activationTimes[c][j] = activationTimes[c][N+j];
+            activationTimes[c][(N-1)*N+j] = activationTimes[c][(N-2)*N+j];
+            apd[c][j] = apd[c][N+j];
+            apd[c][(N-1)*N+j] = apd[c][(N-2)*N+j];
+        }
     }
 
     if (t % downsamplingFactor === 0) {
@@ -407,6 +442,10 @@ self.onmessage = (e) => {
       frameCount++;
     }
   }
+
+  const transferList = [framesBuffer.buffer, timesBuffer.buffer, fibrosisMap.buffer];
+  activationTimes.forEach(arr => transferList.push(arr.buffer));
+  apd.forEach(arr => transferList.push(arr.buffer));
 
   self.postMessage(
     { 
@@ -419,6 +458,6 @@ self.onmessage = (e) => {
         N,
         totalFrames: frameCount
     }, 
-    [framesBuffer.buffer, timesBuffer.buffer, fibrosisMap.buffer, activationTimes.buffer, apd.buffer]
+    transferList
   );
 };

@@ -75,21 +75,25 @@ const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fi
             let val = data[i];
         
             if (isNaN(val) || val < 0) {
-                val = 0; 
+                // Pixel neutro (Cinza) para áreas "Não Ativadas" (LAT ou APD vazio)
+                pixels[idx] = 40;     
+                pixels[idx + 1] = 40; 
+                pixels[idx + 2] = 40; 
+                pixels[idx + 3] = 255; 
+            } else {
+                const safeVal = Math.max(0, Math.min(maxValue, val));
+                
+                let colorIndex = 0;
+                if (maxValue > 0) {
+                    colorIndex = Math.floor((safeVal / maxValue) * 255);
+                    if (colorIndex > 255) colorIndex = 255;
+                }
+                
+                pixels[idx] = colorMap[colorIndex * 3];     
+                pixels[idx + 1] = colorMap[colorIndex * 3 + 1]; 
+                pixels[idx + 2] = colorMap[colorIndex * 3 + 2]; 
+                pixels[idx + 3] = 255; 
             }
-
-            const safeVal = Math.max(0, Math.min(maxValue, val));
-            
-            let colorIndex = 0;
-            if (maxValue > 0) {
-                colorIndex = Math.floor((safeVal / maxValue) * 255);
-                if (colorIndex > 255) colorIndex = 255;
-            }
-            
-            pixels[idx] = colorMap[colorIndex * 3];     
-            pixels[idx + 1] = colorMap[colorIndex * 3 + 1]; 
-            pixels[idx + 2] = colorMap[colorIndex * 3 + 2]; 
-            pixels[idx + 3] = 255; 
         }
     }
 

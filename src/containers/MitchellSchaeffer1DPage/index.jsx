@@ -57,6 +57,7 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedX, setSelectedX] = useState(null);
   const chartRef = useRef(null);
+  const [activeTab, setActiveTab] = useState('basic');
 
   // Parâmetros da simulação que o usuário pode alterar
   const [editableParams, setEditableParams] = useState({
@@ -190,51 +191,104 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
 
   const currentChartData = simulationData[currentFrame]?.data || [];
 
-  const renderInfoModalContent = () => (
-    <div className="info-modal-content text-slate-800 space-y-4">
-      <h2 className="text-2xl font-bold text-emerald-800 mb-4">{t('home.models.ms_1d.title')}</h2>
-      
-      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">
-        {t('modals.math_model')}
-      </h3>
-      <p className="text-slate-600 text-justify">
-        {t('modals.ms1d.desc')}
-      </p>
-      
-      <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 font-mono text-sm my-2 space-y-2 shadow-sm">
-        <p className="font-bold text-slate-700">{t('modals.ms1d.eq_v')}</p>
-        <div className="border-t border-slate-200 pt-2 mt-2 space-y-1 text-slate-600">
-            <p>{t('modals.ms1d.eq_h_open')}</p>
-            <p>{t('modals.ms1d.eq_h_close')}</p>
+  const renderInfoModalContent = () => {
+    return (
+      <div className="flex flex-col h-full max-h-[80vh]">
+        {/* Cabeçalho do Modal */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-emerald-800">{t('modals.ms1d.title')}</h2>
+        </div>
+
+        {/* Navegação por Abas */}
+        <div className="flex border-b border-slate-200 mb-6 overflow-x-auto custom-scrollbar">
+          {['basic', 'advanced', 'math'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-6 py-2 font-medium text-sm transition-colors relative whitespace-nowrap ${
+                activeTab === tab ? 'text-emerald-600' : 'text-slate-500 hover:text-emerald-500'
+              }`}
+            >
+              {t(`modals.ms1d.tabs.${tab}`)}
+              {activeTab === tab && (
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 animate-slideInRight" />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Conteúdo das Abas */}
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+          
+          {activeTab === 'basic' && (
+            <div className="space-y-4 animate-fadeIn">
+              <h3 className="text-xl font-bold text-slate-700">{t('modals.ms1d.basic.title')}</h3>
+              <p className="text-slate-600 leading-relaxed text-justify mb-4">{t('modals.ms1d.basic.desc')}</p>
+
+              {/* NOVA SEÇÃO: O que é um modelo 1D */}
+              <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.ms1d.basic.what_is_1d')}</h3>
+              <p className="text-slate-600 leading-relaxed mb-4">{t('modals.ms1d.basic.what_is_1d_desc')}</p>
+
+              <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4 mt-4">
+                 <h4 className="font-semibold text-emerald-800 mb-2">
+                    <i className="bi bi-activity mr-2"></i>
+                    {t('modals.ms1d.basic.goal')}
+                 </h4>
+                 <p className="text-sm text-emerald-700 leading-relaxed text-justify">
+                    {t('modals.ms1d.basic.goal_desc')}
+                 </p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'advanced' && (
+            <div className="space-y-6 animate-fadeIn">
+              <h3 className="text-xl font-bold text-slate-700">{t('modals.ms1d.advanced.title')}</h3>
+              <p className="text-slate-600 leading-relaxed text-justify">{t('modals.ms1d.advanced.desc')}</p>
+
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                 <h4 className="font-semibold text-slate-700 mb-2">{t('modals.ms1d.advanced.kinetics')}</h4>
+                 <p className="text-sm text-slate-600 text-justify">{t('modals.ms1d.advanced.kinetics_desc')}</p>
+              </div>
+
+              {/* BOX: Explicação das Visualizações */}
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-4">
+                 <h4 className="font-semibold text-slate-700 mb-2">{t('modals.ms1d.advanced.visualizations')}</h4>
+                 <p className="text-sm text-slate-600 text-justify">{t('modals.ms1d.advanced.visualizations_desc')}</p>
+              </div>
+
+              {/* NOVO BOX: Modos de Simulação (Padrão vs CV) */}
+              <div className="bg-white border-l-4 border-emerald-500 p-4 mt-4 shadow-sm">
+                 <h4 className="font-bold text-slate-700 mb-1">{t('modals.ms1d.advanced.modes')}</h4>
+                 <p className="text-sm text-slate-600 text-justify">{t('modals.ms1d.advanced.modes_desc')}</p>
+              </div>
+
+              <div className="mt-6 border-t border-slate-200 pt-4">
+                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{t('modals.references')}</h4>
+                 <p className="text-xs text-slate-500 italic">{t('modals.ms1d.advanced.ref')}</p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'math' && (
+            <div className="space-y-4 animate-fadeIn">
+              <h3 className="text-xl font-bold text-slate-700">{t('modals.ms1d.math.title')}</h3>
+              <p className="text-slate-600 text-sm mb-4">{t('modals.ms1d.math.desc')}</p>
+              
+              <div className="bg-slate-50 border border-slate-200 border-l-4 border-l-emerald-500 text-slate-700 p-4 rounded-r-lg font-mono text-sm space-y-2 overflow-x-auto custom-scrollbar mb-2">
+                 <p>{t('modals.ms1d.math.eq_v')}</p>
+                 <p>{t('modals.ms1d.math.eq_h')}</p>
+              </div>
+              <p className="text-sm text-slate-600 italic mt-2 mb-6">{t('modals.ms1d.math.stim_term')}</p>
+
+              <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.ms1d.math.methods')}</h3>
+              <p className="text-sm text-slate-600 text-justify">{t('modals.ms1d.math.methods_desc')}</p>
+            </div>
+          )}
         </div>
       </div>
-      
-      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">
-        {t('modals.numerical_method')}
-      </h3>
-      <p className="text-slate-600 text-sm text-justify">
-        {t('modals.ms1d.method')}
-      </p>
-      <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">
-        {t('modals.param_meaning')}
-      </h3>
-      <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600">
-         {Object.keys(editableParams).map(key => {
-            const mathSymbols = ['k', 'tau_in', 'tau_out', 'tau_open', 'tau_close', 'gate', 'v_gate', 'L', 'dx', 'dt'];
-            const isSymbol = mathSymbols.includes(key);      
-            return (
-                <li key={key}>
-                    {isSymbol ? (
-                        <> <strong className="text-slate-700">{key}:</strong> {t(`params.${key}`) || key} </>
-                    ) : (
-                        <strong className="text-slate-700">{t(`params.${key}`) || key}</strong>
-                    )}
-                </li>
-            );
-         })}
-      </ul>
-    </div>
-  );
+    );
+  };
 
 
   const chartModalContent = useMemo(() => (

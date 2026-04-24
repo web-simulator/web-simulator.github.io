@@ -88,7 +88,9 @@
     "cv_restitution_curve": "Velocidade de Condução",
     "x_axis_metric": "Métrica do Eixo X",
     "coupling_interval": "Intervalo de Acoplamento",
-    "diastolic_interval": "Intervalo Diastólico"
+    "diastolic_interval": "Intervalo Diastólico",
+    "select_activation": "Selecionar Ativação",
+    "activation": "Ativação"
   },
   "chart": {
     "potential_unit": "Potencial (V)",
@@ -621,60 +623,71 @@
       }
     },
     "ms1d": {
-      "desc": "O modelo Mitchell-Schaeffer é uma formulação fenomenológica simplificada que descreve a propagação do potencial de ação cardíaco. Ele utiliza duas variáveis de estado: o potencial transmembrânico (v) e uma variável de 'gate' (h), que governa a refratariedade (semelhante à inativação dos canais de sódio). Apesar de simples, reproduz propriedades complexas como a curva de restituição do tecido cardíaco.",
-      "method": "A equação de difusão é resolvida espacialmente pelo Método de Diferenças Finitas. A integração temporal usa o método de Euler Explícito, com equações condicionais para a dinâmica do gate 'h'.",
-      "eq_v": "∂v/∂t = k·∇²v + (h·v²·(1-v))/τ_in - v/τ_out + J_stim",
-      "eq_h_open": "Se v < v_gate: ∂h/∂t = (1 - h) / τ_open",
-      "eq_h_close": "Se v > v_gate: ∂h/∂t = -h / τ_close"
+      "title": "Modelo Mitchell-Schaeffer 1D",
+      "tabs": {
+        "basic": "Básico",
+        "advanced": "Avançado",
+        "math": "Matemático"
+      },
+      "basic": {
+        "title": "Conceitos Fundamentais",
+        "desc": "O modelo de Mitchell-Schaeffer é uma representação focada especificamente nas células musculares cardíacas. Ao contrário de modelos simplificados, ele reproduz com precisão o formato real de um Potencial de Ação, capturando a rápida fase de despolarização seguida de um longo platô sustentado.",
+        "what_is_1d": "O que é um modelo 1D?",
+        "what_is_1d_desc": "Diferente de uma simulação de uma única célula isolada (0D), um modelo unidimensional (1D) arranja as células em uma linha, simulando um 'cabo' ou fibra de tecido cardíaco. Isso permite observar não apenas a forma da onda, mas também como a eletricidade se propaga através do espaço físico.",
+        "goal": "A Curva de Restituição",
+        "goal_desc": "O grande diferencial deste modelo é a sua capacidade de simular o comportamento de restituição cardíaca e a memória da célula. Se o coração for estimulado muito rápido (Intervalo Diastólico curto), o tempo de platô da próxima onda será reduzido. Ele é ideal para estudar as causas da fibrilação e da alternância elétrica."
+      },
+      "advanced": {
+        "title": "Cinética e Visualização",
+        "desc": "Este modelo agrupa os canais iônicos em duas grandes forças: uma corrente rápida de entrada despolarizante e uma lenta corrente de saída repolarizante.",
+        "kinetics": "Controle por Constantes de Tempo (Tau)",
+        "kinetics_desc": "Você pode moldar a duração da onda ajustando as variáveis Tau. 'Tau_in' controla a velocidade de subida; 'Tau_out' dita a duração da queda e do platô; e 'Tau_open/close' definem a memória de inativação dos canais. O parâmetro 'gate' é a voltagem de corte que alterna entre a abertura e o fechamento do canal.",
+        "visualizations": "Visualizações de Dados",
+        "visualizations_desc": "A página oferece duas formas de analisar a propagação: o 'Gráfico de Linha', que mostra a amplitude do potencial (v) e da porta de inativação (h) ao longo do cabo em um exato instante de tempo; e o 'Gráfico de Cores', que mostra o tempo no eixo vertical e a posição no eixo horizontal, permitindo visualizar a trajetória completa.",
+        "modes": "Modos de Simulação",
+        "modes_desc": "O simulador oferece duas abordagens. A 'Propagação Padrão' permite observar a evolução geral do potencial de ação. Já o modo 'Velocidade de Condução' mostra a frente de onda e calcula a rapidez exata com que o impulso viaja pelo tecido (cm/s). Isso permite estudar como alterações nos canais iónicos ou mudanças no limiar causam lentidão na condução elétrica.",
+        "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane."
+      },
+      "math": {
+        "title": "Equações do Modelo",
+        "desc": "O sistema é governado pela tensão transmembrana (v) e uma única porta de inativação celular (h) que controla a corrente rápida de entrada.",
+        "eq_v": "∂v/∂t = D · ∇²v + (h · v² · (1-v))/Tau_in - v/Tau_out + I_stim",
+        "eq_h": "∂h/∂t = (1-h)/Tau_open (se v < v_gate)  OU  -h/Tau_close (se v > v_gate)",
+        "methods": "Métodos Numéricos",
+        "methods_desc": "Para garantir máxima estabilidade e precisão, é utilizado uma solução híbrida. No tempo, aplica o Euler Explícito para a voltagem (v), mas para a váriavel de gate(h) utiliza o método de rush-larsen. Ele também conta com proteção ativa contra instabilidades limitando dinamicamente o 'dt' pela condição de CFL.",
+        "stim_term": "A equação condicional do 'h' atua como um interruptor que desacopla a fase de despolarização da repolarização."
+      }
     },
-    "source_sink": {
-      "desc": "A simulação Source-Sink Mismatch investiga o fator de segurança da propagação cardíaca. Ela modela a passagem de uma onda elétrica por um istmo estreito (fenda) em direção a uma região de tecido expandido. Se a corrente da fonte for insuficiente para carregar o sumidouro, ocorre bloqueio.",
-      "geometry_desc": "A geometria utiliza barreiras isolantes para criar uma fenda de largura variável, permitindo estudar os efeitos da curvatura da frente de onda.",
-      "eq": "∂V/∂t = ∇·(D∇V) - I_ion/Cm",
-      "ms": {
-         "title": "Modelo Mitchell-Schaeffer",
-         "eq_v": "∂v/∂t = ∇·(D∇v) + (h·v²·(1-v))/τ_in - v/τ_out",
-         "eq_h": "Dinâmica de gate h (abertura/fechamento)"
+    "sourcesink": {
+      "title": "Source-Sink Mismatch",
+      "tabs": {
+        "basic": "Básico",
+        "advanced": "Avançado",
+        "math": "Matemático"
       },
-      "minimal": {
-         "title": "Minimal Model",
-         "eq_u": "∂u/∂t = ∇·(D∇u) - (J_fi + J_so + J_si)",
-         "vars": "Variáveis: u (potencial), v, w, s",
-         "currents": "Correntes: J_fi, J_so, J_si"
+      "basic": {
+        "title": "Conceitos Fundamentais",
+        "desc": "O fenômeno do Source-Sink Mismatch ocorre quando uma onda elétrica precisa passar de uma região estreita de tecido (a 'Fonte', que gera a corrente) para uma região muito mais larga (o 'Sumidouro', que precisa ser estimulado pela corrente).",
+        "goal": "Bloqueio de Condução Geométrico",
+        "goal_desc": "Neste simulador, a onda viaja por um istmo (uma fenda). Ao sair da fenda e atingir o tecido aberto, a frente de onda se expande drasticamente. Se a fenda for muito estreita, as poucas células da 'fonte' não conseguem fornecer carga elétrica suficiente para excitar a enorme quantidade de células do 'sumidouro', causando um bloqueio onde a onda simplesmente morre."
       },
-      "numerical_details": [
-        "Discretização Espacial: Método de Diferenças Finitas.",
-        "Integração Temporal: Euler Explícito.",
-        "Condições de Contorno: Neumann nas barreiras.",
-        "Malha: Retangular regular com passo dx."
-      ],
-      "features": {
-        "geometry_title": "Geometria da Fenda",
-        "geometry_desc": "Define a largura da passagem (Fenda Superior/Inferior) e a presença de obstáculos circulares que dificultam a propagação."
+      "advanced": {
+        "title": "Anisotropia e Obstáculos",
+        "desc": "Este modelo 2D permite testar a falha de condução sob condições adversas reais. O tecido cardíaco possui fibras, ou seja, a eletricidade viaja mais rápido em uma direção (longitudinal) do que na outra (transversal).",
+        "kinetics": "Fibrose",
+        "kinetics_desc": "Você pode adicionar fibrose compacta ou difusa. O algoritmo suporta zonas de borda, onde a condutividade decai em áreas próximas às regiões de fibrose, reproduzindo a heterogeneidade das bordas de um infarto real.",
+        "models": "Múltiplos Modelos Celulares",
+        "models_desc": "A página permite alternar entre o modelo Mitchell-Schaeffer e o Minimal Model. Isso permite comparar como diferentes dinâmicas resistem à mesma barreira anatômica.",
+        "ref": "Kléber, A. G., & Rudy, Y. (2004). Basic mechanisms of cardiac impulse propagation and associated arrhythmias."
       },
-      "glossary": {
-        "geometry": "Parâmetros Geométricos",
-        "model": "Parâmetros do Modelo",
-        "general": "Parâmetros Gerais",
-        "model_ms": "Parâmetros Mitchell-Schaeffer",
-        "model_minimal": "Parâmetros Minimal Model",
-        "L_dx": "L / dx: Tamanho do tecido (cm) e passo espacial",
-        "sigma": "σ_l / σ_t: Condutividade longitudinal e transversal",
-        "angle": "Ângulo: Orientação das fibras do tecido",
-        "slit": "Fenda: Largura superior e inferior",
-        "obstacle": "Obstáculo: Raio e posição da barreira central",
-        "dt_time": "dt / Tempo: Passo de tempo e duração total da simulação",
-        "ms_taus": "τ_in / τ_out: Tempos de despolarização e repolarização",
-        "ms_gates": "τ_open / τ_close: Tempos de recuperação e inativação (gate h)",
-        "minimal_cells": "Tipo Celular: Define parâmetros para Epicárdio, Endocárdio ou M-Cell"
-      },
-      "steps": [
-        "Escolha o modelo celular (Mitchell-Schaeffer ou Minimal).",
-        "Defina a geometria da fenda e do obstáculo na aba Geometria.",
-        "Posicione o estímulo antes da fenda.",
-        "Clique em Simular.",
-        "Analise se a onda consegue excitar o tecido após a expansão."
-      ]
+      "math": {
+        "title": "Equações e Tensor de Difusão",
+        "desc": "Para calcular a direção das fibras, o Laplaciano espacial é substituído por um Tensor de Difusão Anisotrópico bidimensional.",
+        "eq_laplacian": "∇·(D∇v) = Dxx(∂²v/∂x²) + Dyy(∂²v/∂y²) + 2Dxy(∂²v/∂x∂y)",
+        "methods": "Métodos Numéricos",
+        "methods_desc": "Para a discretização espacial, é utilizado o Método das Diferenças Finitas Centrais. No tempo, a integração utiliza Euler para a tensão e o método de Rush-Larsen para as variáveis de gate. O cálculo dinâmico do 'dt' baseia-se no tensor máximo de difusão para evitar instabilidades (CFL).",
+        "stim_term": "Dxx, Dyy e Dxy são os coeficientes derivados das velocidades sigma_L, sigma_T e do ângulo da fibra."
+  }
     }
   }
 }

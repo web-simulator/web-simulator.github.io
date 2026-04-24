@@ -88,7 +88,9 @@
     "cv_restitution_curve": "Conduction Velocity",
     "x_axis_metric": "X-Axis Metric",
     "coupling_interval": "Coupling Interval",
-    "diastolic_interval": "Diastolic Interval"
+    "diastolic_interval": "Diastolic Interval",
+    "select_activation": "Select Activation",
+    "activation": "Activation"
   },
   "chart": {
     "potential_unit": "Potential (V)",
@@ -625,62 +627,71 @@
       }
     },
     "ms1d": {
-    "desc": "The Mitchell-Schaeffer model is a simplified phenomenological formulation describing cardiac action potential propagation. It uses two state variables: transmembrane potential (v) and a gate variable (h) governing refractoriness (similar to sodium channel inactivation). Despite its simplicity, it reproduces complex properties like the cardiac tissue restitution curve.",
-      "method": "The diffusion equation is solved spatially using the Finite Difference Method. Temporal integration uses the Explicit Euler method, with conditional equations for the 'h' gate dynamics.",
-      "eq_v": "∂v/∂t = k·∇²v + (h·v²·(1-v))/τ_in - v/τ_out + J_stim",
-      "eq_h_open": "If v < v_gate: ∂h/∂t = (1 - h) / τ_open",
-      "eq_h_close": "If v > v_gate: ∂h/∂t = -h / τ_close"
+      "title": "Mitchell-Schaeffer 1D Model",
+      "tabs": {
+        "basic": "Basic",
+        "advanced": "Advanced",
+        "math": "Math"
+      },
+      "basic": {
+        "title": "Fundamental Concepts",
+        "desc": "The Mitchell-Schaeffer model is a evolution focused specifically on cardiac muscle cells. Unlike nerve models, it accurately reproduces the real shape of an Action Potential, capturing the rapid depolarization phase followed by a long sustained plateau.",
+        "what_is_1d": "What is a 1D model?",
+        "what_is_1d_desc": "Unlike a single isolated cell simulation (0D), a one-dimensional (1D) model arranges cells in a line, simulating a 'cable' or fiber of cardiac tissue. This allows us to observe not only the shape of the wave but also how electricity propagates (conduction) across physical space.",
+        "goal": "The Restitution Curve",
+        "goal_desc": "The main differential of this model is its ability to simulate cardiac restitution behavior and cell memory. If the heart is stimulated too quickly (short Diastolic Interval), the plateau time of the next wave will be reduced. It is ideal for studying the causes of fibrillation and electrical alternans."
+      },
+      "advanced": {
+        "title": "Kinetics and Visualization",
+        "desc": "This model simplifies the complex Hodgkin-Huxley system by grouping the ion channels into two major forces: a rapid depolarizing inward current and a slow repolarizing outward current.",
+        "kinetics": "Time Constants (Tau) Control",
+        "kinetics_desc": "You can shape the wave duration by adjusting the Tau variables. 'Tau_in' controls the upstroke speed; 'Tau_out' dictates the repolarization and plateau duration; and 'Tau_open/close' define the channel inactivation memory. The 'gate' parameter is the cutoff voltage that toggles between channel opening and closing.",
+        "visualizations": "Data Visualizations (Line vs. Color Map)",
+        "visualizations_desc": "The page offers two ways to analyze propagation: the 'Line Chart', which shows the amplitude of the potential (v) and the inactivation gate (h) along the cable at an exact instant in time; and the 'Spatiotemporal Chart' (Color Map), which stacks time on the vertical axis and position on the horizontal axis, allowing you to visualize the complete trajectory.",
+        "modes": "Simulation Modes: Standard and Conduction Velocity",
+        "modes_desc": "The simulator offers two approaches. 'Standard Propagation' allows you to observe the general evolution of the action potential. The 'Conduction Velocity (CV)' mode activates an algorithm that tracks the wavefront and calculates the exact speed at which the impulse travels through the tissue (cm/s). This allows studying how alterations in ion channels or threshold changes slow down electrical conduction.",
+        "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane."
+      },
+      "math": {
+        "title": "Model Equations",
+        "desc": "The system is governed by the transmembrane voltage (v) and a single cellular inactivation gate (h) that controls the rapid inward current.",
+        "eq_v": "∂v/∂t = D · ∇²v + (h · v² · (1-v))/Tau_in - v/Tau_out + I_stim",
+        "eq_h": "∂h/∂t = (1-h)/Tau_open (if v < v_gate)  OR  -h/Tau_close (if v > v_gate)",
+        "methods": "Hybrid Integration: Rush-Larsen and Euler",
+        "methods_desc": "To ensure  stability and biological accuracy, this simulation uses a hybrid approximation. In time, it applies Explicit Euler for the voltage (v), but uses the Rush-Larsen method for the inactivation gate (h). It also features active protection against instabilities by dynamically capping 'dt' via the CFL criterion.",
+        "stim_term": "The conditional equation for 'h' acts as a mathematical switch that decouples the depolarization phase from the repolarization phase."
+      }
     },
-"modals": {
-    "source_sink": {
-      "desc": "The Source-Sink Mismatch simulation investigates the safety factor of cardiac propagation. It models the passage of an electrical wave through a narrow isthmus (slit) into an expanded tissue region. If source current is insufficient to charge the sink, block occurs.",
-      "geometry_desc": "The geometry uses insulating barriers to create a variable-width slit, allowing the study of wavefront curvature effects.",
-      "eq": "∂V/∂t = ∇·(D∇V) - I_ion/Cm",
-      "ms": {
-         "title": "Mitchell-Schaeffer Model",
-         "eq_v": "∂v/∂t = ∇·(D∇v) + (h·v²·(1-v))/τ_in - v/τ_out",
-         "eq_h": "h-gate dynamics (opening/closing)"
+    "sourcesink": {
+      "title": "Source-Sink Mismatch",
+      "tabs": {
+        "basic": "Basic",
+        "advanced": "Advanced",
+        "math": "Math"
       },
-      "minimal": {
-         "title": "Minimal Model (Bueno-Orovio)",
-         "eq_u": "∂u/∂t = ∇·(D∇u) - (J_fi + J_so + J_si)",
-         "vars": "Variables: u (potential), v, w, s",
-         "currents": "Currents: J_fi, J_so, J_si"
+      "basic": {
+        "title": "Fundamental Concepts",
+        "desc": "The 'Source-Sink Mismatch' phenomenon is a central principle in electrophysiology. It occurs when an electrical wave must pass from a narrow region of tissue (the 'Source', which generates current) to a much wider region (the 'Sink', which must be charged/excited by the current).",
+        "goal": "Geometric Conduction Block",
+        "goal_desc": "In this simulator, the wave travels through an isthmus (a slit). Upon exiting the slit and hitting the open tissue, the wavefront expands drastically. If the slit is too narrow, the few cells of the 'source' cannot provide enough electrical charge to excite the huge amount of cells in the 'sink', causing an abrupt block where the wave simply 'dies'."
       },
-      "numerical_details": [
-        "Spatial Discretization: Finite Difference Method.",
-        "Time Integration: Explicit Euler.",
-        "Boundary Conditions: Neumann on barriers.",
-        "Mesh: Regular rectangular grid with step dx."
-      ],
-      "features": {
-        "geometry_title": "Slit Geometry",
-        "geometry_desc": "Defines the passage width (Upper/Lower Gap) and presence of circular obstacles hindering propagation."
+      "advanced": {
+        "title": "Anisotropy and Obstacles",
+        "desc": "This 2D model allows testing conduction failure under real adverse conditions. Cardiac tissue has fibers, meaning electricity travels faster in one direction (longitudinal) than the other (transverse).",
+        "kinetics": "Fibrosis and Border Zone",
+        "kinetics_desc": "You can add compact or diffuse fibrosis. The algorithm supports 'Border Zones', where conductivity smoothly decays at the periphery of the scar (using linear interpolation), reproducing the heterogeneity of real infarct borders.",
+        "models": "Multiple Cellular Models",
+        "models_desc": "The page allows toggling between the Mitchell-Schaeffer model and the Minimal Model. This allows comparing how different calcium and potassium dynamics resist the same anatomical barrier.",
+        "ref": "Kléber, A. G., & Rudy, Y. (2004). Basic mechanisms of cardiac impulse propagation and associated arrhythmias."
       },
-      "glossary": {
-        "geometry": "Geometric Parameters",
-        "model": "Model Parameters",
-        "general": "General Parameters",
-        "model_ms": "Mitchell-Schaeffer Parameters",
-        "model_minimal": "Minimal Model Parameters",
-        "L_dx": "L / dx: Tissue size (cm) and spatial step",
-        "sigma": "σ_l / σ_t: Longitudinal and transverse conductivity",
-        "angle": "Angle: Fiber orientation",
-        "slit": "Slit: Upper and Lower widths",
-        "obstacle": "Obstacle: Radius and central barrier position",
-        "dt_time": "dt / Time: Time step and total simulation duration",
-        "ms_taus": "τ_in / τ_out: Depolarization and repolarization times",
-        "ms_gates": "τ_open / τ_close: Recovery and inactivation times (h-gate)",
-        "minimal_cells": "Cell Type: Defines parameters for Epicardium, Endocardium, or M-Cell"
-      },
-      "steps": [
-        "Choose the cell model (Mitchell-Schaeffer or Minimal).",
-        "Define gap and obstacle geometry in the 'Geometry' tab.",
-        "Position the stimulus (green circle) before the gap.",
-        "Click 'Simulate' and observe propagation through the isthmus.",
-        "Analyze if the wave successfully excites the tissue after expansion (Sink)."
-      ]
-    }
+      "math": {
+        "title": "Equations and Diffusion Tensor",
+        "desc": "To compute fiber direction, the traditional spatial Laplacian is replaced by a two-dimensional Anisotropic Diffusion Tensor.",
+        "eq_laplacian": "∇·(D∇v) = Dxx(∂²v/∂x²) + Dyy(∂²v/∂y²) + 2Dxy(∂²v/∂x∂y)",
+        "methods": "Integration and Performance",
+        "methods_desc": "For spatial discretization, the worker uses the Central Finite Difference Method. In time, integration uses Euler for voltage and the Rush-Larsen method for gating variables. The dynamic 'dt' calculation (CFL) relies on the maximum diffusion tensor to prevent instabilities.",
+        "stim_term": "Dxx, Dyy, and Dxy are the coefficients derived from the sigma_L, sigma_T velocities and the fiber angle."
   }
+    }
   }
 }

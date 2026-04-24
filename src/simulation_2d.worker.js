@@ -215,10 +215,12 @@ self.onmessage = (e) => {
     const timesBuffer = new Float32Array(expectedFrames);
     
     // arrays para APD e LAT
-    const activationTimes = new Float32Array(size).fill(-1);
-    const apd = new Float32Array(size).fill(-1);
+    const activationTimes = []; 
+    const apd = []; 
     const activationState = new Uint8Array(size).fill(0);
     const activationStartTime = new Float32Array(size).fill(-1);
+    const activationCount = new Uint32Array(size).fill(0); // Conta quantas vezes a célula ativou
+    let maxActivations = 0; // Controla quantos arrays de LAT/APD precisamos
     const activationThreshold = 0.3;
 
     let frameCount = 0;
@@ -318,21 +320,33 @@ self.onmessage = (e) => {
 
                 // Cálculo de LAT e APD
                 const volt = v[idx];
-                
-                // Primeiro tempo de ativação
-                if (activationTimes[idx] < 0 && volt >= activationThreshold) {
-                    activationTimes[idx] = currentTime;
-                }
 
                 if (activationState[idx] === 0) { // Em repouso
                     if (volt >= activationThreshold) {
                         activationState[idx] = 1; // Ativado
                         activationStartTime[idx] = currentTime;
+                        
+                        let c = activationCount[idx];
+                        activationCount[idx]++;
+                        
+                        if (c >= maxActivations) {
+                            maxActivations++;
+                            activationTimes.push(new Float32Array(size).fill(-1));
+                            apd.push(new Float32Array(size).fill(-1));
+                        }
+                        activationTimes[c][idx] = currentTime;
                     }
                 } else if (activationState[idx] === 1) { // Ativado
                     if (volt < activationThreshold) {
                         activationState[idx] = 2; // Recuperado
-                        apd[idx] = currentTime - activationStartTime[idx];
+                        let c = activationCount[idx] - 1;
+                        if (c >= 0 && apd[c]) {
+                            apd[c][idx] = currentTime - activationStartTime[idx];
+                        }
+                    }
+                } else if (activationState[idx] === 2) { 
+                    if (volt < 0.1) {
+                        activationState[idx] = 0;
                     }
                 }
             }
@@ -345,14 +359,19 @@ self.onmessage = (e) => {
             h[i*N] = h[i*N+1]; 
             h[i*N+N-1] = h[i*N+N-2];
 
-            activationTimes[i*N] = activationTimes[i*N+1]; 
-            activationTimes[i*N+N-1] = activationTimes[i*N+N-2];
-            apd[i*N] = apd[i*N+1]; 
-            apd[i*N+N-1] = apd[i*N+N-2];
             activationState[i*N] = activationState[i*N+1]; 
             activationState[i*N+N-1] = activationState[i*N+N-2];
             activationStartTime[i*N] = activationStartTime[i*N+1]; 
             activationStartTime[i*N+N-1] = activationStartTime[i*N+N-2];
+            activationCount[i*N] = activationCount[i*N+1];
+            activationCount[i*N+N-1] = activationCount[i*N+N-2];
+
+            for (let c = 0; c < maxActivations; c++) {
+                activationTimes[c][i*N] = activationTimes[c][i*N+1];
+                activationTimes[c][i*N+N-1] = activationTimes[c][i*N+N-2];
+                apd[c][i*N] = apd[c][i*N+1];
+                apd[c][i*N+N-1] = apd[c][i*N+N-2];
+            }
         }
         for (let j = 0; j < N; j++) {
             v[j] = v[N+j]; 
@@ -360,14 +379,19 @@ self.onmessage = (e) => {
             h[j] = h[N+j]; 
             h[(N-1)*N+j] = h[(N-2)*N+j];
 
-            activationTimes[j] = activationTimes[N+j]; 
-            activationTimes[(N-1)*N+j] = activationTimes[(N-2)*N+j];
-            apd[j] = apd[N+j]; 
-            apd[(N-1)*N+j] = apd[(N-2)*N+j];
             activationState[j] = activationState[N+j]; 
             activationState[(N-1)*N+j] = activationState[(N-2)*N+j];
             activationStartTime[j] = activationStartTime[N+j]; 
             activationStartTime[(N-1)*N+j] = activationStartTime[(N-2)*N+j];
+            activationCount[j] = activationCount[N+j];
+            activationCount[(N-1)*N+j] = activationCount[(N-2)*N+j];
+
+            for (let c = 0; c < maxActivations; c++) {
+                activationTimes[c][j] = activationTimes[c][N+j];
+                activationTimes[c][(N-1)*N+j] = activationTimes[c][(N-2)*N+j];
+                apd[c][j] = apd[c][N+j];
+                apd[c][(N-1)*N+j] = apd[c][(N-2)*N+j];
+            }
         }
 
         // Downsampling
@@ -377,6 +401,10 @@ self.onmessage = (e) => {
             frameCount++;
         }
     }
+
+    const transferList = [framesBuffer.buffer, timesBuffer.buffer, fibrosisMap.buffer];
+    activationTimes.forEach(arr => transferList.push(arr.buffer));
+    apd.forEach(arr => transferList.push(arr.buffer));
 
     // Envia os resultados de volta
     self.postMessage(
@@ -390,6 +418,6 @@ self.onmessage = (e) => {
             N,
             totalFrames: frameCount
         }, 
-        [framesBuffer.buffer, timesBuffer.buffer, fibrosisMap.buffer, activationTimes.buffer, apd.buffer]
+        transferList
     );
 };
