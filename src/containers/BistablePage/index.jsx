@@ -8,7 +8,8 @@ import Chart from '../../components/Chart';
 import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation_bistable.worker.js?worker';
 import { useTranslation } from 'react-i18next';
-import { export1DToGif } from '../../utils/export';
+import ExportModal from '../../components/ExportModal';
+import { export1DToGif, exportToPng, export1DToXDMF, export0DToCSV } from '../../utils/export';
 
 /* Componente para seções expansíveis na sidebar */
 const SettingsSection = ({ title, children, defaultOpen = false }) => {
@@ -49,6 +50,7 @@ const BistablePage = ({ onBack }) => {
   // Estados de visualização
   const [viewMode, setViewMode] = useState('line');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedX, setSelectedX] = useState(null);
   const chartRef = useRef(null);
@@ -136,6 +138,7 @@ const BistablePage = ({ onBack }) => {
       setExporting(false);
     }, 100);
   }, [simulationData, editableParams, t, viewMode]);
+
   // Mudança no controle deslizante
   const handleSliderChange = (e) => {
     setIsPlaying(false);
@@ -242,7 +245,7 @@ const BistablePage = ({ onBack }) => {
       <h2 className="text-lg font-bold text-slate-700 mb-4">{t('bistableChart.potentialModal')} = {selectedX !== null ? (selectedX * editableParams.dx).toFixed(2) + ' cm' : ''}</h2>
       <Chart data={timeseriesData} />
     </>
-  ), [selectedX, editableParams.dx, timeseriesData]);
+  ), [selectedX, editableParams.dx, timeseriesData, t]);
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-auto lg:overflow-hidden">
@@ -320,7 +323,8 @@ const BistablePage = ({ onBack }) => {
           {/* Barra de Ação Inferior */}
           <div className="bg-white border-t border-slate-200 p-4 shadow-lg z-20">
             <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-4 w-full md:w-auto">
+              
+              <div className="flex flex-wrap items-center justify-center gap-3">
                 <button
                   onClick={handleSimularClick}
                   disabled={loading || exporting}
@@ -332,7 +336,18 @@ const BistablePage = ({ onBack }) => {
 
                 {simulationData.length > 0 && (
                   <>
-                    <div className="h-8 w-px bg-slate-300 mx-2"></div>
+                    <ExportButton onClick={() => setIsExportModalOpen(true)} disabled={exporting} />
+                    
+                    <ExportModal 
+                        mode="1d"
+                        isOpen={isExportModalOpen} 
+                        onClose={() => setIsExportModalOpen(false)}
+                        onExportPng={() => exportToPng(chartRef, 'bistable_1d_plot')}
+                        onExportGif={handleExportGif}
+                        onExportData={() => export1DToXDMF(simulationData, editableParams, 'bistable_1d_data')}
+                    />
+
+                    <div className="h-8 w-px bg-slate-300 mx-1 hidden md:block"></div>
                     <button
                       onClick={() => setIsPlaying(!isPlaying)}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-md transition-transform active:scale-95"
@@ -340,20 +355,13 @@ const BistablePage = ({ onBack }) => {
                     >
                       <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} text-2xl ml-${isPlaying ? '0' : '1'}`}></i>
                     </button>
-
-                    {/* Botão de Exportar GIF */}
-                    <ExportButton
-                      onClick={handleExportGif}
-                      label={exporting ? t('common.generating_gif') : t('common.export_result')}
-                      disabled={exporting}
-                    />
                   </>
                 )}
               </div>
 
               {simulationData.length > 0 && (
                 <div className="flex-1 w-full flex items-center gap-3">
-                  <span className="text-xs font-mono text-slate-500 w-12 text-right">{(simulationData[currentFrame]?.time || 0)}ms</span>
+                  <span className="text-xs font-mono text-slate-500 w-12 text-right">{Number(simulationData[currentFrame]?.time || 0).toFixed(0)}ms</span>
                   <input
                     type="range"
                     min="0"
@@ -362,9 +370,9 @@ const BistablePage = ({ onBack }) => {
                     onChange={handleSliderChange}
                     className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
                   />
-                  <span className="text-xs font-mono text-slate-500 w-12">{(simulationData[simulationData.length - 1]?.time || 0)}ms</span>
+                  <span className="text-xs font-mono text-slate-500 w-12">{Number(simulationData[simulationData.length - 1]?.time || 0).toFixed(0)}ms</span>
 
-                  <div className="flex items-center gap-2 ml-4 border-l border-slate-200 pl-4" title={t('common.speed')}>
+                  <div className="flex items-center gap-2 ml-2 border-l border-slate-200 pl-4" title={t('common.speed')}>
                     <i className="bi bi-speedometer2 text-slate-400"></i>
                     <input
                       type="range"
@@ -378,9 +386,12 @@ const BistablePage = ({ onBack }) => {
                 </div>
               )}
 
-              <Button onClick={() => setIsInfoModalOpen(true)} className="bg-slate-100 text-slate-600 hover:bg-slate-200 p-2 rounded-lg" title={t('common.more_info')}>
-                <i className="bi bi-info-circle text-lg"></i> <span className="md:hidden ml-2">{t('common.more_info')}</span>
-              </Button>
+              <div className="ml-auto flex-shrink-0">
+                <Button onClick={() => setIsInfoModalOpen(true)} className="bg-slate-100 text-slate-600 hover:bg-slate-200 p-2 rounded-lg" title={t('common.more_info')}>
+                  <i className="bi bi-info-circle text-lg"></i> <span className="md:hidden ml-2">{t('common.more_info')}</span>
+                </Button>
+              </div>
+
             </div>
           </div>
         </main>
