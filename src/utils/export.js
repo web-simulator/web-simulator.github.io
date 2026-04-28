@@ -467,3 +467,97 @@ export const export1DToXDMF = async (simulationData, params, fileNamePrefix = '1
         if (fileSystem) { try { fileSystem.unlink(h5FileName); } catch(e) {} }
     }
 };
+
+// Função para exportar XDMF 2D
+export const export2DToXDMF = async (simulationResult, params, fileNamePrefix = '2d_simulation') => {
+    if (!simulationResult || !simulationResult.frames) {
+        alert("Sem dados para exportar.");
+        return;
+    }
+
+    const { frames, totalFrames, N } = simulationResult;
+    const h5FileName = `${fileNamePrefix}.h5`;
+    const xdmfFileName = `${fileNamePrefix}.xdmf`;
+    let file = null;
+    let fileSystem = null;
+
+    try {
+        const wasm = await h5wasm.ready;
+        fileSystem = wasm.FS || h5wasm.FS;
+        const FileClass = wasm.File || h5wasm.File;
+
+        try {
+            if (fileSystem.analyzePath(h5FileName).exists) {
+                fileSystem.unlink(h5FileName);
+            }
+        } catch (e) {}
+
+        file = new FileClass(h5FileName, 'w');
+
+        const MAX_FRAMES_2D = 400; 
+        let step = 1;
+        if (totalFrames > MAX_FRAMES_2D) {
+            step = Math.ceil(totalFrames / MAX_FRAMES_2D);
+        }
+
+        const numPoints = N * N;
+        let exportedFrameCount = 0;
+
+        let xdmfContent = `<?xml version="1.0" ?>\n<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>\n<Xdmf Version="2.0">\n  <Domain>\n    <Grid Name="TimeSeries" GridType="Collection" CollectionType="Temporal">\n`;
+
+        for (let f = 0; f < totalFrames; f += step) {
+            const offset = f * numPoints;
+            const frameData = frames.subarray(offset, offset + numPoints);
+            
+            const flippedArray = new Float32Array(numPoints);
+            for (let i = 0; i < N; i++) {
+                const originalRowStart = (N - 1 - i) * N;
+                const targetRowStart = i * N;
+                flippedArray.set(frameData.subarray(originalRowStart, originalRowStart + N), targetRowStart);
+            }
+            
+            const datasetNameV = `potential_frame_${exportedFrameCount}`;
+            file.create_dataset({ name: datasetNameV, data: flippedArray, shape: [N, N], dtype: '<f4' });
+
+            const dx = params.dx || 1;
+            const timeVal = simulationResult.times[f] || (f * (params.dt || 0.1) * (params.stride || 10));
+
+            xdmfContent += `      <Grid Name="Frame_${exportedFrameCount}" GridType="Uniform">\n        <Time Value="${Number(timeVal).toFixed(2)}" />\n        <Topology TopologyType="2DCoRectMesh" Dimensions="${N} ${N}"/>\n        <Geometry GeometryType="ORIGIN_DXDY">\n          <DataItem DataType="Float" Dimensions="2" Format="XML">0 0</DataItem>\n          <DataItem DataType="Float" Dimensions="2" Format="XML">${dx} ${dx}</DataItem>\n        </Geometry>\n        <Attribute Name="Potential" AttributeType="Scalar" Center="Node">\n          <DataItem DataType="Float" Precision="4" Dimensions="${N} ${N}" Format="HDF">\n            ${h5FileName}:/${datasetNameV}\n          </DataItem>\n        </Attribute>\n      </Grid>\n`;
+
+            exportedFrameCount++;
+        }
+
+        xdmfContent += `    </Grid>\n  </Domain>\n</Xdmf>`;
+
+        file.close();
+        file = null; 
+
+        const h5FileBuffer = fileSystem.readFile(h5FileName);
+        const h5Blob = new Blob([h5FileBuffer], { type: 'application/x-hdf5' });
+
+        fileSystem.unlink(h5FileName);
+
+        const zip = new JSZip();
+        zip.file(h5FileName, h5Blob);
+        zip.file(xdmfFileName, xdmfContent);
+
+        const zipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
+
+        const url = URL.createObjectURL(zipBlob);
+        const link = document.createElement('a');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        
+        link.download = `${fileNamePrefix}_XDMF_${timestamp}.zip`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+    } catch (err) {
+        console.error("Erro detalhado ao gerar XDMF/HDF5 2D:", err);
+        alert("Falha ao exportar em formato XDMF.");
+        if (file) { try { file.close(); } catch(e) {} }
+        if (fileSystem) { try { fileSystem.unlink(h5FileName); } catch(e) {} }
+    }
+};
