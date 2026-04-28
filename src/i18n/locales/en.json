@@ -693,5 +693,15 @@
         "stim_term": "Dxx, Dyy, and Dxy are the coefficients derived from the sigma_L, sigma_T velocities and the fiber angle."
   }
     }
+  },
+  "export_modal": {
+    "title": "Export Simulation",
+    "subtitle": "Select the desired format for download.",
+    "png_title": "Image (.png)",
+    "png_desc": "Saves the exact current view of the simulation chart.",
+    "data_title": "Data ({{dataType}})",
+    "data_desc": "Exports raw values for advanced analysis in software like ParaView.",
+    "cancel": "Cancel",
+    "download": "Download"
   }
 }

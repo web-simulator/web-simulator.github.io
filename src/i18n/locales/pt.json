@@ -689,5 +689,15 @@
         "stim_term": "Dxx, Dyy e Dxy são os coeficientes derivados das velocidades sigma_L, sigma_T e do ângulo da fibra."
   }
     }
+  },
+  "export_modal": {
+    "title": "Exportar Simulação",
+    "subtitle": "Selecione o formato desejado para o download.",
+    "png_title": "Imagem (.png)",
+    "png_desc": "Salva exatamente a visualização atual do gráfico da simulação.",
+    "data_title": "Dados ({{dataType}})",
+    "data_desc": "Exporta os valores brutos para análise avançada em softwares como o ParaView.",
+    "cancel": "Cancelar",
+    "download": "Fazer Download"
   }
 }
