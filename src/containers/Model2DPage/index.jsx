@@ -9,7 +9,8 @@ import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation_2d.worker.js?worker';
 import MinimalWorker from '../../simulation_minimal_2d.worker.js?worker';
 import { useTranslation } from 'react-i18next';
-import { export2DToGif, exportToPng } from '../../utils/export';
+import ExportModal from '../../components/ExportModal';
+import { export2DToGif, exportToPng, export2DToXDMF } from '../../utils/export';
 
 const SettingsSection = ({ title, children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -61,9 +62,10 @@ const Model2DPage = ({ onBack }) => {
   const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [isChartModalOpen, setIsChartModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('basic'); // Estado para as abas do modal
-  const [selectedActivation, setSelectedActivation] = useState(0)
+  const [selectedActivation, setSelectedActivation] = useState(0);
 
   // Parâmetros
   const [params, setParams] = useState({
@@ -271,7 +273,7 @@ const Model2DPage = ({ onBack }) => {
       setWorker(simWorker); setCalculating(false); setProgress(0);
   };
 
-  // Função para exportar GIF
+  // Função para exportar GIF da vista 2D Escalar
   const handleExportGif = useCallback(async () => {
     if (!simulationResult || viewMode !== 'potential') return;
     setExporting(true);
@@ -281,7 +283,6 @@ const Model2DPage = ({ onBack }) => {
         time_ms: t('chart.time_ms')
     };
 
-    // Adiciona o tipo de modelo aos parâmetros para ajuste de escala
     const exportParams = { ...params, modelType: selectedModel };
 
     setTimeout(async () => {
@@ -290,7 +291,7 @@ const Model2DPage = ({ onBack }) => {
     }, 100);
   }, [simulationResult, params, selectedModel, t, viewMode]);
 
-  // Função para exportar PNG
+  // Função para exportar PNG (que estava em falta)
   const handleExportImage = useCallback(async () => {
     if (!chartContainerRef.current) return;
     setExporting(true);
@@ -496,7 +497,6 @@ const Model2DPage = ({ onBack }) => {
           <div className="p-6 pb-24 lg:pb-6">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">{t('common.configuration')}</p>
 
-            {/* Seletor de tipo de gráfico */}
             <SettingsSection title={t('common.view_options')} defaultOpen={true}>
               <div className="mb-2 border-b border-slate-100 pb-2">
                 <label className="text-sm font-bold text-slate-700 mb-2 block">
@@ -513,7 +513,6 @@ const Model2DPage = ({ onBack }) => {
                 </select>
               </div>
 
-              {/* Botoes de selecao de ativacao */}
               {(viewMode === 'lat' || viewMode === 'apd') && simulationResult && simulationResult.activationTimes && simulationResult.activationTimes.length > 0 && (
                 <div className="mt-3">
                   <label className="text-sm font-bold text-slate-700 mb-2 block">
@@ -770,29 +769,44 @@ const Model2DPage = ({ onBack }) => {
                             <i className="bi bi-stop-fill"></i> {t('common.stop')}
                         </button>
                     )}
+                    
                     {simulationResult && (
                         <>
-                            <div className="h-8 w-px bg-slate-300 mx-2"></div>
+                            <div className="h-8 w-px bg-slate-300 mx-1"></div>
+                            
                             {viewMode === 'potential' && (
                                 <button onClick={() => setIsPlaying(!isPlaying)} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-md transition-transform active:scale-95">
                                     <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} text-2xl ml-${isPlaying ? '0' : '1'}`}></i>
                                 </button>
                             )}
-                            {/* Botão de Exportar */}
+
+                            {/* BOTÃO DE EXPORTAÇÃO */}
                             <ExportButton 
-                                onClick={viewMode === 'potential' ? handleExportGif : handleExportImage}
+                                onClick={viewMode === 'potential' ? () => setIsExportModalOpen(true) : handleExportImage}
                                 label={exporting ? (viewMode === 'potential' ? t('common.generating_gif') : 'Exportando...') : t('common.export_result')}
                                 disabled={exporting || (viewMode !== 'potential' && !currentChartData)}
                             />
+
+                            {/* MODAL DE EXPORTAÇÃO */}
+                            {viewMode === 'potential' && (
+                                <ExportModal 
+                                    mode="2d"
+                                    isOpen={isExportModalOpen} 
+                                    onClose={() => setIsExportModalOpen(false)}
+                                    onExportPng={handleExportImage}
+                                    onExportGif={handleExportGif}
+                                    onExportData={() => export2DToXDMF(simulationResult, { ...params, modelType: selectedModel }, `2d_simulation_${selectedModel}`)}
+                                />
+                            )}
                         </>
                     )}
                 </div>
 
                 {simulationResult && viewMode === 'potential' && (
                     <div className="flex-1 w-full flex items-center gap-3">
-                        <span className="text-xs font-mono text-slate-500 w-12 text-right">{(simulationResult.times[currentFrame] || 0).toFixed(0)}ms</span>
+                        <span className="text-xs font-mono text-slate-500 w-12 text-right">{Number(simulationResult.times[currentFrame] || 0).toFixed(0)}ms</span>
                         <input type="range" min="0" max={simulationResult.totalFrames - 1} value={currentFrame} onChange={(e) => { setIsPlaying(false); setCurrentFrame(parseInt(e.target.value)); }} className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" />
-                        <span className="text-xs font-mono text-slate-500 w-12">{(simulationResult.times[simulationResult.totalFrames-1] || 0).toFixed(0)}ms</span>
+                        <span className="text-xs font-mono text-slate-500 w-12">{Number(simulationResult.times[simulationResult.totalFrames-1] || 0).toFixed(0)}ms</span>
                         
                         <div className="flex items-center gap-2 ml-4 border-l border-slate-200 pl-4" title={t('common.speed')}>
                             <i className="bi bi-speedometer2 text-slate-400"></i>
@@ -801,7 +815,7 @@ const Model2DPage = ({ onBack }) => {
                     </div>
                 )}
                 
-                <Button onClick={() => setIsInfoModalOpen(true)} className="bg-slate-100 text-slate-600 hover:bg-slate-200 p-2 rounded-lg" title={t('common.more_info')}>
+                <Button onClick={() => setIsInfoModalOpen(true)} className="bg-slate-100 text-slate-600 hover:bg-slate-200 p-2 rounded-lg ml-auto" title={t('common.more_info')}>
                     <i className="bi bi-info-circle text-lg"></i>
                 </Button>
             </div>
