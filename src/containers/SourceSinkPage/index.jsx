@@ -44,7 +44,7 @@ const DEFAULT_MINIMAL_PARAMS = {
 const SourceSinkPage = ({ onBack }) => {
   const { t } = useTranslation();
 
-  const [selectedModel, setSelectedModel] = useState('minimal'); // 'ms' ou 'minimal'
+  const [selectedModel, setSelectedModel] = useState('minimal');
   const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
 
   const [simulationResult, setSimulationResult] = useState(null);
@@ -58,7 +58,7 @@ const SourceSinkPage = ({ onBack }) => {
   const [remainingTime, setRemainingTime] = useState(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false); // NOVO
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState(null);
   const chartRef = useRef(null);
@@ -72,32 +72,13 @@ const SourceSinkPage = ({ onBack }) => {
     dt: 0.05,
     totalTime: 600,
     downsamplingFactor: 20,
-    // Parametros ms
-    Tau_in: 0.3,
-    Tau_out: 6.0,
-    Tau_open: 120.0,
-    Tau_close: 80.0,
-    gate: 0.13,
-
+    Tau_in: 0.3, Tau_out: 6.0, Tau_open: 120.0, Tau_close: 80.0, gate: 0.13,
     cellType: 'epi',
-    L: 10,
-    dx: 0.05,
-    // Parâmetros do Obstáculo
-    obstacleCx: 5.0,
-    obstacleCy: 5.0,
-    obstacleRadius: 4.0,
-    // Parâmetros da Fenda
-    slitWidthStart: 1.0,
-    slitWidthEnd: 0.25,
-    // Parâmetros de Fibrose
-    fibrosis: true,
-    fibrosisType: 'diffuse',
-    fibrosisDistribution: 'random',
-    fibrosisDensity: 4.5,
-    fibrosisSeed: 12345,
-    fibrosisConductivity: 0.0,
-    fibrosisShape: 'rectangle',
-    fibrosisBorderZone: 0.0,
+    L: 10, dx: 0.05,
+    obstacleCx: 5.0, obstacleCy: 5.0, obstacleRadius: 4.0,
+    slitWidthStart: 1.0, slitWidthEnd: 0.25,
+    fibrosis: true, fibrosisType: 'diffuse', fibrosisDistribution: 'random', fibrosisDensity: 4.5,
+    fibrosisSeed: 12345, fibrosisConductivity: 0.0, fibrosisShape: 'rectangle', fibrosisBorderZone: 0.0,
     fibrosisRect: { x1: 4.0, y1: 1.0, x2: 6.0, y2: 4.0 },
     fibrosisCircle: { cx: 2.0, cy: 2.0, radius: 0.5 },
     fibrosisRegion: { x1: 4.0, y1: 1.0, x2: 6.0, y2: 4.0 },
@@ -105,13 +86,7 @@ const SourceSinkPage = ({ onBack }) => {
 
   // Parâmetros do Estímulo
   const [stimulusParams, setStimulusParams] = useState({
-    cx: 5.0,
-    cy: 0.5,
-    radius: 0.3,
-    startTime: 10,
-    duration: 3,
-    amplitude: 1.0,
-    interval: 0
+    cx: 5.0, cy: 0.5, radius: 0.3, startTime: 10, duration: 3, amplitude: 1.0, interval: 0
   });
 
   // Configuração do Worker
@@ -159,46 +134,30 @@ const SourceSinkPage = ({ onBack }) => {
     if (isPlaying && simulationResult) {
       animationFrameId = requestAnimationFrame(animate);
     }
-
-    return () => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
-    };
+    return () => { if (animationFrameId) cancelAnimationFrame(animationFrameId); };
   }, [isPlaying, simulationResult, simulationSpeed]);
 
   // Handlers de Mudança
   const handleParamChange = useCallback((e, name) => {
     const target = e.target;
     let value;
-
-    if (target.type === 'checkbox') {
-      value = target.checked;
-    } else if (target.type === 'number' || target.type === 'range') {
-      value = parseFloat(target.value);
-    } else {
-      value = target.value;
-    }
-
+    if (target.type === 'checkbox') value = target.checked;
+    else if (target.type === 'number' || target.type === 'range') value = parseFloat(target.value);
+    else value = target.value;
     setParams((prev) => ({ ...prev, [name]: value }));
   }, []);
 
   const handleFibrosisNestedChange = (shapeType, key, value) => {
-    setParams(prev => ({
-      ...prev,
-      [shapeType]: { ...prev[shapeType], [key]: parseFloat(value) }
-    }));
+    setParams(prev => ({ ...prev, [shapeType]: { ...prev[shapeType], [key]: parseFloat(value) } }));
   };
 
   const handleMinimalCustomChange = (param, value) => {
     const activeType = params.cellType;
-    setMinimalCustomParams(prev => ({
-      ...prev,
-      [activeType]: { ...prev[activeType], [param]: parseFloat(value) }
-    }));
+    setMinimalCustomParams(prev => ({ ...prev, [activeType]: { ...prev[activeType], [param]: parseFloat(value) } }));
   };
 
   const handleStimulusChange = useCallback((e, name) => {
-    const value = parseFloat(e.target.value);
-    setStimulusParams((prev) => ({ ...prev, [name]: value }));
+    setStimulusParams((prev) => ({ ...prev, [name]: parseFloat(e.target.value) }));
   }, []);
 
   // Handler de Simulação
@@ -210,70 +169,33 @@ const SourceSinkPage = ({ onBack }) => {
           simulationResult.times = null;
           simulationResult.fibrosis = null;
       }
-
-      setLoading(true);
-      setSimulationResult(null);
-      setIsPlaying(false);
-      setProgress(0);
-      setRemainingTime(null);
+      setLoading(true); setSimulationResult(null); setIsPlaying(false); setProgress(0); setRemainingTime(null);
 
       const stimulusObj = {
-        startTime: stimulusParams.startTime,
-        interval: stimulusParams.interval,
-        duration: stimulusParams.duration,
-        amplitude: stimulusParams.amplitude,
-        shape: 'circle',
-        circleParams: {
-          cx: stimulusParams.cx,
-          cy: stimulusParams.cy,
-          radius: stimulusParams.radius
-        }
+        startTime: stimulusParams.startTime, interval: stimulusParams.interval, duration: stimulusParams.duration, amplitude: stimulusParams.amplitude,
+        shape: 'circle', circleParams: { cx: stimulusParams.cx, cy: stimulusParams.cy, radius: stimulusParams.radius }
       };
 
-      const obstacleObj = {
-        cx: params.obstacleCx,
-        cy: params.obstacleCy,
-        radius: params.obstacleRadius
-      };
-
-      const slitObj = {
-        widthStart: params.slitWidthStart,
-        widthEnd: params.slitWidthEnd
-      };
+      const obstacleObj = { cx: params.obstacleCx, cy: params.obstacleCy, radius: params.obstacleRadius };
+      const slitObj = { widthStart: params.slitWidthStart, widthEnd: params.slitWidthEnd };
 
       const safeMinimalParams = {};
       if (selectedModel === 'minimal') {
         Object.keys(minimalCustomParams).forEach(type => {
           safeMinimalParams[type] = {};
-          Object.keys(minimalCustomParams[type]).forEach(k => {
-            safeMinimalParams[type][k] = parseFloat(minimalCustomParams[type][k]);
-          });
+          Object.keys(minimalCustomParams[type]).forEach(k => { safeMinimalParams[type][k] = parseFloat(minimalCustomParams[type][k]); });
         });
       }
 
       const fibrosisPayload = {
-        enabled: params.fibrosis,
-        type: params.fibrosisType,
-        distribution: params.fibrosisDistribution,
-        shape: params.fibrosisShape,
-        conductivity: params.fibrosisConductivity,
-        density: params.fibrosisDensity / 100.0,
-        seed: params.fibrosisSeed,
-        borderZone: params.fibrosisBorderZone,
-        rectParams: params.fibrosisRect,
-        circleParams: params.fibrosisCircle,
-        regionParams: params.fibrosisRegion
+        enabled: params.fibrosis, type: params.fibrosisType, distribution: params.fibrosisDistribution, shape: params.fibrosisShape,
+        conductivity: params.fibrosisConductivity, density: params.fibrosisDensity / 100.0, seed: params.fibrosisSeed, borderZone: params.fibrosisBorderZone,
+        rectParams: params.fibrosisRect, circleParams: params.fibrosisCircle, regionParams: params.fibrosisRegion
       };
 
       worker.postMessage({
-        modelType: selectedModel,
-        ...params,
-        stimuli: [stimulusObj],
-        obstacleParams: obstacleObj,
-        slitParams: slitObj,
-        fiber_angle: params.angle,
-        fibrosisParams: fibrosisPayload,
-        minimalCellParams: safeMinimalParams
+        modelType: selectedModel, ...params, stimuli: [stimulusObj], obstacleParams: obstacleObj, slitParams: slitObj,
+        fiber_angle: params.angle, fibrosisParams: fibrosisPayload, minimalCellParams: safeMinimalParams
       });
     }
   }, [worker, params, stimulusParams, selectedModel, minimalCustomParams, simulationResult]);
@@ -292,19 +214,10 @@ const SourceSinkPage = ({ onBack }) => {
     const newWorker = new SimulationWorker();
     newWorker.onmessage = (e) => {
       const { type, value, remaining, frames, times, fibrosis, N, totalFrames } = e.data;
-      if (type === 'progress') {
-        setProgress(value);
-        if (remaining !== undefined) setRemainingTime(remaining);
-      } else if (type === 'result') {
-        setSimulationResult({ frames, times, fibrosis, N, totalFrames });
-        setCurrentFrame(0);
-        setLoading(false);
-        setIsPlaying(true);
-      }
+      if (type === 'progress') { setProgress(value); if (remaining !== undefined) setRemainingTime(remaining); }
+      else if (type === 'result') { setSimulationResult({ frames, times, fibrosis, N, totalFrames }); setCurrentFrame(0); setLoading(false); setIsPlaying(true); }
     };
-    setWorker(newWorker);
-    setLoading(false);
-    setProgress(0);
+    setWorker(newWorker); setLoading(false); setProgress(0);
   };
 
   const handleSliderChange = (e) => {
@@ -317,19 +230,11 @@ const SourceSinkPage = ({ onBack }) => {
     setSelectedPoint(point);
     setIsModalOpen(true);
   }, []);
-
-  // Funções de Exportação
   const handleExportGif = useCallback(async () => {
     if (!simulationResult) return;
     setExporting(true);
-    
-    const labels = {
-        potential: t('chart.potential_unit'),
-        time_ms: t('chart.time_ms')
-    };
-
+    const labels = { potential: t('chart.potential_unit'), time_ms: t('chart.time_ms') };
     const exportParams = { ...params, modelType: selectedModel };
-
     setTimeout(async () => {
         await export2DToGif(simulationResult, exportParams, `source_sink_simulation_${selectedModel}`, labels);
         setExporting(false);
@@ -369,9 +274,7 @@ const SourceSinkPage = ({ onBack }) => {
 
     const timeseries = [];
     for (let f = 0; f < totalFrames; f++) {
-      const val = frames[f * N * N + idx];
-      const t = times[f];
-      timeseries.push({ tempo: parseFloat(t.toFixed(2)), v: val });
+      timeseries.push({ tempo: parseFloat(times[f].toFixed(2)), v: frames[f * N * N + idx] });
     }
     return timeseries;
   }, [selectedPoint, simulationResult]);
@@ -411,12 +314,9 @@ const SourceSinkPage = ({ onBack }) => {
 
               <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4 mt-4">
                  <h4 className="font-semibold text-emerald-800 mb-2">
-                    <i className="bi bi-funnel mr-2"></i>
-                    {t('modals.sourcesink.basic.goal')}
+                    <i className="bi bi-funnel mr-2"></i> {t('modals.sourcesink.basic.goal')}
                  </h4>
-                 <p className="text-sm text-emerald-700 leading-relaxed text-justify">
-                    {t('modals.sourcesink.basic.goal_desc')}
-                 </p>
+                 <p className="text-sm text-emerald-700 leading-relaxed text-justify">{t('modals.sourcesink.basic.goal_desc')}</p>
               </div>
             </div>
           )}
@@ -483,11 +383,7 @@ const SourceSinkPage = ({ onBack }) => {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm text-slate-500 hidden sm:block">{t('common.select_model')}:</span>
-          <select
-            value={selectedModel}
-            onChange={(e) => { setSimulationResult(null); setSelectedModel(e.target.value); }}
-            className="bg-slate-100 border-none text-sm font-medium text-slate-700 py-2 px-4 rounded-lg cursor-pointer focus:ring-2 focus:ring-emerald-500"
-          >
+          <select value={selectedModel} onChange={(e) => { setSimulationResult(null); setSelectedModel(e.target.value); }} className="bg-slate-100 border-none text-sm font-medium text-slate-700 py-2 px-4 rounded-lg cursor-pointer focus:ring-2 focus:ring-emerald-500">
             <option value="ms">{t('common.ms_model')}</option>
             <option value="minimal">{t('common.minimal_model')}</option>
           </select>
