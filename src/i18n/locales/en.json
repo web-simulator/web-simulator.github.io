@@ -702,6 +702,8 @@
     "data_title": "Data ({{dataType}})",
     "data_desc": "Exports raw values for advanced analysis in software like ParaView.",
     "cancel": "Cancel",
-    "download": "Download"
+    "download": "Download",
+    "gif_title": "Animation (.gif)",
+    "gif_desc": "Generates a short looping video of the temporal simulation."
   }
 }

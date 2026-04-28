@@ -698,6 +698,8 @@
     "data_title": "Dados ({{dataType}})",
     "data_desc": "Exporta os valores brutos para análise avançada em softwares como o ParaView.",
     "cancel": "Cancelar",
-    "download": "Fazer Download"
+    "download": "Fazer Download",
+    "gif_title": "Animação (.gif)",
+    "gif_desc": "Gera um vídeo curto em loop da simulação temporal."
   }
 }
