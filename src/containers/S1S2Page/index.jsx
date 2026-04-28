@@ -6,6 +6,7 @@ import Modal from '../../components/Modal';
 import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation_s1_s2.worker.js?worker';
 import MinimalWorker from '../../simulation_minimal_0d.worker.js?worker';
+import ExportModal from '../../components/ExportModal';
 import { useTranslation } from 'react-i18next';
 import { exportToPng } from '../../utils/export';
 import './styles.css';
@@ -93,6 +94,7 @@ const S1S2Page = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   
   const [selectedModel, setSelectedModel] = useState('ms');
   const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
@@ -463,13 +465,14 @@ const S1S2Page = ({ onBack }) => {
                         )}
                     </button>
 
-                    {/* Botão de Exportar */}
-                    {chartData.length > 0 && (
-                      <ExportButton 
-                          onClick={handleExport}
-                          label={t('common.export_result')}
-                      />
-                    )}
+                    <ExportButton onClick={() => setIsExportModalOpen(true)} />
+                    <ExportModal 
+                        isOpen={isExportModalOpen} 
+                        onClose={() => setIsExportModalOpen(false)}
+                        onExportPng={() => exportToPng(chartRef, 's1s2_protocol_plot')}
+                        onExportData={() => export0DToCSV(data, 's1s2_protocol_data')}
+                        dataType="CSV" 
+                    />
                 </div>
                 
                 <Button onClick={() => setIsInfoModalOpen(true)} className="bg-slate-100 text-slate-600 hover:bg-slate-200 p-2 rounded-lg" title={t('common.more_info')}>
