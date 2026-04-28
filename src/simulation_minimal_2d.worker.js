@@ -209,13 +209,18 @@ self.onmessage = (e) => {
   const framesBuffer = new Float32Array(expectedFrames * size);
   const timesBuffer = new Float32Array(expectedFrames);
   
-  // arrays para LAT e APD
-  const activationTimes = [];
-  const apd = [];
+
+  const MAX_ACTIVATIONS_TO_TRACK = 5;
+  const activationTimes = new Array(MAX_ACTIVATIONS_TO_TRACK);
+  const apd = new Array(MAX_ACTIVATIONS_TO_TRACK);
+  for (let c = 0; c < MAX_ACTIVATIONS_TO_TRACK; c++) {
+    activationTimes[c] = new Float32Array(size).fill(-1);
+    apd[c] = new Float32Array(size).fill(-1);
+  }
+
   const activationState = new Uint8Array(size).fill(0);
   const activationStartTime = new Float32Array(size).fill(-1);
   const activationCount = new Uint32Array(size).fill(0);
-  let maxActivations = 0; 
   const activationThreshold = 0.3;
 
   let frameCount = 0;
@@ -232,6 +237,11 @@ self.onmessage = (e) => {
     singleCellParams = minimalCellParams[cellType] || minimalCellParams.epi;
   }
 
+  const u_prev = new Float32Array(size); 
+  const v_prev = new Float32Array(size);
+  const w_prev = new Float32Array(size);
+  const s_prev = new Float32Array(size);
+
   // Loop Temporal Principal
   for (let t = 0; t < steps; t++) {
     if (t % progressInterval === 0) {
@@ -244,11 +254,10 @@ self.onmessage = (e) => {
       self.postMessage({ type: 'progress', value: progress, remaining });
     }
 
-    // Variaveis anteriores
-    const u_prev = new Float32Array(u); 
-    const v_prev = new Float32Array(v_gate);
-    const w_prev = new Float32Array(w_gate);
-    const s_prev = new Float32Array(s_gate);
+    u_prev.set(u); 
+    v_prev.set(v_gate);
+    w_prev.set(w_gate);
+    s_prev.set(s_gate);
 
     const currentTime = t * dt;
     let stim_amp = 0;
@@ -361,19 +370,15 @@ self.onmessage = (e) => {
                 let c = activationCount[idx];
                 activationCount[idx]++;
                 
-                // Expande os arrays dinamicamente se necessário
-                if (c >= maxActivations) {
-                    maxActivations++;
-                    activationTimes.push(new Float32Array(size).fill(-1));
-                    apd.push(new Float32Array(size).fill(-1));
+                if (c < MAX_ACTIVATIONS_TO_TRACK) {
+                    activationTimes[c][idx] = currentTime;
                 }
-                activationTimes[c][idx] = currentTime;
             }
         } else if (activationState[idx] === 1) { // Ativado
             if (volt < activationThreshold) {
                 activationState[idx] = 2; // Recuperado
                 let c = activationCount[idx] - 1;
-                if (c >= 0 && apd[c]) {
+                if (c >= 0 && c < MAX_ACTIVATIONS_TO_TRACK) {
                     apd[c][idx] = currentTime - activationStartTime[idx];
                 }
             }
@@ -404,7 +409,7 @@ self.onmessage = (e) => {
         activationCount[i*N] = activationCount[i*N+1];
         activationCount[i*N+N-1] = activationCount[i*N+N-2];
 
-        for (let c = 0; c < maxActivations; c++) {
+        for (let c = 0; c < MAX_ACTIVATIONS_TO_TRACK; c++) {
             activationTimes[c][i*N] = activationTimes[c][i*N+1];
             activationTimes[c][i*N+N-1] = activationTimes[c][i*N+N-2];
             apd[c][i*N] = apd[c][i*N+1];
@@ -428,7 +433,7 @@ self.onmessage = (e) => {
         activationCount[j] = activationCount[N+j];
         activationCount[(N-1)*N+j] = activationCount[(N-2)*N+j];
 
-        for (let c = 0; c < maxActivations; c++) {
+        for (let c = 0; c < MAX_ACTIVATIONS_TO_TRACK; c++) {
             activationTimes[c][j] = activationTimes[c][N+j];
             activationTimes[c][(N-1)*N+j] = activationTimes[c][(N-2)*N+j];
             apd[c][j] = apd[c][N+j];
@@ -442,10 +447,12 @@ self.onmessage = (e) => {
       frameCount++;
     }
   }
+  const validActivationTimes = activationTimes.filter(arr => arr.some(val => val !== -1));
+  const validApd = apd.filter(arr => arr.some(val => val !== -1));
 
   const transferList = [framesBuffer.buffer, timesBuffer.buffer, fibrosisMap.buffer];
-  activationTimes.forEach(arr => transferList.push(arr.buffer));
-  apd.forEach(arr => transferList.push(arr.buffer));
+  validActivationTimes.forEach(arr => transferList.push(arr.buffer));
+  validApd.forEach(arr => transferList.push(arr.buffer));
 
   self.postMessage(
     { 
@@ -453,8 +460,8 @@ self.onmessage = (e) => {
         frames: framesBuffer, 
         times: timesBuffer,
         fibrosis: fibrosisMap,
-        activationTimes,
-        apd,
+        activationTimes: validActivationTimes,
+        apd: validApd,
         N,
         totalFrames: frameCount
     }, 
