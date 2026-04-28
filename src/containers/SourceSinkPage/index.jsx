@@ -8,7 +8,8 @@ import Chart from '../../components/Chart';
 import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation_source_sink.worker.js?worker';
 import { useTranslation } from 'react-i18next';
-import { export2DToGif } from '../../utils/export';
+import ExportModal from '../../components/ExportModal';
+import { export2DToGif, exportToPng, export2DToXDMF } from '../../utils/export';
 import './styles.css';
 
 /* Componente para seções expansíveis na sidebar */
@@ -57,6 +58,7 @@ const SourceSinkPage = ({ onBack }) => {
   const [remainingTime, setRemainingTime] = useState(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState(null);
   const chartRef = useRef(null);
@@ -202,6 +204,13 @@ const SourceSinkPage = ({ onBack }) => {
   // Handler de Simulação
   const handleSimularClick = useCallback(() => {
     if (worker) {
+      // Força a liberação da memória anterior
+      if (simulationResult) {
+          simulationResult.frames = null;
+          simulationResult.times = null;
+          simulationResult.fibrosis = null;
+      }
+
       setLoading(true);
       setSimulationResult(null);
       setIsPlaying(false);
@@ -267,11 +276,19 @@ const SourceSinkPage = ({ onBack }) => {
         minimalCellParams: safeMinimalParams
       });
     }
-  }, [worker, params, stimulusParams, selectedModel, minimalCustomParams]);
+  }, [worker, params, stimulusParams, selectedModel, minimalCustomParams, simulationResult]);
 
   // Handler de Parada
   const handleStop = () => {
     if (worker) worker.terminate();
+    
+    // Força a liberação da memória
+    if (simulationResult) {
+        simulationResult.frames = null;
+        simulationResult.times = null;
+        simulationResult.fibrosis = null;
+    }
+
     const newWorker = new SimulationWorker();
     newWorker.onmessage = (e) => {
       const { type, value, remaining, frames, times, fibrosis, N, totalFrames } = e.data;
@@ -301,7 +318,7 @@ const SourceSinkPage = ({ onBack }) => {
     setIsModalOpen(true);
   }, []);
 
-  // Função para exportar
+  // Funções de Exportação
   const handleExportGif = useCallback(async () => {
     if (!simulationResult) return;
     setExporting(true);
@@ -318,6 +335,16 @@ const SourceSinkPage = ({ onBack }) => {
         setExporting(false);
     }, 100);
   }, [simulationResult, params, selectedModel, t]);
+
+  const handleExportImage = useCallback(async () => {
+    if (!chartRef.current) return;
+    setExporting(true);
+    
+    setTimeout(async () => {
+        await exportToPng(chartRef, `source_sink_2d_${selectedModel}`);
+        setExporting(false);
+    }, 100);
+  }, [selectedModel]);
 
   let currentChartData = null;
   let currentGeometryMap = null;
@@ -348,11 +375,6 @@ const SourceSinkPage = ({ onBack }) => {
     }
     return timeseries;
   }, [selectedPoint, simulationResult]);
-
-  const safeList = (key) => {
-    const list = t(key, { returnObjects: true });
-    return Array.isArray(list) ? list : [];
-  };
 
   const renderInfoModalContent = () => {
     return (
@@ -699,11 +721,20 @@ const SourceSinkPage = ({ onBack }) => {
                       <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} text-2xl ml-${isPlaying ? '0' : '1'}`}></i>
                     </button>
 
-                    {/* Botão de Exportar */}
                     <ExportButton 
-                        onClick={handleExportGif}
+                        onClick={() => setIsExportModalOpen(true)}
                         label={exporting ? t('common.generating_gif') : t('common.export_result')}
-                        disabled={exporting}
+                        disabled={exporting || !currentChartData}
+                    />
+
+                    {/* Modal de Exportação */}
+                    <ExportModal 
+                        mode="2d"
+                        isOpen={isExportModalOpen} 
+                        onClose={() => setIsExportModalOpen(false)}
+                        onExportPng={handleExportImage}
+                        onExportGif={handleExportGif}
+                        onExportData={() => export2DToXDMF(simulationResult, { ...params, modelType: selectedModel }, `source_sink_2d_simulation_${selectedModel}`)}
                     />
                   </>
                 )}
@@ -711,7 +742,7 @@ const SourceSinkPage = ({ onBack }) => {
 
               {simulationResult && (
                 <div className="flex-1 w-full flex items-center gap-3">
-                  <span className="text-xs font-mono text-slate-500 w-12 text-right">{(simulationResult.times[currentFrame] || 0).toFixed(0)}ms</span>
+                  <span className="text-xs font-mono text-slate-500 w-12 text-right">{Number(simulationResult.times[currentFrame] || 0).toFixed(0)}ms</span>
                   <input
                     type="range"
                     min="0"
@@ -720,7 +751,7 @@ const SourceSinkPage = ({ onBack }) => {
                     onChange={handleSliderChange}
                     className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
                   />
-                  <span className="text-xs font-mono text-slate-500 w-12">{(simulationResult.times[simulationResult.totalFrames - 1] || 0).toFixed(0)}ms</span>
+                  <span className="text-xs font-mono text-slate-500 w-12">{Number(simulationResult.times[simulationResult.totalFrames - 1] || 0).toFixed(0)}ms</span>
 
                   <div className="flex items-center gap-2 ml-4 border-l border-slate-200 pl-4" title={t('common.speed')}>
                     <i className="bi bi-speedometer2 text-slate-400"></i>
