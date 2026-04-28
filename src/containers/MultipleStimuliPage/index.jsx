@@ -6,8 +6,9 @@ import Modal from '../../components/Modal';
 import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation_8_stimuli.worker.js?worker';
 import MinimalWorker from '../../simulation_minimal_0d.worker.js?worker';
+import ExportModal from '../../components/ExportModal';
 import { useTranslation } from 'react-i18next';
-import { exportToPng } from '../../utils/export';
+import { exportToPng, export0DToCSV } from '../../utils/export';
 import './styles.css';
 
 {/* Componente para as configurações de parâmetros */}
@@ -79,6 +80,7 @@ const MultipleStimuliPage = ({ onBack }) => {
   const [data, setData] = useState([]);
   const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   
   // Estado para gerenciar as abas do modal de informação
@@ -431,13 +433,14 @@ const MultipleStimuliPage = ({ onBack }) => {
                         )}
                     </button>
 
-                    {/* Botão de Exportar */}
-                    {chartData.length > 0 && (
-                      <ExportButton 
-                          onClick={handleExport}
-                          label={t('common.export_result')}
-                      />
-                    )}
+                    <ExportButton onClick={() => setIsExportModalOpen(true)} />
+                    <ExportModal 
+                        isOpen={isExportModalOpen} 
+                        onClose={() => setIsExportModalOpen(false)}
+                        onExportPng={() => exportToPng(chartRef, 'multiple_stimuli_plot')}
+                        onExportData={() => export0DToCSV(data, 'multiple_stimuli_data')}
+                        dataType="CSV" 
+                    />
                 </div>
                 
                 <Button onClick={() => setIsInfoModalOpen(true)} className="bg-slate-100 text-slate-600 hover:bg-slate-200 p-2 rounded-lg" title={t('common.more_info')}>
