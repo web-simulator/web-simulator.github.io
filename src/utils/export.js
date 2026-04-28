@@ -1,6 +1,8 @@
 import { toPng } from 'html-to-image';
 import GIF from 'gif.js/dist/gif';
 import gifWorkerUrl from '../gif.worker.js?url';
+import JSZip from 'jszip';
+import h5wasm from 'h5wasm';
 
 export const exportToPng = async (elementRef, fileNamePrefix = 'simulacao') => {
   if (!elementRef.current) return;
@@ -357,4 +359,92 @@ export const export0DToCSV = (data, fileNamePrefix = '0d_simulation') => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+};
+
+// Função para exportar XDMF
+export const export1DToXDMF = async (simulationData, params, fileNamePrefix = '1d_simulation') => {
+    if (!simulationData || simulationData.length === 0) {
+        alert("Sem dados para exportar.");
+        return;
+    }
+
+    const h5FileName = `${fileNamePrefix}.h5`;
+    const xdmfFileName = `${fileNamePrefix}.xdmf`;
+    let file = null;
+    let fileSystem = null;
+
+    try {
+        const wasm = await h5wasm.ready;
+        fileSystem = wasm.FS || h5wasm.FS;
+        const FileClass = wasm.File || h5wasm.File;
+
+        try {
+            if (fileSystem.analyzePath(h5FileName).exists) {
+                fileSystem.unlink(h5FileName);
+            }
+        } catch (e) {}
+
+        file = new FileClass(h5FileName, 'w');
+
+        const MAX_FRAMES = 500;
+        let step = 1;
+        if (simulationData.length > MAX_FRAMES) {
+            step = Math.ceil(simulationData.length / MAX_FRAMES);
+        }
+
+        const numPoints = simulationData[0].data.length;
+        let frameCount = 0;
+
+        let xdmfContent = `<?xml version="1.0" ?>\n<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>\n<Xdmf Version="2.0">\n  <Domain>\n    <Grid Name="TimeSeries" GridType="Collection" CollectionType="Temporal">\n`;
+
+        for (let i = 0; i < simulationData.length; i += step) {
+            const frame = simulationData[i];
+            
+            const rawArrayV = new Float32Array(frame.data.map(p => (isNaN(p.v) || p.v === null ? 0.0 : Number(p.v))));
+            const rawArrayH = new Float32Array(frame.data.map(p => (isNaN(p.h) || p.h === null ? 0.0 : Number(p.h))));
+            
+            const datasetNameV = `potential_frame_${frameCount}`;
+            const datasetNameH = `gate_h_frame_${frameCount}`;
+            
+            file.create_dataset({ name: datasetNameV, data: rawArrayV, shape: [numPoints], dtype: '<f4' });
+            file.create_dataset({ name: datasetNameH, data: rawArrayH, shape: [numPoints], dtype: '<f4' });
+
+            xdmfContent += `      <Grid Name="Frame_${frameCount}" GridType="Uniform">\n        <Time Value="${Number(frame.time).toFixed(2)}" />\n        <Topology TopologyType="3DCoRectMesh" Dimensions="1 1 ${numPoints}"/>\n        <Geometry GeometryType="ORIGIN_DXDYDZ">\n          <DataItem DataType="Float" Dimensions="3" Format="XML">0 0 0</DataItem>\n          <DataItem DataType="Float" Dimensions="3" Format="XML">1 1 ${params.dx || 1}</DataItem>\n        </Geometry>\n        <Attribute Name="Potential" AttributeType="Scalar" Center="Node">\n          <DataItem DataType="Float" Precision="4" Dimensions="1 1 ${numPoints}" Format="HDF">\n            ${h5FileName}:/${datasetNameV}\n          </DataItem>\n        </Attribute>\n        <Attribute Name="Gate_h" AttributeType="Scalar" Center="Node">\n          <DataItem DataType="Float" Precision="4" Dimensions="1 1 ${numPoints}" Format="HDF">\n            ${h5FileName}:/${datasetNameH}\n          </DataItem>\n        </Attribute>\n      </Grid>\n`;
+
+            frameCount++;
+        }
+
+        xdmfContent += `    </Grid>\n  </Domain>\n</Xdmf>`;
+
+        file.close();
+        file = null; 
+
+        const h5FileBuffer = fileSystem.readFile(h5FileName);
+        const h5Blob = new Blob([h5FileBuffer], { type: 'application/x-hdf5' });
+
+        fileSystem.unlink(h5FileName);
+
+        const zip = new JSZip();
+        zip.file(h5FileName, h5Blob);
+        zip.file(xdmfFileName, xdmfContent);
+
+        const zipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
+
+        const url = URL.createObjectURL(zipBlob);
+        const link = document.createElement('a');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        
+        link.href = url;
+        link.download = `${fileNamePrefix}_XDMF_${timestamp}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+    } catch (err) {
+        console.error("Erro detalhado ao gerar XDMF/HDF5:", err);
+        alert("Falha ao exportar em formato XDMF. Verifica a consola para detalhes.");
+        if (file) { try { file.close(); } catch(e) {} }
+        if (fileSystem) { try { fileSystem.unlink(h5FileName); } catch(e) {} }
+    }
 };
