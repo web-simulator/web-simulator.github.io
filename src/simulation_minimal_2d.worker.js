@@ -210,8 +210,8 @@ self.onmessage = (e) => {
   const timesBuffer = new Float32Array(expectedFrames);
   
   // arrays para LAT e APD
-  const activationTimes = new Float32Array(size).fill(-1);
-  const apd = new Float32Array(size).fill(-1);
+  const activationTimes = [];
+  const apd = [];
   const activationState = new Uint8Array(size).fill(0);
   const activationStartTime = new Float32Array(size).fill(-1);
   const activationCount = new Uint32Array(size).fill(0);
