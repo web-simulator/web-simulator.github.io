@@ -317,3 +317,44 @@ export const export2DToGif = (simulationResult, params, fileNamePrefix = '2d_sim
         }
     });
 };
+
+// Função para exportar dados 0d em CSV
+export const export0DToCSV = (data, fileNamePrefix = '0d_simulation') => {
+    if (!data || data.length === 0) {
+        alert("Sem dados para exportar.");
+        return;
+    }
+
+    let csvContent = "";
+    
+    const sample = data[0];
+    if (typeof sample === 'object' && !Array.isArray(sample)) {
+        const columns = Object.keys(sample);
+        csvContent += columns.join(",") + "\n";
+        
+        data.forEach(row => {
+            const values = columns.map(col => {
+                let val = row[col];
+                if (val === undefined || val === null || isNaN(val)) val = 0;
+                return typeof val === 'number' ? val.toFixed(6) : val;
+            });
+            csvContent += values.join(",") + "\n";
+        });
+    } else {
+        alert("Formato de dados não suportado para exportação.");
+        return;
+    }
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    link.href = url;
+    link.download = `${fileNamePrefix}_${timestamp}.csv`;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
