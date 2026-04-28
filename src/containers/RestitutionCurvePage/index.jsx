@@ -9,6 +9,7 @@ import RestitutionWorker from '../../simulation_restitution.worker.js?worker';
 import MMSWorker from '../../simulation_mms_restitution_alt.worker.js?worker';
 import DynamicWorker from '../../simulation_dynamic_protocol1.worker.js?worker';
 import MinimalWorker from '../../simulation_minimal_restitution.worker.js?worker';
+import ExportModal from '../../components/ExportModal';
 import { useTranslation } from 'react-i18next';
 import { exportToPng } from '../../utils/export';
 import { t } from 'i18next';
@@ -89,6 +90,7 @@ const RestitutionCurvePage = ({ onBack }) => {
   const [selectedModel, setSelectedModel] = useState('mms');
   const [curveType, setCurveType] = useState('apd');
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false); 
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
   const [minimalCustomParams, setMinimalCustomParams] = useState(DEFAULT_MINIMAL_PARAMS);
   const [visibleVars, setVisibleVars] = useState({ v: true, gate_v: true, gate_w: true, gate_s: true });
@@ -538,13 +540,14 @@ const RestitutionCurvePage = ({ onBack }) => {
                             )}
                         </button>
 
-                        {/* Botão de Exportar */}
-                        {(restitutionData.length > 0 || (showTimeSeries && chartData.length > 0)) && (
-                          <ExportButton 
-                              onClick={handleExport}
-                              label={t('common.export_result')}
-                          />
-                        )}
+                    <ExportButton onClick={() => setIsExportModalOpen(true)} />
+                    <ExportModal 
+                        isOpen={isExportModalOpen} 
+                        onClose={() => setIsExportModalOpen(false)}
+                        onExportPng={() => exportToPng(chartRef, 's1s2_protocol_plot')}
+                        onExportData={() => export0DToCSV(data, 's1s2_protocol_data')}
+                        dataType="CSV" 
+                    />
                     </div>
                     
                     <Button onClick={() => setIsInfoModalOpen(true)} className="bg-slate-100 text-slate-600 hover:bg-slate-200 p-2 rounded-lg" title={t('common.more_info')}>
