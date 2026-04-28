@@ -124,7 +124,7 @@ const HomePage = ({ onNavigate }) => {
                         className="w-full justify-center bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-medium py-2 rounded-lg shadow-sm transition-all duration-200 flex items-center gap-2"
                       >
                         {t('home.btn_start')}
-                        <i class="bi bi-arrow-right"></i>
+                        <i className="bi bi-arrow-right"></i>
                       </Button>
                     </div>
                   </div>
