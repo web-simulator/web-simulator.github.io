@@ -442,7 +442,8 @@ const SingleStimulusPage = ({ onBack }) => {
                     </button>
 
                     <ExportButton onClick={() => setIsExportModalOpen(true)} />
-                    <ExportModal 
+                    <ExportModal
+                        mode="0d" 
                         isOpen={isExportModalOpen} 
                         onClose={() => setIsExportModalOpen(false)}
                         onExportPng={() => exportToPng(chartRef, 'single_stimulus_plot')}

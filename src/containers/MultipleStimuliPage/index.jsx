@@ -435,6 +435,7 @@ const MultipleStimuliPage = ({ onBack }) => {
 
                     <ExportButton onClick={() => setIsExportModalOpen(true)} />
                     <ExportModal 
+                        mode="0d"
                         isOpen={isExportModalOpen} 
                         onClose={() => setIsExportModalOpen(false)}
                         onExportPng={() => exportToPng(chartRef, 'multiple_stimuli_plot')}

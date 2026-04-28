@@ -466,7 +466,8 @@ const S1S2Page = ({ onBack }) => {
                     </button>
 
                     <ExportButton onClick={() => setIsExportModalOpen(true)} />
-                    <ExportModal 
+                    <ExportModal
+                        mode="0d" 
                         isOpen={isExportModalOpen} 
                         onClose={() => setIsExportModalOpen(false)}
                         onExportPng={() => exportToPng(chartRef, 's1s2_protocol_plot')}
