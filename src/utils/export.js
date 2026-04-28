@@ -394,6 +394,17 @@ export const export1DToXDMF = async (simulationData, params, fileNamePrefix = '1
 
         const numPoints = simulationData[0].data.length;
         let frameCount = 0;
+        let hasGate = false;
+        let gateKey = null;
+        const firstPoint = simulationData[0].data[0];
+        
+        if (firstPoint.w !== undefined) {
+            hasGate = true;
+            gateKey = 'w';
+        } else if (firstPoint.h !== undefined) {
+            hasGate = true;
+            gateKey = 'h';
+        }
 
         let xdmfContent = `<?xml version="1.0" ?>\n<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>\n<Xdmf Version="2.0">\n  <Domain>\n    <Grid Name="TimeSeries" GridType="Collection" CollectionType="Temporal">\n`;
 
@@ -401,16 +412,24 @@ export const export1DToXDMF = async (simulationData, params, fileNamePrefix = '1
             const frame = simulationData[i];
             
             const rawArrayV = new Float32Array(frame.data.map(p => (isNaN(p.v) || p.v === null ? 0.0 : Number(p.v))));
-            const rawArrayH = new Float32Array(frame.data.map(p => (isNaN(p.h) || p.h === null ? 0.0 : Number(p.h))));
-            
             const datasetNameV = `potential_frame_${frameCount}`;
-            const datasetNameH = `gate_h_frame_${frameCount}`;
             
             file.create_dataset({ name: datasetNameV, data: rawArrayV, shape: [numPoints], dtype: '<f4' });
-            file.create_dataset({ name: datasetNameH, data: rawArrayH, shape: [numPoints], dtype: '<f4' });
 
-            xdmfContent += `      <Grid Name="Frame_${frameCount}" GridType="Uniform">\n        <Time Value="${Number(frame.time).toFixed(2)}" />\n        <Topology TopologyType="3DCoRectMesh" Dimensions="1 1 ${numPoints}"/>\n        <Geometry GeometryType="ORIGIN_DXDYDZ">\n          <DataItem DataType="Float" Dimensions="3" Format="XML">0 0 0</DataItem>\n          <DataItem DataType="Float" Dimensions="3" Format="XML">1 1 ${params.dx || 1}</DataItem>\n        </Geometry>\n        <Attribute Name="Potential" AttributeType="Scalar" Center="Node">\n          <DataItem DataType="Float" Precision="4" Dimensions="1 1 ${numPoints}" Format="HDF">\n            ${h5FileName}:/${datasetNameV}\n          </DataItem>\n        </Attribute>\n        <Attribute Name="Gate_h" AttributeType="Scalar" Center="Node">\n          <DataItem DataType="Float" Precision="4" Dimensions="1 1 ${numPoints}" Format="HDF">\n            ${h5FileName}:/${datasetNameH}\n          </DataItem>\n        </Attribute>\n      </Grid>\n`;
+            xdmfContent += `      <Grid Name="Frame_${frameCount}" GridType="Uniform">\n        <Time Value="${Number(frame.time).toFixed(2)}" />\n        <Topology TopologyType="3DCoRectMesh" Dimensions="1 1 ${numPoints}"/>\n        <Geometry GeometryType="ORIGIN_DXDYDZ">\n          <DataItem DataType="Float" Dimensions="3" Format="XML">0 0 0</DataItem>\n          <DataItem DataType="Float" Dimensions="3" Format="XML">1 1 ${params.dx || 1}</DataItem>\n        </Geometry>\n        <Attribute Name="Potential" AttributeType="Scalar" Center="Node">\n          <DataItem DataType="Float" Precision="4" Dimensions="1 1 ${numPoints}" Format="HDF">\n            ${h5FileName}:/${datasetNameV}\n          </DataItem>\n        </Attribute>\n`;
+            if (hasGate) {
+                const rawArrayGate = new Float32Array(frame.data.map(p => {
+                    const val = p[gateKey];
+                    return (isNaN(val) || val === null ? 0.0 : Number(val));
+                }));
+                const datasetNameGate = `gate_${gateKey}_frame_${frameCount}`;
+                
+                file.create_dataset({ name: datasetNameGate, data: rawArrayGate, shape: [numPoints], dtype: '<f4' });
+                
+                xdmfContent += `        <Attribute Name="Gate_${gateKey}" AttributeType="Scalar" Center="Node">\n          <DataItem DataType="Float" Precision="4" Dimensions="1 1 ${numPoints}" Format="HDF">\n            ${h5FileName}:/${datasetNameGate}\n          </DataItem>\n        </Attribute>\n`;
+            }
 
+            xdmfContent += `      </Grid>\n`;
             frameCount++;
         }
 
