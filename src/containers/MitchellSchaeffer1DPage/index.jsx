@@ -9,8 +9,10 @@ import Chart from '../../components/Chart';
 import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation_ms_1d.worker.js?worker';
 import CVWorker from '../../simulation_cv_restitution_ms_1d.worker.js?worker';
+import ExportModal from '../../components/ExportModal';
+import h5wasm from 'h5wasm';
 import { useTranslation } from 'react-i18next';
-import { export1DToGif, exportToPng } from '../../utils/export';
+import { export1DToGif, exportToPng, export1DToXDMF, export0DToCSV } from '../../utils/export';
 
 const SettingsSection = ({ title, children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -54,6 +56,7 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
   // Estados de visualização
   const [viewMode, setViewMode] = useState('line');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedX, setSelectedX] = useState(null);
   const chartRef = useRef(null);
@@ -225,7 +228,6 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
               <h3 className="text-xl font-bold text-slate-700">{t('modals.ms1d.basic.title')}</h3>
               <p className="text-slate-600 leading-relaxed text-justify mb-4">{t('modals.ms1d.basic.desc')}</p>
 
-              {/* NOVA SEÇÃO: O que é um modelo 1D */}
               <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.ms1d.basic.what_is_1d')}</h3>
               <p className="text-slate-600 leading-relaxed mb-4">{t('modals.ms1d.basic.what_is_1d_desc')}</p>
 
@@ -251,13 +253,11 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
                  <p className="text-sm text-slate-600 text-justify">{t('modals.ms1d.advanced.kinetics_desc')}</p>
               </div>
 
-              {/* BOX: Explicação das Visualizações */}
               <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-4">
                  <h4 className="font-semibold text-slate-700 mb-2">{t('modals.ms1d.advanced.visualizations')}</h4>
                  <p className="text-sm text-slate-600 text-justify">{t('modals.ms1d.advanced.visualizations_desc')}</p>
               </div>
 
-              {/* NOVO BOX: Modos de Simulação (Padrão vs CV) */}
               <div className="bg-white border-l-4 border-emerald-500 p-4 mt-4 shadow-sm">
                  <h4 className="font-bold text-slate-700 mb-1">{t('modals.ms1d.advanced.modes')}</h4>
                  <p className="text-sm text-slate-600 text-justify">{t('modals.ms1d.advanced.modes_desc')}</p>
@@ -438,7 +438,8 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
 
             <div className="bg-white border-t border-slate-200 p-4 shadow-lg z-20">
                 <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 w-full md:w-auto">
+                    
+                    <div className="flex flex-wrap items-center justify-center gap-3">
                         <button 
                             onClick={handleSimularClick} 
                             disabled={loading || exporting}
@@ -450,30 +451,51 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
                         
                         {((simulationMode === 'standard' && simulationData.length > 0) || (simulationMode === 'cv' && restitutionData.length > 0)) && (
                              <>
-                                <div className="h-8 w-px bg-slate-300 mx-2"></div>
+                                <ExportButton onClick={() => setIsExportModalOpen(true)} disabled={exporting} />
+                                
+                                <ExportModal 
+                                    mode="1d"
+                                    isOpen={isExportModalOpen} 
+                                    onClose={() => setIsExportModalOpen(false)}
+                                    onExportPng={() => exportToPng(chartRef, 'ms_1d_plot')}
+                                    onExportGif={simulationMode === 'standard' ? async () => {
+                                        setExporting(true);
+                                        const labels = {
+                                            potential: t('chart.potential_unit'),
+                                            position: t('chart.position_unit'),
+                                            time_ms: t('chart.time_ms')
+                                        };
+                                        await export1DToGif(simulationData, editableParams, 'ms1d_simulation', labels, viewMode);
+                                        setExporting(false);
+                                    } : undefined}
+                                    onExportData={() => {
+                                        if (simulationMode === 'standard') {
+                                            export1DToXDMF(simulationData, editableParams, 'ms_1d_data');
+                                        } else {
+                                            export0DToCSV(restitutionData, 'ms_1d_cv_restitution');
+                                        }
+                                    }}
+                                />
                                 
                                 {simulationMode === 'standard' && (
-                                    <button 
-                                        onClick={() => setIsPlaying(!isPlaying)}
-                                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-md transition-transform active:scale-95 mr-2"
-                                        title={isPlaying ? t('common.pause') : t('common.resume')}
-                                    >
-                                        <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} text-2xl ml-${isPlaying ? '0' : '1'}`}></i>
-                                    </button>
+                                    <>
+                                        <div className="h-8 w-px bg-slate-300 mx-1 hidden md:block"></div>
+                                        <button 
+                                            onClick={() => setIsPlaying(!isPlaying)}
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-md transition-transform active:scale-95"
+                                            title={isPlaying ? t('common.pause') : t('common.resume')}
+                                        >
+                                            <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} text-2xl ml-${isPlaying ? '0' : '1'}`}></i>
+                                        </button>
+                                    </>
                                 )}
-
-                                <ExportButton 
-                                    onClick={handleExport}
-                                    label={exporting ? t('common.exporting', 'Exportando...') : t('common.export_result')}
-                                    disabled={exporting}
-                                />
                              </>
                         )}
                     </div>
                     
                     {simulationMode === 'standard' && simulationData.length > 0 && (
                         <div className="flex-1 w-full flex items-center gap-3">
-                            <span className="text-xs font-mono text-slate-500 w-12 text-right">{(simulationData[currentFrame]?.time || 0)}ms</span>
+                            <span className="text-xs font-mono text-slate-500 w-12 text-right">{Number(simulationData[currentFrame]?.time || 0).toFixed(0)}ms</span>
                             <input 
                                 type="range" 
                                 min="0" 
@@ -482,9 +504,9 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
                                 onChange={handleSliderChange} 
                                 className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" 
                             />
-                            <span className="text-xs font-mono text-slate-500 w-12">{(simulationData[simulationData.length-1]?.time || 0)}ms</span>
+                            <span className="text-xs font-mono text-slate-500 w-12">{Number(simulationData[simulationData.length-1]?.time || 0).toFixed(0)}ms</span>
                             
-                            <div className="flex items-center gap-2 ml-4 border-l border-slate-200 pl-4" title={t('common.speed')}>
+                            <div className="flex items-center gap-2 ml-2 border-l border-slate-200 pl-4" title={t('common.speed')}>
                                 <i className="bi bi-speedometer2 text-slate-400"></i>
                                 <input 
                                     type="range" 
@@ -498,9 +520,12 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
                         </div>
                     )}
                     
-                    <Button onClick={() => setIsInfoModalOpen(true)} className="bg-slate-100 text-slate-600 hover:bg-slate-200 p-2 rounded-lg ml-auto" title={t('common.more_info')}>
-                        <i className="bi bi-info-circle text-lg"></i> <span className="md:hidden ml-2">{t('common.more_info')}</span>
-                    </Button>
+                    <div className="ml-auto flex-shrink-0">
+                        <Button onClick={() => setIsInfoModalOpen(true)} className="bg-slate-100 text-slate-600 hover:bg-slate-200 p-2 rounded-lg" title={t('common.more_info')}>
+                            <i className="bi bi-info-circle text-lg"></i> <span className="md:hidden ml-2">{t('common.more_info')}</span>
+                        </Button>
+                    </div>
+
                 </div>
             </div>
         </main>
