@@ -489,16 +489,18 @@ export const export2DToXDMF = async (simulationResult, params, fileNamePrefix = 
         try { if (fileSystem.analyzePath(h5FileName).exists) fileSystem.unlink(h5FileName); } catch (e) {}
 
         file = new FileClass(h5FileName, 'w');
+
         const numPoints = N * N;
-        const flippedFibrosis = new Float32Array(numPoints);
+
+        const flippedBuffer = new Float32Array(numPoints); 
+
         if (fibrosis) {
             for (let i = 0; i < N; i++) {
                 const originalRowStart = (N - 1 - i) * N;
-                const targetRowStart = i * N;
-                flippedFibrosis.set(fibrosis.subarray(originalRowStart, originalRowStart + N), targetRowStart);
+                flippedBuffer.set(fibrosis.subarray(originalRowStart, originalRowStart + N), i * N);
             }
+            file.create_dataset({ name: 'fibrosis_map', data: flippedBuffer, shape: [N, N], dtype: '<f4' });
         }
-        file.create_dataset({ name: 'fibrosis_map', data: flippedFibrosis, shape: [N, N], dtype: '<f4' });
 
         const MAX_FRAMES_2D = 400; 
         let step = Math.ceil(totalFrames / MAX_FRAMES_2D) || 1;
@@ -510,15 +512,13 @@ export const export2DToXDMF = async (simulationResult, params, fileNamePrefix = 
             const offset = f * numPoints;
             const frameData = frames.subarray(offset, offset + numPoints);
             
-            const flippedArrayV = new Float32Array(numPoints);
             for (let i = 0; i < N; i++) {
                 const originalRowStart = (N - 1 - i) * N;
-                const targetRowStart = i * N;
-                flippedArrayV.set(frameData.subarray(originalRowStart, originalRowStart + N), targetRowStart);
+                flippedBuffer.set(frameData.subarray(originalRowStart, originalRowStart + N), i * N);
             }
             
             const datasetNameV = `potential_frame_${exportedFrameCount}`;
-            file.create_dataset({ name: datasetNameV, data: flippedArrayV, shape: [N, N], dtype: '<f4' });
+            file.create_dataset({ name: datasetNameV, data: flippedBuffer, shape: [N, N], dtype: '<f4' });
 
             const dx = params.dx || 1;
             const timeVal = simulationResult.times[f] || (f * (params.dt || 0.1) * (params.stride || 10));
@@ -530,6 +530,8 @@ export const export2DToXDMF = async (simulationResult, params, fileNamePrefix = 
         xdmfContent += `    </Grid>\n  </Domain>\n</Xdmf>`;
 
         file.close();
+        file = null;
+
         const h5FileBuffer = fileSystem.readFile(h5FileName);
         const h5Blob = new Blob([h5FileBuffer], { type: 'application/x-hdf5' });
         fileSystem.unlink(h5FileName);
@@ -537,6 +539,7 @@ export const export2DToXDMF = async (simulationResult, params, fileNamePrefix = 
         const zip = new JSZip();
         zip.file(h5FileName, h5Blob);
         zip.file(xdmfFileName, xdmfContent);
+
         const zipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
 
         const url = URL.createObjectURL(zipBlob);
@@ -544,6 +547,7 @@ export const export2DToXDMF = async (simulationResult, params, fileNamePrefix = 
         link.href = url;
         link.download = `${fileNamePrefix}_XDMF.zip`;
         link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
 
     } catch (err) {
         console.error("Erro na exportação 2D:", err);

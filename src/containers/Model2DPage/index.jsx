@@ -202,6 +202,14 @@ const Model2DPage = ({ onBack }) => {
 
   const handleStart = () => {
     if (!worker) return;
+
+    if (simulationResult) {
+        simulationResult.frames = null;
+        simulationResult.times = null;
+        simulationResult.activationTimes = null;
+        simulationResult.apd = null;
+    }
+
     setCalculating(true); setSimulationResult(null); setProgress(0); setRemainingTime(null); setIsPlaying(false);setSelectedActivation(0);
     
     const num = (v) => parseFloat(v) || 0;
@@ -264,6 +272,14 @@ const Model2DPage = ({ onBack }) => {
 
   const handleStop = () => {
       if (worker) worker.terminate();
+
+      if (simulationResult) {
+        simulationResult.frames = null;
+        simulationResult.times = null;
+        simulationResult.activationTimes = null;
+        simulationResult.apd = null;
+      }
+
       let simWorker = selectedModel === 'minimal' ? new MinimalWorker() : new SimulationWorker();
       simWorker.onmessage = (e) => {
           const { type, value, remaining, frames, times, fibrosis, activationTimes, apd, N, totalFrames } = e.data;
