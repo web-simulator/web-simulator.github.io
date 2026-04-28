@@ -41,6 +41,7 @@ self.onmessage = (e) => {
   
   const N = Math.floor(L / dx);
   const dy = dx;
+  const size = N * N;
   
   const rad = (fiber_angle * Math.PI) / 180.0;
   const c = Math.cos(rad);
@@ -60,27 +61,26 @@ self.onmessage = (e) => {
   if (dt > cfl_limit) dt = cfl_limit * 0.9;
 
   // V e H iniciais
-  let v_arr = new Float32Array(N * N).fill(0.0);
-  let h_arr = new Float32Array(N * N).fill(1.0);
+  let v_arr = new Float32Array(size).fill(0.0);
+  let h_arr = new Float32Array(size).fill(1.0);
   
   // W e S
-  let w_arr, s_arr;
-  if (modelType === 'minimal') {// Só preenche se for minimal
-      w_arr = new Float32Array(N * N).fill(1.0);
-      s_arr = new Float32Array(N * N).fill(0.0);
+  let w_arr = null, s_arr = null;
+  if (modelType === 'minimal') {
+      w_arr = new Float32Array(size).fill(1.0);
+      s_arr = new Float32Array(size).fill(0.0);
   }
   
   // Mapas de Difusão e Geometria
-  let Dxx_map = new Float32Array(N * N).fill(base_Dxx);
-  let Dyy_map = new Float32Array(N * N).fill(base_Dyy);
-  let Dxy_map = new Float32Array(N * N).fill(base_Dxy);
-  let geometryMap = new Float32Array(N * N).fill(1.0); 
+  let Dxx_map = new Float32Array(size).fill(base_Dxx);
+  let Dyy_map = new Float32Array(size).fill(base_Dyy);
+  let Dxy_map = new Float32Array(size).fill(base_Dxy);
+  let geometryMap = new Float32Array(size).fill(1.0); 
 
   // lida com a fibrose
   if (fibrosisParams && fibrosisParams.enabled) {
       const { conductivity, type, distribution, shape, rectParams, circleParams, regionParams, borderZone = 0, seed, density } = fibrosisParams;
       const lerp = (start, end, t) => start * (1 - t) + end * t;
-      const size = N * N;
   
       if (type === 'compact' && distribution === 'region') {
         if (shape === 'rectangle') {
@@ -224,7 +224,7 @@ self.onmessage = (e) => {
   let cumulativeTime = 0;
 
   stimuli.forEach((stim, index) => {
-    let map = new Uint8Array(N * N).fill(0);
+    let map = new Uint8Array(size).fill(0);
     if (stim.shape === 'circle') {
         const { cx: sCx, cy: sCy, radius: sR } = stim.circleParams;
         const sRSq = sR * sR;
@@ -248,7 +248,7 @@ self.onmessage = (e) => {
   const steps = Math.floor(totalTime / dt);
   const expectedFrames = Math.floor(steps / downsamplingFactor) + 1;
   
-  const framesBuffer = new Float32Array(expectedFrames * N * N); 
+  const framesBuffer = new Float32Array(expectedFrames * size); 
   const timesBuffer = new Float32Array(expectedFrames); 
   
   let frameCount = 0;
@@ -259,6 +259,10 @@ self.onmessage = (e) => {
 
   const { u_o, theta_v, theta_w, tau_vplus, tau_s1, k_s, u_s } = COMMON_MINIMAL;
   const p = (modelType === 'minimal') ? (minimalCellParams[cellType] || minimalCellParams.epi) : null;
+  const v_prev = new Float32Array(size);
+  const h_prev = new Float32Array(size);
+  const w_prev = (modelType === 'minimal') ? new Float32Array(size) : null;
+  const s_prev = (modelType === 'minimal') ? new Float32Array(size) : null;
 
   for (let t = 0; t < steps; t++) {
       // barra de progresso
@@ -273,10 +277,12 @@ self.onmessage = (e) => {
           self.postMessage({ type: 'progress', value: progress, remaining });
       }
 
-      const v_prev = new Float32Array(v_arr);
-      const h_prev = new Float32Array(h_arr);
-      const w_prev = (modelType === 'minimal') ? new Float32Array(w_arr) : null;
-      const s_prev = (modelType === 'minimal') ? new Float32Array(s_arr) : null;
+      v_prev.set(v_arr);
+      h_prev.set(h_arr);
+      if (modelType === 'minimal') {
+          w_prev.set(w_arr);
+          s_prev.set(s_arr);
+      }
 
       const currentTime = t * dt;
       let stimulus_amplitude = 0;
@@ -408,7 +414,7 @@ self.onmessage = (e) => {
 
       // Downsampling
       if (t % downsamplingFactor === 0) {
-          framesBuffer.set(v_arr, frameCount * N * N);
+          framesBuffer.set(v_arr, frameCount * size);
           timesBuffer[frameCount] = currentTime;
           frameCount++;
       }
