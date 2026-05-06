@@ -411,22 +411,36 @@ export const export1DToXDMF = async (simulationData, params, fileNamePrefix = '1
         for (let i = 0; i < simulationData.length; i += step) {
             const frame = simulationData[i];
             
-            const rawArrayV = new Float32Array(frame.data.map(p => (isNaN(p.v) || p.v === null ? 0.0 : Number(p.v))));
+            // 1. Extrai a linha original (1D)
+            const baseArrayV = new Float32Array(frame.data.map(p => (isNaN(p.v) || p.v === null ? 0.0 : Number(p.v))));
+            
+            // 2. Expande para 2x o tamanho para formar uma fita 2D (linha de quadrados)
+            const rawArrayV = new Float32Array(2 * numPoints);
+            rawArrayV.set(baseArrayV, 0);
+            rawArrayV.set(baseArrayV, numPoints);
+
             const datasetNameV = `potential_frame_${frameCount}`;
             
-            file.create_dataset({ name: datasetNameV, data: rawArrayV, shape: [numPoints], dtype: '<f4' });
+            // 3. Salva no HDF5 com shape 2D perfeitamente compatível
+            file.create_dataset({ name: datasetNameV, data: rawArrayV, shape: [2, numPoints], dtype: '<f4' });
 
-            xdmfContent += `      <Grid Name="Frame_${frameCount}" GridType="Uniform">\n        <Time Value="${Number(frame.time).toFixed(2)}" />\n        <Topology TopologyType="3DCoRectMesh" Dimensions="1 1 ${numPoints}"/>\n        <Geometry GeometryType="ORIGIN_DXDYDZ">\n          <DataItem DataType="Float" Dimensions="3" Format="XML">0 0 0</DataItem>\n          <DataItem DataType="Float" Dimensions="3" Format="XML">1 1 ${params.dx || 1}</DataItem>\n        </Geometry>\n        <Attribute Name="Potential" AttributeType="Scalar" Center="Node">\n          <DataItem DataType="Float" Precision="4" Dimensions="1 1 ${numPoints}" Format="HDF">\n            ${h5FileName}:/${datasetNameV}\n          </DataItem>\n        </Attribute>\n`;
+            xdmfContent += `      <Grid Name="Frame_${frameCount}" GridType="Uniform">\n        <Time Value="${Number(frame.time).toFixed(2)}" />\n        <Topology TopologyType="2DCoRectMesh" Dimensions="2 ${numPoints}"/>\n        <Geometry GeometryType="ORIGIN_DXDY">\n          <DataItem DataType="Float" Dimensions="2" Format="XML">0 0</DataItem>\n          <DataItem DataType="Float" Dimensions="2" Format="XML">1 ${params.dx || 1}</DataItem>\n        </Geometry>\n        <Attribute Name="Potential" AttributeType="Scalar" Center="Node">\n          <DataItem DataType="Float" Precision="4" Dimensions="2 ${numPoints}" Format="HDF">\n            ${h5FileName}:/${datasetNameV}\n          </DataItem>\n        </Attribute>\n`;
+            
             if (hasGate) {
-                const rawArrayGate = new Float32Array(frame.data.map(p => {
+                const baseArrayGate = new Float32Array(frame.data.map(p => {
                     const val = p[gateKey];
                     return (isNaN(val) || val === null ? 0.0 : Number(val));
                 }));
+                
+                const rawArrayGate = new Float32Array(2 * numPoints);
+                rawArrayGate.set(baseArrayGate, 0);
+                rawArrayGate.set(baseArrayGate, numPoints);
+                
                 const datasetNameGate = `gate_${gateKey}_frame_${frameCount}`;
                 
-                file.create_dataset({ name: datasetNameGate, data: rawArrayGate, shape: [numPoints], dtype: '<f4' });
+                file.create_dataset({ name: datasetNameGate, data: rawArrayGate, shape: [2, numPoints], dtype: '<f4' });
                 
-                xdmfContent += `        <Attribute Name="Gate_${gateKey}" AttributeType="Scalar" Center="Node">\n          <DataItem DataType="Float" Precision="4" Dimensions="1 1 ${numPoints}" Format="HDF">\n            ${h5FileName}:/${datasetNameGate}\n          </DataItem>\n        </Attribute>\n`;
+                xdmfContent += `        <Attribute Name="Gate_${gateKey}" AttributeType="Scalar" Center="Node">\n          <DataItem DataType="Float" Precision="4" Dimensions="2 ${numPoints}" Format="HDF">\n            ${h5FileName}:/${datasetNameGate}\n          </DataItem>\n        </Attribute>\n`;
             }
 
             xdmfContent += `      </Grid>\n`;
