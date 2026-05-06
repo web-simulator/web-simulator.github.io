@@ -8,6 +8,7 @@ import BistablePage from './containers/BistablePage';
 import FitzHughNagumoPage from './containers/FitzHughNagumoPage';
 import MitchellSchaeffer1DPage from './containers/MitchellSchaeffer1DPage';
 import Model1DPage from './containers/Model1DPage';
+import CVRestitution1DPage from './containers/CVRestitution1DPage';
 import Model2DPage from './containers/Model2DPage';
 import SourceSinkPage from './containers/SourceSinkPage';
 import './index.css';
@@ -37,6 +38,9 @@ function App() {
       case 'model_1d':
         // Modelo 1D
         return <Model1DPage onBack={() => navigateTo('home')} />;
+      case 'cv_restitution_1d':
+        // Curva de Restituição 1D
+        return <CVRestitution1DPage onBack={() => navigateTo('home')} />;
       case 'model_2d':
         // Modelo 2D
         return <Model2DPage onBack={() => navigateTo('home')} />;
