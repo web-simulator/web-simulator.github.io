@@ -35,7 +35,7 @@ const SettingsSection = ({ title, children, defaultOpen = false }) => {
   );
 };
 
-const MitchellSchaeffer1DPage = ({ onBack }) => {
+const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
   const { t } = useTranslation();
   
   // Estados de dados e worker
@@ -302,15 +302,16 @@ const MitchellSchaeffer1DPage = ({ onBack }) => {
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-auto lg:overflow-hidden">
-      <header className="bg-white border-b border-slate-200 h-16 flex-none flex items-center justify-between px-6 shadow-sm z-20 sticky top-0 lg:relative">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors">
-            <i className="bi bi-arrow-left text-xl"></i>
-          </button>
-          <h1 className="text-xl font-bold text-slate-800 hidden sm:block">{t('home.models.ms_1d.title')}</h1>
-        </div>
-      </header>
-
+      {!isEmbedded && (
+        <header className="bg-white border-b border-slate-200 h-16 flex-none flex items-center justify-between px-6 shadow-sm z-20 sticky top-0 lg:relative">
+          <div className="flex items-center gap-4">
+            <button onClick={onBack} className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors">
+              <i className="bi bi-arrow-left text-xl"></i>
+            </button>
+            <h1 className="text-xl font-bold text-slate-800 hidden sm:block">{t('home.models.ms_1d.title')}</h1>
+          </div>
+        </header>
+      )}
       <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden">
         <aside className="w-full lg:w-96 bg-white border-r border-slate-200 lg:overflow-y-auto custom-scrollbar flex-none shadow-xl z-10">
           <div className="p-6 pb-6">

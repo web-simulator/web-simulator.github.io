@@ -410,18 +410,15 @@ export const export1DToXDMF = async (simulationData, params, fileNamePrefix = '1
 
         for (let i = 0; i < simulationData.length; i += step) {
             const frame = simulationData[i];
-            
-            // 1. Extrai a linha original (1D)
+
             const baseArrayV = new Float32Array(frame.data.map(p => (isNaN(p.v) || p.v === null ? 0.0 : Number(p.v))));
-            
-            // 2. Expande para 2x o tamanho para formar uma fita 2D (linha de quadrados)
+
             const rawArrayV = new Float32Array(2 * numPoints);
             rawArrayV.set(baseArrayV, 0);
             rawArrayV.set(baseArrayV, numPoints);
 
             const datasetNameV = `potential_frame_${frameCount}`;
-            
-            // 3. Salva no HDF5 com shape 2D perfeitamente compatível
+
             file.create_dataset({ name: datasetNameV, data: rawArrayV, shape: [2, numPoints], dtype: '<f4' });
 
             xdmfContent += `      <Grid Name="Frame_${frameCount}" GridType="Uniform">\n        <Time Value="${Number(frame.time).toFixed(2)}" />\n        <Topology TopologyType="2DCoRectMesh" Dimensions="2 ${numPoints}"/>\n        <Geometry GeometryType="ORIGIN_DXDY">\n          <DataItem DataType="Float" Dimensions="2" Format="XML">0 0</DataItem>\n          <DataItem DataType="Float" Dimensions="2" Format="XML">1 ${params.dx || 1}</DataItem>\n        </Geometry>\n        <Attribute Name="Potential" AttributeType="Scalar" Center="Node">\n          <DataItem DataType="Float" Precision="4" Dimensions="2 ${numPoints}" Format="HDF">\n            ${h5FileName}:/${datasetNameV}\n          </DataItem>\n        </Attribute>\n`;
