@@ -30,22 +30,10 @@ const HomePage = ({ onNavigate }) => {
       description: 'home.models.restitution_curve.desc',
       category: 'home.categories.0d' 
     },
-    { // Bistable 1D
-      id: 'bistable', 
-      title: 'home.models.bistable.title', 
-      description: 'home.models.bistable.desc',
-      category: 'home.categories.1d' 
-    },
-    { // FitzHugh-Nagumo 1D
-      id: 'fhn', 
-      title: 'home.models.fhn.title', 
-      description: 'home.models.fhn.desc',
-      category: 'home.categories.1d' 
-    },
-    { // Mitchell-Schaeffer 1D
-      id: 'ms_1d', 
-      title: 'home.models.ms_1d.title', 
-      description: 'home.models.ms_1d.desc',
+    { // Modelos 1D
+      id: 'model_1d', 
+      title: 'home.models.model_1d.title',
+      description: 'home.models.model_1d.desc',
       category: 'home.categories.1d' 
     },
     { // Modelo 2D
