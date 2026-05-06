@@ -36,6 +36,12 @@ const HomePage = ({ onNavigate }) => {
       description: 'home.models.model_1d.desc',
       category: 'home.categories.1d' 
     },
+    { // Curva de Restituição 1D
+      id: 'cv_restitution_1d', 
+      title: 'home.models.cv_restitution_1d.title', 
+      description: 'home.models.cv_restitution_1d.desc',
+      category: 'home.categories.1d' 
+    },
     { // Modelo 2D
       id: 'model_2d',
       title: 'home.models.model_2d.title',
