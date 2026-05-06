@@ -1,18 +1,15 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import MS1DChart from '../../components/MS1DChart';
 import SpatiotemporalChart from '../../components/SpatiotemporalChart';
-import RestitutionChart from '../../components/RestitutionChart';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal';
 import Chart from '../../components/Chart';
 import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation_ms_1d.worker.js?worker';
-import CVWorker from '../../simulation_cv_restitution_ms_1d.worker.js?worker';
 import ExportModal from '../../components/ExportModal';
-import h5wasm from 'h5wasm';
 import { useTranslation } from 'react-i18next';
-import { export1DToGif, exportToPng, export1DToXDMF, export0DToCSV } from '../../utils/export';
+import { export1DToGif, exportToPng, export1DToXDMF } from '../../utils/export';
 
 const SettingsSection = ({ title, children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -40,15 +37,11 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
   
   // Estados de dados e worker
   const [simulationData, setSimulationData] = useState([]);
-  const [restitutionData, setRestitutionData] = useState([]);
   const [worker, setWorker] = useState(null);
-  const [cvWorker, setCvWorker] = useState(null);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   
   // Estados de controle
-  const [simulationMode, setSimulationMode] = useState('standard');
-  const [xAxisMetric, setXAxisMetric] = useState('ci');
   const [currentFrame, setCurrentFrame] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [simulationSpeed, setSimulationSpeed] = useState(50);
@@ -62,7 +55,7 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
   const chartRef = useRef(null);
   const [activeTab, setActiveTab] = useState('basic');
 
-  // Parâmetros da simulação que o usuário pode alterar
+  // Parâmetros exclusivos da propagação padrão 1D
   const [editableParams, setEditableParams] = useState({
     k: 2.0,
     Tau_in: 0.3,
@@ -81,18 +74,13 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
     posição_do_estímulo: 10,
     tamanho_do_estímulo: 5,
     num_estimulos: 8,
-    BCL_S1: 250,
-    BCL_S2_inicial: 350,
-    BCL_S2_final: 100,
-    delta_CL: 10
+    BCL_S1: 250
   });
 
-  // Configura os Workers
+  // Configura o Worker
   useEffect(() => {
     const stdWorker = new SimulationWorker();
-    const restWorker = new CVWorker();
     setWorker(stdWorker);
-    setCvWorker(restWorker);
 
     stdWorker.onmessage = (e) => {
       setSimulationData(e.data);
@@ -101,21 +89,13 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
       setIsPlaying(true);
     };
 
-    restWorker.onmessage = (e) => {
-      setRestitutionData(e.data);
-      setLoading(false);
-    };
-
-    return () => {
-      stdWorker.terminate();
-      restWorker.terminate();
-    };
+    return () => stdWorker.terminate();
   }, []);
 
   // Simulação em um loop com velocidade ajustável
   useEffect(() => {
     let interval;
-    if (isPlaying && simulationData.length > 0 && simulationMode === 'standard') {
+    if (isPlaying && simulationData.length > 0) {
       const delay = Math.max(0, (100 - simulationSpeed) * 2); 
       interval = setInterval(() => {
         setCurrentFrame((prevFrame) => {
@@ -129,48 +109,23 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
       }, delay);
     }
     return () => clearInterval(interval); 
-  }, [isPlaying, simulationData, simulationSpeed, simulationMode]);
+  }, [isPlaying, simulationData, simulationSpeed]);
 
   const handleChange = useCallback((e, name) => {
     const value = parseFloat(e.target.value);
     setEditableParams((prev) => ({ ...prev, [name]: value }));
   }, []);
 
-  // Inicia a simulação
+  // Inicia a simulação Padrão
   const handleSimularClick = useCallback(() => {
-    setLoading(true);
-    if (simulationMode === 'standard') {
+    if (worker) {
+      setLoading(true);
       setSimulationData([]);
       setIsPlaying(false);
       worker.postMessage({ ...editableParams, BCL: editableParams.BCL_S1 });
-    } else {
-      setRestitutionData([]);
-      cvWorker.postMessage(editableParams);
     }
-  }, [worker, cvWorker, editableParams, simulationMode]);
+  }, [worker, editableParams]);
 
-  // Função para exportar os resultados
-  const handleExport = useCallback(async () => {
-    setExporting(true);
-    if (simulationMode === 'standard') {
-        const labels = {
-            potential: t('chart.potential_unit'),
-            position: t('chart.position_unit'),
-            time_ms: t('chart.time_ms')
-        };
-        setTimeout(async () => {
-            await export1DToGif(simulationData, editableParams, 'ms1d_simulation', labels, viewMode);
-            setExporting(false);
-        }, 100);
-    } else {
-        setTimeout(async () => {
-            await exportToPng(chartRef, 'ms1d_cv_restitution');
-            setExporting(false);
-        }, 100);
-    }
-  }, [simulationMode, simulationData, editableParams, t, viewMode]);
-
-  // Mudança no controle deslizante de tempo
   const handleSliderChange = (e) => {
     setIsPlaying(false);
     setCurrentFrame(parseInt(e.target.value, 10));
@@ -258,11 +213,6 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
                  <p className="text-sm text-slate-600 text-justify">{t('modals.ms1d.advanced.visualizations_desc')}</p>
               </div>
 
-              <div className="bg-white border-l-4 border-emerald-500 p-4 mt-4 shadow-sm">
-                 <h4 className="font-bold text-slate-700 mb-1">{t('modals.ms1d.advanced.modes')}</h4>
-                 <p className="text-sm text-slate-600 text-justify">{t('modals.ms1d.advanced.modes_desc')}</p>
-              </div>
-
               <div className="mt-6 border-t border-slate-200 pt-4">
                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{t('modals.references')}</h4>
                  <p className="text-xs text-slate-500 italic">{t('modals.ms1d.advanced.ref')}</p>
@@ -312,67 +262,30 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
           </div>
         </header>
       )}
+
       <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden">
         <aside className="w-full lg:w-96 bg-white border-r border-slate-200 lg:overflow-y-auto custom-scrollbar flex-none shadow-xl z-10">
           <div className="p-6 pb-6">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">{t('common.configuration')}</p>
 
             <SettingsSection title={t('common.view_options') || "Visualização"} defaultOpen={true}>
-                 <div className="space-y-4">
-                    <div className="mb-4 border-b border-slate-100 pb-4">
-                        <label className="text-sm font-bold text-slate-700 mb-2 block">{t('common.simulation_mode', 'Modo de Simulação')}</label>
-                        <select 
-                            value={simulationMode} 
-                            onChange={(e) => {
-                                setSimulationMode(e.target.value);
-                                setIsPlaying(false);
-                            }}
-                            className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer"
-                        >
-                            <option value="standard">{t('common.standard_propagation', 'Propagação Padrão')}</option>
-                            <option value="cv">{t('common.cv_restitution_curve', 'Curva de Restituição (CV)')}</option>
-                        </select>
-                    </div>
-                    {simulationMode === 'cv' && (
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-slate-700">{t('common.x_axis_metric')}</span>
-                            <select 
-                                value={xAxisMetric} 
-                                onChange={(e) => setXAxisMetric(e.target.value)}
-                                className="px-2 py-1 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                            >
-                                <option value="ci">{t('common.coupling_interval')}</option>
-                                <option value="di">{t('common.diastolic_interval')}</option>
-                            </select>
-                        </div>
-                    )}
-
-                    {simulationMode === 'standard' && (
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-slate-700">{viewMode === 'line' ? t('common.line_chart') : t('common.color_chart')}</span>
-                            <div className="relative inline-block w-12 h-6 align-middle select-none transition duration-200 ease-in">
-                                <input 
-                                    type="checkbox" 
-                                    checked={viewMode === 'color'}
-                                    onChange={() => setViewMode(viewMode === 'line' ? 'color' : 'line')}
-                                    className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer checked:right-0 checked:border-emerald-500 right-6 border-slate-300 transition-all duration-200 top-0"
-                                />
-                                <label className="toggle-label block overflow-hidden h-6 rounded-full bg-slate-200 cursor-pointer checked:bg-emerald-500"></label>
-                            </div>
-                        </div>
-                    )}
+                 <div className="flex items-center justify-between">
+                     <span className="text-sm font-medium text-slate-700">{viewMode === 'line' ? t('common.line_chart') : t('common.color_chart')}</span>
+                     <div className="relative inline-block w-12 h-6 align-middle select-none transition duration-200 ease-in">
+                         <input 
+                             type="checkbox" 
+                             checked={viewMode === 'color'}
+                             onChange={() => setViewMode(viewMode === 'line' ? 'color' : 'line')}
+                             className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer checked:right-0 checked:border-emerald-500 right-6 border-slate-300 transition-all duration-200 top-0"
+                         />
+                         <label className="toggle-label block overflow-hidden h-6 rounded-full bg-slate-200 cursor-pointer checked:bg-emerald-500"></label>
+                     </div>
                  </div>
             </SettingsSection>
 
             <SettingsSection title={t('common.simulation_params')} defaultOpen={true}>
                 <div className="grid grid-cols-2 gap-3">
-                    {Object.keys(editableParams).filter(key => {
-                        if (simulationMode === 'standard') {
-                            return !['BCL_S2_inicial', 'BCL_S2_final', 'delta_CL'].includes(key);
-                        } else {
-                            return !['totalTime', 'downsamplingFactor'].includes(key);
-                        }
-                    }).map((key) => (
+                    {Object.keys(editableParams).map((key) => (
                     <Input
                         key={key}
                         label={t(`params.${key}`) || key}
@@ -390,49 +303,23 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
         <main className="flex-1 bg-slate-100 relative flex flex-col min-h-0">
             <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col items-center">
                  <div ref={chartRef} className="w-full max-w-5xl bg-white rounded-lg shadow-sm border border-slate-200 p-4 mb-4 min-h-100 flex flex-col">
-                    {simulationMode === 'standard' ? (
-                        simulationData.length > 0 ? (
-                            <>
-                                {viewMode === 'line' ? (
-                                    <MS1DChart 
-                                      data={currentChartData} 
-                                      windowSize={editableParams.L} 
-                                      scrollPosition={0} 
-                                    />
-                                ) : (
-                                    <SpatiotemporalChart simulationData={simulationData} currentFrame={currentFrame} onPointClick={handlePointClick} />
-                                )}
-                            </>
-                        ) : (
-                            <div className="h-87.5 w-full flex flex-col items-center justify-center text-slate-400">
-                                 <i className="bi bi-activity text-6xl mb-4 opacity-50"></i>
-                                 <p>{t('common.ready')}</p>
-                            </div>
-                        )
-                    ) : (
+                    {simulationData.length > 0 ? (
                         <>
-                            <h3 className="text-lg font-bold text-slate-700 mb-4 pl-2 border-l-4 border-emerald-500">
-                                {t('chart.conduction_velocity', 'Velocidade de Condução')}
-                            </h3>
-                            {restitutionData.length > 0 ? (
-                                <RestitutionChart 
-                                    data={restitutionData} 
-                                    analyticalData={[]} 
-                                    xDataKey={xAxisMetric}
-                                    yDataKey="cv"
-                                    xLabel={xAxisMetric === 'ci' ? 'Coupling Interval (CI)' : 'Diastolic Interval (DI)'}
-                                    yLabel="CV"
-                                    xUnit="ms"
-                                    yUnit="cm/ms"
-                                    lineName={t('chart.conduction_velocity', 'Velocidade de Condução')}
+                            {viewMode === 'line' ? (
+                                <MS1DChart 
+                                  data={currentChartData} 
+                                  windowSize={editableParams.L} 
+                                  scrollPosition={0} 
                                 />
                             ) : (
-                                <div className="h-87.5 w-full flex flex-col items-center justify-center text-slate-400">
-                                    <i className="bi bi-graph-up text-6xl mb-4 opacity-50"></i>
-                                    <p>{t('common.ready')}</p>
-                                </div>
+                                <SpatiotemporalChart simulationData={simulationData} currentFrame={currentFrame} onPointClick={handlePointClick} />
                             )}
                         </>
+                    ) : (
+                        <div className="h-87.5 w-full flex flex-col items-center justify-center text-slate-400">
+                             <i className="bi bi-activity text-6xl mb-4 opacity-50"></i>
+                             <p>{t('common.ready')}</p>
+                        </div>
                     )}
                  </div>
             </div>
@@ -450,7 +337,7 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
                              {loading ? t('common.simulating') : t('common.simulate')}
                         </button>
                         
-                        {((simulationMode === 'standard' && simulationData.length > 0) || (simulationMode === 'cv' && restitutionData.length > 0)) && (
+                        {simulationData.length > 0 && (
                              <>
                                 <ExportButton onClick={() => setIsExportModalOpen(true)} disabled={exporting} />
                                 
@@ -459,7 +346,7 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
                                     isOpen={isExportModalOpen} 
                                     onClose={() => setIsExportModalOpen(false)}
                                     onExportPng={() => exportToPng(chartRef, 'ms_1d_plot')}
-                                    onExportGif={simulationMode === 'standard' ? async () => {
+                                    onExportGif={async () => {
                                         setExporting(true);
                                         const labels = {
                                             potential: t('chart.potential_unit'),
@@ -468,33 +355,23 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
                                         };
                                         await export1DToGif(simulationData, editableParams, 'ms1d_simulation', labels, viewMode);
                                         setExporting(false);
-                                    } : undefined}
-                                    onExportData={() => {
-                                        if (simulationMode === 'standard') {
-                                            export1DToXDMF(simulationData, editableParams, 'ms_1d_data');
-                                        } else {
-                                            export0DToCSV(restitutionData, 'ms_1d_cv_restitution');
-                                        }
                                     }}
+                                    onExportData={() => export1DToXDMF(simulationData, editableParams, 'ms_1d_data')}
                                 />
                                 
-                                {simulationMode === 'standard' && (
-                                    <>
-                                        <div className="h-8 w-px bg-slate-300 mx-1 hidden md:block"></div>
-                                        <button 
-                                            onClick={() => setIsPlaying(!isPlaying)}
-                                            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-md transition-transform active:scale-95"
-                                            title={isPlaying ? t('common.pause') : t('common.resume')}
-                                        >
-                                            <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} text-2xl ml-${isPlaying ? '0' : '1'}`}></i>
-                                        </button>
-                                    </>
-                                )}
+                                <div className="h-8 w-px bg-slate-300 mx-1 hidden md:block"></div>
+                                <button 
+                                    onClick={() => setIsPlaying(!isPlaying)}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-md transition-transform active:scale-95"
+                                    title={isPlaying ? t('common.pause') : t('common.resume')}
+                                >
+                                    <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} text-2xl ml-${isPlaying ? '0' : '1'}`}></i>
+                                </button>
                              </>
                         )}
                     </div>
                     
-                    {simulationMode === 'standard' && simulationData.length > 0 && (
+                    {simulationData.length > 0 && (
                         <div className="flex-1 w-full flex items-center gap-3">
                             <span className="text-xs font-mono text-slate-500 w-12 text-right">{Number(simulationData[currentFrame]?.time || 0).toFixed(0)}ms</span>
                             <input 
