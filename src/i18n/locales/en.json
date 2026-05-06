@@ -19,7 +19,8 @@
       "ms_1d": { "title": "Mitchell-Schaeffer 1D", "desc": "Mitchell-Schaeffer model extended to one spatial dimension." },
       "model_2d": { "title": "2D Tissue Model", "desc": "Simulates 2D wave propagation using Mitchell-Schaeffer or Minimal Model." },
       "source_sink": { "title": "Source-Sink Mismatch", "desc": "Simulates propagation through a variable gap in an obstacle." },
-      "model_1d": { "title": "1D Fiber Simulation", "desc": "Choose between different models for one-dimensional simulations." }
+      "model_1d": { "title": "1D Fiber Simulation", "desc": "Choose between different models for one-dimensional simulations." },
+      "cv_restitution_1d": { "title": "1D Conduction Velocity Restitution", "desc": "Analyzes how conduction velocity changes with different intervals in a 1D fiber." }
     }
   },
   "common": {
@@ -636,21 +637,21 @@
       },
       "basic": {
         "title": "Fundamental Concepts",
-        "desc": "The Mitchell-Schaeffer model is a evolution focused specifically on cardiac muscle cells. Unlike nerve models, it accurately reproduces the real shape of an Action Potential, capturing the rapid depolarization phase followed by a long sustained plateau.",
+        "desc": "The Mitchell-Schaeffer model is a representation focused specifically on cardiac muscle cells. Unlike simplified models, it accurately reproduces the real shape of an Action Potential, capturing the rapid depolarization phase followed by a long sustained plateau.",
         "what_is_1d": "What is a 1D model?",
-        "what_is_1d_desc": "Unlike a single isolated cell simulation (0D), a one-dimensional (1D) model arranges cells in a line, simulating a 'cable' or fiber of cardiac tissue. This allows us to observe not only the shape of the wave but also how electricity propagates (conduction) across physical space.",
-        "goal": "The Restitution Curve",
-        "goal_desc": "The main differential of this model is its ability to simulate cardiac restitution behavior and cell memory. If the heart is stimulated too quickly (short Diastolic Interval), the plateau time of the next wave will be reduced. It is ideal for studying the causes of fibrillation and electrical alternans."
+        "what_is_1d_desc": "Unlike a single isolated cell simulation (0D), a one-dimensional (1D) model arranges cells in a line, simulating a 'cable' or fiber of cardiac tissue. This allows us to observe not only the shape of the wave but also how electricity propagates across physical space.",
+        "goal": "Tissue Propagation",
+        "goal_desc": "The main goal of this simulation is to analyze how an electrical signal physically moves along a cardiac fiber. You can observe the wavefront formation, the pulse width, and how the refractory period travels through space, which are essential features for understanding healthy electrical conduction."
       },
       "advanced": {
         "title": "Kinetics and Visualization",
-        "desc": "This model simplifies the complex Hodgkin-Huxley system by grouping the ion channels into two major forces: a rapid depolarizing inward current and a slow repolarizing outward current.",
+        "desc": "This model groups the ion channels into two major forces: a rapid depolarizing inward current and a slow repolarizing outward current.",
         "kinetics": "Time Constants (Tau) Control",
-        "kinetics_desc": "You can shape the wave duration by adjusting the Tau variables. 'Tau_in' controls the upstroke speed; 'Tau_out' dictates the repolarization and plateau duration; and 'Tau_open/close' define the channel inactivation memory. The 'gate' parameter is the cutoff voltage that toggles between channel opening and closing.",
-        "visualizations": "Data Visualizations (Line vs. Color Map)",
-        "visualizations_desc": "The page offers two ways to analyze propagation: the 'Line Chart', which shows the amplitude of the potential (v) and the inactivation gate (h) along the cable at an exact instant in time; and the 'Spatiotemporal Chart' (Color Map), which stacks time on the vertical axis and position on the horizontal axis, allowing you to visualize the complete trajectory.",
-        "modes": "Simulation Modes: Standard and Conduction Velocity",
-        "modes_desc": "The simulator offers two approaches. 'Standard Propagation' allows you to observe the general evolution of the action potential. The 'Conduction Velocity (CV)' mode activates an algorithm that tracks the wavefront and calculates the exact speed at which the impulse travels through the tissue (cm/s). This allows studying how alterations in ion channels or threshold changes slow down electrical conduction.",
+        "kinetics_desc": "You can shape the wave duration by adjusting the Tau variables. 'Tau_in' controls the upstroke speed; 'Tau_out' dictates the duration of the fall and the plateau; and 'Tau_open/close' define the channel inactivation memory. The 'gate' parameter is the cutoff voltage that toggles between channel opening and closing.",
+        "visualizations": "Data Visualizations",
+        "visualizations_desc": "The page offers two ways to analyze propagation: the 'Line Chart', which shows the amplitude of the potential (v) and the inactivation gate (h) along the cable at an exact instant in time; and the 'Spatiotemporal Chart' (Color Map), which maps the complete evolution of the wave, showing time on the vertical axis and position on the horizontal axis.",
+        "modes": "Cable Dynamics",
+        "modes_desc": "The simulation allows you to adjust structural parameters such as the cable length (L) and the spatial step (dx). The interaction between the local cellular current and spatial diffusion determines the speed and stability with which the wavefront advances through the simulated tissue.",
         "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane."
       },
       "math": {
@@ -658,9 +659,34 @@
         "desc": "The system is governed by the transmembrane voltage (v) and a single cellular inactivation gate (h) that controls the rapid inward current.",
         "eq_v": "∂v/∂t = D · ∇²v + (h · v² · (1-v))/Tau_in - v/Tau_out + I_stim",
         "eq_h": "∂h/∂t = (1-h)/Tau_open (if v < v_gate)  OR  -h/Tau_close (if v > v_gate)",
-        "methods": "Hybrid Integration: Rush-Larsen and Euler",
-        "methods_desc": "To ensure  stability and biological accuracy, this simulation uses a hybrid approximation. In time, it applies Explicit Euler for the voltage (v), but uses the Rush-Larsen method for the inactivation gate (h). It also features active protection against instabilities by dynamically capping 'dt' via the CFL criterion.",
-        "stim_term": "The conditional equation for 'h' acts as a mathematical switch that decouples the depolarization phase from the repolarization phase."
+        "methods": "Numerical Methods",
+        "methods_desc": "To ensure maximum stability and accuracy, a hybrid solution is used. In time, it applies Explicit Euler for the voltage diffusion (v), but for the state variable (h) it uses the Rush-Larsen method. The simulator also features active protection by dynamically limiting the integration step according to the CFL condition.",
+        "stim_term": "The conditional equation for 'h' acts as a switch that decouples the depolarization phase from the repolarization phase."
+      }
+    },
+    "cv1d": {
+      "title": "1D Restitution Curve",
+      "tabs": {
+        "basic": "Basic",
+        "advanced": "Advanced",
+        "math": "Math"
+      },
+      "basic": {
+        "title": "What is the Restitution Curve?",
+        "desc": "The Restitution Curve shows how the propagation speed of the action potential adapts in response to different heart rates.",
+        "goal": "Practical Objective",
+        "goal_desc": "Evaluate the electrical stability of the tissue by simulating the S1-S2 protocol, allowing the identification of conditions that lead to arrhythmias. Furthermore, analyzing the slope of the curve is essential, as slopes greater than 1 are classic indicators of instability and electrical alternans."
+      },
+      "advanced": {
+        "title": "S1-S2 Protocol in 1D",
+        "desc": "The protocol applies a train of stimuli (S1) with a constant basic cycle length (BCL) to reach a steady state, followed by a premature stimulus (S2).",
+        "visualizations": "X-Axis Metrics",
+        "visualizations_desc": "You can plot the Conduction Velocity (CV) against the Coupling Interval (CI) or the Diastolic Interval (DI). The DI more directly reflects the recovery time of ion channels."
+      },
+      "math": {
+        "title": "Velocity Calculation (CV)",
+        "desc": "Conduction Velocity is calculated by dividing the physical distance by the difference in activation time between two points on the cable.",
+        "eq_v": "CV = Δx / Δt"
       }
     },
     "sourcesink": {

@@ -19,7 +19,8 @@
       "ms_1d": { "title": "Mitchell-Schaeffer 1D", "desc": "Mitchell-Schaeffer estendido para uma dimensão espacial." },
       "model_2d": { "title": "Modelo de Tecido 2D", "desc": "Simula a propagação de ondas 2D usando Mitchell-Schaeffer ou Minimal Model." },
       "source_sink": { "title": "Source-Sink Mismatch", "desc": "Simula a propagação através de uma fenda variável em um obstáculo." },
-      "model_1d": { "title": "Modelos de Fibra 1D", "desc": "Escolha entre diferentes modelos para simulações unidimensionais." }
+      "model_1d": { "title": "Modelos de Fibra 1D", "desc": "Escolha entre diferentes modelos para simulações unidimensionais." },
+      "cv_restitution_1d": { "title": "Curva de Restituição 1D", "desc": "Analisa como a velocidade de condução varia em diferentes intervalos em uma fibra 1D." }
     }
   },
   "common": {
@@ -635,8 +636,8 @@
         "desc": "O modelo de Mitchell-Schaeffer é uma representação focada especificamente nas células musculares cardíacas. Ao contrário de modelos simplificados, ele reproduz com precisão o formato real de um Potencial de Ação, capturando a rápida fase de despolarização seguida de um longo platô sustentado.",
         "what_is_1d": "O que é um modelo 1D?",
         "what_is_1d_desc": "Diferente de uma simulação de uma única célula isolada (0D), um modelo unidimensional (1D) arranja as células em uma linha, simulando um 'cabo' ou fibra de tecido cardíaco. Isso permite observar não apenas a forma da onda, mas também como a eletricidade se propaga através do espaço físico.",
-        "goal": "A Curva de Restituição",
-        "goal_desc": "O grande diferencial deste modelo é a sua capacidade de simular o comportamento de restituição cardíaca e a memória da célula. Se o coração for estimulado muito rápido (Intervalo Diastólico curto), o tempo de platô da próxima onda será reduzido. Ele é ideal para estudar as causas da fibrilação e da alternância elétrica."
+        "goal": "Propagação no Tecido",
+        "goal_desc": "O objetivo principal desta simulação é analisar como um sinal elétrico se desloca fisicamente ao longo de uma fibra cardíaca. Você pode observar a formação da frente de onda, a largura do pulso e como o período refratário viaja pelo espaço, características essenciais para entender a condução elétrica saudável."
       },
       "advanced": {
         "title": "Cinética e Visualização",
@@ -644,9 +645,9 @@
         "kinetics": "Controle por Constantes de Tempo (Tau)",
         "kinetics_desc": "Você pode moldar a duração da onda ajustando as variáveis Tau. 'Tau_in' controla a velocidade de subida; 'Tau_out' dita a duração da queda e do platô; e 'Tau_open/close' definem a memória de inativação dos canais. O parâmetro 'gate' é a voltagem de corte que alterna entre a abertura e o fechamento do canal.",
         "visualizations": "Visualizações de Dados",
-        "visualizations_desc": "A página oferece duas formas de analisar a propagação: o 'Gráfico de Linha', que mostra a amplitude do potencial (v) e da porta de inativação (h) ao longo do cabo em um exato instante de tempo; e o 'Gráfico de Cores', que mostra o tempo no eixo vertical e a posição no eixo horizontal, permitindo visualizar a trajetória completa.",
-        "modes": "Modos de Simulação",
-        "modes_desc": "O simulador oferece duas abordagens. A 'Propagação Padrão' permite observar a evolução geral do potencial de ação. Já o modo 'Velocidade de Condução' mostra a frente de onda e calcula a rapidez exata com que o impulso viaja pelo tecido (cm/s). Isso permite estudar como alterações nos canais iónicos ou mudanças no limiar causam lentidão na condução elétrica.",
+        "visualizations_desc": "A página oferece duas formas de analisar a propagação: o 'Gráfico de Linha', que mostra a amplitude do potencial (v) e da porta de inativação (h) ao longo do cabo em um exato instante de tempo; e o 'Gráfico de Espaço-Tempo' (Cores), que mapeia a evolução completa da onda, mostrando o tempo no eixo vertical e a posição no eixo horizontal.",
+        "modes": "Dinâmica do Cabo",
+        "modes_desc": "A simulação permite ajustar parâmetros estruturais como o comprimento do cabo (L) e o passo espacial (dx). A interação entre a corrente celular local e a difusão espacial determina a velocidade e a estabilidade com que a frente de onda avança pelo tecido simulado.",
         "ref": "Mitchell, C. C., & Schaeffer, D. G. (2003). A two-current model for the dynamics of cardiac membrane."
       },
       "math": {
@@ -655,8 +656,33 @@
         "eq_v": "∂v/∂t = D · ∇²v + (h · v² · (1-v))/Tau_in - v/Tau_out + I_stim",
         "eq_h": "∂h/∂t = (1-h)/Tau_open (se v < v_gate)  OU  -h/Tau_close (se v > v_gate)",
         "methods": "Métodos Numéricos",
-        "methods_desc": "Para garantir máxima estabilidade e precisão, é utilizado uma solução híbrida. No tempo, aplica o Euler Explícito para a voltagem (v), mas para a váriavel de gate(h) utiliza o método de rush-larsen. Ele também conta com proteção ativa contra instabilidades limitando dinamicamente o 'dt' pela condição de CFL.",
+        "methods_desc": "Para garantir máxima estabilidade e precisão, é utilizada uma solução híbrida. No tempo, aplica-se o Euler Explícito para a difusão da voltagem (v), mas para a variável de estado (h) utiliza-se o método de Rush-Larsen. O simulador também conta com proteção ativa limitando dinamicamente o passo de integração de acordo com a condição CFL.",
         "stim_term": "A equação condicional do 'h' atua como um interruptor que desacopla a fase de despolarização da repolarização."
+      }
+    },
+    "cv1d": {
+      "title": "Curva de Restituição 1D",
+      "tabs": {
+        "basic": "Básico",
+        "advanced": "Avançado",
+        "math": "Matemática"
+      },
+      "basic": {
+        "title": "O que é a Curva de Restituição?",
+        "desc": "A Curva de Restituição mostra como a velocidade de propagação do potencial de ação se adapta em resposta a diferentes frequências cardíacas.",
+        "goal": "Objetivo Prático",
+        "goal_desc": "Avaliar a estabilidade elétrica do tecido ao simular o protocolo S1-S2, permitindo identificar condições que levam a arritmias. Além disso, a análise da inclinação da curva é fundamental, visto que inclinações superiores a 1 são indicadores clássicos de instabilidade e alternância elétrica."
+      },
+      "advanced": {
+        "title": "Protocolo S1-S2 em 1D",
+        "desc": "O protocolo aplica uma sequência de estímulos (S1) com um comprimento de ciclo básico (BCL) constante para atingir o estado estacionário, seguido por um estímulo prematuro (S2).",
+        "visualizations": "Métricas do Eixo X",
+        "visualizations_desc": "Você pode plotar a Velocidade de Condução (CV) em função do Intervalo de Acoplamento (CI) ou do Intervalo Diastólico (DI). O DI reflete mais diretamente o tempo de recuperação dos canais iônicos."
+      },
+      "math": {
+        "title": "Cálculo da Velocidade (CV)",
+        "desc": "A Velocidade de Condução é calculada dividindo a distância física pela diferença de tempo de ativação entre dois pontos do cabo.",
+        "eq_v": "CV = Δx / Δt"
       }
     },
     "sourcesink": {
