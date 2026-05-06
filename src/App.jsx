@@ -7,6 +7,7 @@ import RestitutionCurvePage from './containers/RestitutionCurvePage';
 import BistablePage from './containers/BistablePage';
 import FitzHughNagumoPage from './containers/FitzHughNagumoPage';
 import MitchellSchaeffer1DPage from './containers/MitchellSchaeffer1DPage';
+import Model1DPage from './containers/Model1DPage';
 import Model2DPage from './containers/Model2DPage';
 import SourceSinkPage from './containers/SourceSinkPage';
 import './index.css';
@@ -33,15 +34,9 @@ function App() {
       case 'restitution_curve':
         // Curva de Restituição
         return <RestitutionCurvePage onBack={() => navigateTo('home')} />;
-      case 'bistable': 
-        // Protocolo Bistable
-        return <BistablePage onBack={() => navigateTo('home')} />;
-      case 'fhn': 
-        // FitzHughNagumo
-        return <FitzHughNagumoPage onBack={() => navigateTo('home')} />;
-      case 'ms_1d':
-        // Mitchell-Schaeffer 1D
-        return <MitchellSchaeffer1DPage onBack={() => navigateTo('home')} />;
+      case 'model_1d':
+        // Modelo 1D
+        return <Model1DPage onBack={() => navigateTo('home')} />;
       case 'model_2d':
         // Modelo 2D
         return <Model2DPage onBack={() => navigateTo('home')} />;
