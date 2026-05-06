@@ -18,7 +18,8 @@
       "fhn": { "title": "FitzHugh-Nagumo", "desc": "Modelo simplificado da excitabilidade cardíaca em uma dimensão." },
       "ms_1d": { "title": "Mitchell-Schaeffer 1D", "desc": "Mitchell-Schaeffer estendido para uma dimensão espacial." },
       "model_2d": { "title": "Modelo de Tecido 2D", "desc": "Simula a propagação de ondas 2D usando Mitchell-Schaeffer ou Minimal Model." },
-      "source_sink": { "title": "Source-Sink Mismatch", "desc": "Simula a propagação através de uma fenda variável em um obstáculo." }
+      "source_sink": { "title": "Source-Sink Mismatch", "desc": "Simula a propagação através de uma fenda variável em um obstáculo." },
+      "model_1d": { "title": "Modelos de Fibra 1D", "desc": "Escolha entre diferentes modelos para simulações unidimensionais." }
     }
   },
   "common": {
