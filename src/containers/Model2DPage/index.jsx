@@ -11,6 +11,8 @@ import MinimalWorker from '../../simulation_minimal_2d.worker.js?worker';
 import { useTranslation } from 'react-i18next';
 import ExportModal from '../../components/ExportModal';
 import { export2DToGif, exportToPng, export2DToXDMF } from '../../utils/export';
+import { checkWebGPUSupport } from '../../utils/gpuDetection';
+import { runGPU2DSimulation } from '../../utils/webgpu_simulation';
 
 const SettingsSection = ({ title, children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -66,6 +68,16 @@ const Model2DPage = ({ onBack }) => {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('basic'); // Estado para as abas do modal
   const [selectedActivation, setSelectedActivation] = useState(0);
+
+  // Verificação de Suporte a WebGPU
+  const [hasGPU, setHasGPU] = useState(false);
+
+  useEffect(() => {
+    checkWebGPUSupport().then(supported => {
+      setHasGPU(supported);
+      if (supported) console.log("GPU detectada");
+    });
+  }, []);
 
   // Parâmetros
   const [params, setParams] = useState({
@@ -200,7 +212,7 @@ const Model2DPage = ({ onBack }) => {
     setStimuli(prev => prev.filter(s => s.id !== id));
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (!worker) return;
 
     if (simulationResult) {
@@ -210,7 +222,12 @@ const Model2DPage = ({ onBack }) => {
         simulationResult.apd = null;
     }
 
-    setCalculating(true); setSimulationResult(null); setProgress(0); setRemainingTime(null); setIsPlaying(false);setSelectedActivation(0);
+    setCalculating(true); 
+    setSimulationResult(null); 
+    setProgress(0); 
+    setRemainingTime(null); 
+    setIsPlaying(false);
+    setSelectedActivation(0);
     
     const num = (v) => parseFloat(v) || 0;
     const int = (v) => parseInt(v, 10) || 0;
@@ -267,8 +284,40 @@ const Model2DPage = ({ onBack }) => {
       stimuli: safeStimuli, minimalCellParams: safeMinimalParams
     };
 
+    // Execução com webgpu para modelo ms
+    if (typeof hasGPU !== 'undefined' && hasGPU && selectedModel === 'ms') {
+        try {
+            const startTimeReal = performance.now();
+            
+            // Chama a simulação na GPU aguardando a resposta final
+            const result = await runGPU2DSimulation(payload, (prog) => {
+                setProgress(prog);
+                
+                // Cálculo de estimativa de tempo restant
+                if (prog > 0) {
+                    const elapsed = performance.now() - startTimeReal;
+                    const remaining = (elapsed / prog) * (100 - prog);
+                    setRemainingTime(remaining);
+                }
+            });
+
+            // Atualiza os estados da aplicação como se tivessem vindo do Worker
+            setSimulationResult(result);
+            setCalculating(false);
+            setCurrentFrame(0);
+            setIsPlaying(true);
+            return;
+        } catch (error) {
+            console.error("Erro na execução via WebGPU. Acionando fallback automático para CPU Worker:", error);
+            // Se falhar limpa os estados e deixa o fluxo continuar para a CPU
+            setProgress(0);
+            setRemainingTime(null);
+        }
+    }
+
+    // FLUXO PADRÃO (CPU WORKER)
     worker.postMessage(payload);
-  };
+};
 
   const handleStop = () => {
       if (worker) worker.terminate();
