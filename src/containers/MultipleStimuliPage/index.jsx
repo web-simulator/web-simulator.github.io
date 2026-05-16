@@ -60,6 +60,35 @@ const DEFAULT_MINIMAL_PARAMS = {
   }
 };
 
+const DEFAULT_EDITABLE_PARAMS = {
+  ms: {
+      despolarização: 0.3,
+      repolarização: 6.0,
+      recuperação: 120.0,
+      inativação: 80.0,
+      gate: 0.13,
+      inicio: 5.0,
+      duração: 1.0,
+      amplitude: 1.0,
+      BCL: 250,
+      num_estimulos: 8,
+      dt: 0.01,
+      v_inicial: 0.0,
+      h_inicial: 1.0,
+      downsamplingFactor: 100,
+  },
+  minimal: {
+      cellType: 'epi',
+      inicio: 10.0,
+      duração: 1.0,
+      amplitude: 1.0,
+      BCL: 400,
+      num_estimulos: 5,
+      dt: 0.1,
+      downsamplingFactor: 50,
+  }
+};
+
 // Configuração das variáveis por modelo
 const MODEL_VARIABLES = {
   ms: ['v', 'h'],
@@ -93,34 +122,7 @@ const MultipleStimuliPage = ({ onBack }) => {
   // Estado para visibilidade das variáveis
   const [visibleVars, setVisibleVars] = useState({ v: true, h: true });
 
-  const [editableParams, setEditableParams] = useState({
-    ms: {
-        despolarização: 0.3,
-        repolarização: 6.0,
-        recuperação: 120.0,
-        inativação: 80.0,
-        gate: 0.13,
-        inicio: 5.0,
-        duração: 1.0,
-        amplitude: 1.0,
-        BCL: 250,
-        num_estimulos: 8,
-        dt: 0.01,
-        v_inicial: 0.0,
-        h_inicial: 1.0,
-        downsamplingFactor: 100, 
-    },
-    minimal: {
-        cellType: 'epi',
-        inicio: 10.0,
-        duração: 1.0,
-        amplitude: 1.0,
-        BCL: 400,
-        num_estimulos: 5,
-        dt: 0.1,
-        downsamplingFactor: 50,
-    }
-  });
+  const [editableParams, setEditableParams] = useState(DEFAULT_EDITABLE_PARAMS);
 
   useEffect(() => {
     let simulationWorker;
@@ -202,6 +204,12 @@ const MultipleStimuliPage = ({ onBack }) => {
   const handleExport = useCallback(() => {
     exportToPng(chartRef, `multiple_stimuli_${selectedModel}`);
   }, [selectedModel]);
+
+  const handleReset = useCallback(() => {
+    setEditableParams(DEFAULT_EDITABLE_PARAMS);
+    setMinimalCustomParams(DEFAULT_MINIMAL_PARAMS);
+    setData([]);
+  }, []);
 
   const currentParams = editableParams[selectedModel];
   const currentVariables = MODEL_VARIABLES[selectedModel];
@@ -421,8 +429,8 @@ const MultipleStimuliPage = ({ onBack }) => {
           <div className="bg-white border-t border-slate-200 p-4 shadow-lg z-20">
             <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-4 w-full md:w-auto">
-                    <button 
-                        onClick={handleSimularClick} 
+                    <button
+                        onClick={handleSimularClick}
                         disabled={loading}
                         className={`w-full md:w-auto rounded-full px-8 py-2 font-bold text-white shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2 ${loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                     >
@@ -431,6 +439,14 @@ const MultipleStimuliPage = ({ onBack }) => {
                         ) : (
                             <><i className="bi bi-play-fill text-xl"></i> {t('common.simulate')}</>
                         )}
+                    </button>
+
+                    <button
+                        onClick={handleReset}
+                        className="rounded-full px-6 py-2 font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors shadow-sm flex items-center justify-center gap-2"
+                        title={t('common.reset')}
+                    >
+                        <i className="bi bi-arrow-counterclockwise text-lg"></i> <span className="hidden sm:inline">{t('common.reset')}</span>
                     </button>
 
                     <ExportButton onClick={() => setIsExportModalOpen(true)} />

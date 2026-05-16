@@ -27,6 +27,7 @@
     "back": "Voltar",
     "simulate": "Simular",
     "resimulate": "Re-Simular",
+    "reset": "Resetar",
     "simulating": "Simulando...",
     "calculating": "Calculando...",
     "ready": "Pronto para simular",

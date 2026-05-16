@@ -79,6 +79,31 @@ const DEFAULT_MINIMAL_PARAMS = {
   }
 };
 
+const DEFAULT_EDITABLE_PARAMS = {
+  s1s2: {
+    BCL_S1: 250, BCL_S2_inicial: 200, BCL_S2_final: 100, delta_CL: 10,
+    tau_in: 0.3, tau_out: 6.0, tau_open: 120.0, tau_close: 150.0,
+    v_gate: 0.13, inicio: 5.0, duracao: 1.0, amplitude: 1.0,
+    dt: 0.1, v_inicial: 0.0, h_inicial: 1.0, num_estimulos_s1: 8, downsamplingFactor: 50,
+  },
+  mms: {
+    BCL_S1: 1000, BCL_S2_inicial: 900, BCL_S2_final: 200, delta_CL: 20,
+    tau_in: 0.3, tau_out: 6.0, tau_open: 120.0, tau_close: 150.0,
+    v_gate: 0.13, inicio: 5.0, duracao: 1.0, amplitude: 1.0,
+    dt: 0.1, v_inicial: 0.0, h_inicial: 1.0, num_estimulos_s1: 8, downsamplingFactor: 1000,
+  },
+  dynamic: {
+    CI1: 500, CI0: 250, CIinc: 10, nbeats: 5, tau_in: 0.3, tau_out: 6.0,
+    tau_open: 120.0, tau_close: 150.0, v_gate: 0.13, inicio: 5.0, duracao: 1.0,
+    amplitude: 1.0, dt: 0.1, v_inicial: 0.0, h_inicial: 1.0, downsamplingFactor: 50,
+  },
+  minimal: {
+    cellType: 'epi', BCL_S1: 600, BCL_S2_inicial: 500, BCL_S2_final: 200,
+    delta_CL: 10, inicio: 10.0, duracao: 1.0, amplitude: 1.0, dt: 0.1,
+    num_estimulos_s1: 8, downsamplingFactor: 100
+  }
+};
+
 const RestitutionCurvePage = ({ onBack }) => {
   const { t } = useTranslation();
   const [data, setData] = useState(null); 
@@ -97,34 +122,7 @@ const RestitutionCurvePage = ({ onBack }) => {
   const chartRef = useRef(null);
 
   // Parâmetros editáveis para cada modelo
-  const [editableParams, setEditableParams] = useState({
-    // Parâmetros para o modelo S1S2
-    s1s2: {
-      BCL_S1: 250, BCL_S2_inicial: 200, BCL_S2_final: 100, delta_CL: 10, 
-      tau_in: 0.3, tau_out: 6.0, tau_open: 120.0, tau_close: 150.0, 
-      v_gate: 0.13, inicio: 5.0, duracao: 1.0, amplitude: 1.0, 
-      dt: 0.1, v_inicial: 0.0, h_inicial: 1.0, num_estimulos_s1: 8, downsamplingFactor: 50, 
-    },
-    // Parâmetros para o modelo MMS
-    mms: {
-      BCL_S1: 1000, BCL_S2_inicial: 900, BCL_S2_final: 200, delta_CL: 20,
-      tau_in: 0.3, tau_out: 6.0, tau_open: 120.0, tau_close: 150.0, 
-      v_gate: 0.13, inicio: 5.0, duracao: 1.0, amplitude: 1.0, 
-      dt: 0.1, v_inicial: 0.0, h_inicial: 1.0, num_estimulos_s1: 8, downsamplingFactor: 1000,
-    },
-    // Parâmetros para o modelo Dinâmico
-    dynamic: {
-      CI1: 500, CI0: 250, CIinc: 10, nbeats: 5, tau_in: 0.3, tau_out: 6.0, 
-      tau_open: 120.0, tau_close: 150.0, v_gate: 0.13, inicio: 5.0, duracao: 1.0, 
-      amplitude: 1.0, dt: 0.1, v_inicial: 0.0, h_inicial: 1.0, downsamplingFactor: 50,
-    },
-    // Parâmetros para o Minimal Model
-    minimal: {
-      cellType: 'epi', BCL_S1: 600, BCL_S2_inicial: 500, BCL_S2_final: 200,
-      delta_CL: 10, inicio: 10.0, duracao: 1.0, amplitude: 1.0, dt: 0.1,
-      num_estimulos_s1: 8, downsamplingFactor: 100
-    }
-  });
+  const [editableParams, setEditableParams] = useState(DEFAULT_EDITABLE_PARAMS);
 
   // Função para calcular a curva analítica
   const calculateAnalyticalCurve = useCallback((simulatedData) => {
@@ -281,6 +279,14 @@ const RestitutionCurvePage = ({ onBack }) => {
   const handleExport = useCallback(() => {
     exportToPng(chartRef, `restitution_${selectedModel}_${curveType}`);
   }, [selectedModel, curveType]);
+
+  const handleReset = useCallback(() => {
+    setEditableParams(DEFAULT_EDITABLE_PARAMS);
+    setMinimalCustomParams(DEFAULT_MINIMAL_PARAMS);
+    setData(null);
+    setRestitutionData([]);
+    setAnalyticalData([]);
+  }, []);
 
   const renderInfoModalContent = () => {
     const modelKey = selectedModel;
@@ -528,8 +534,8 @@ const RestitutionCurvePage = ({ onBack }) => {
             <div className="bg-white border-t border-slate-200 p-4 shadow-lg z-20">
                 <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-4 w-full md:w-auto">
-                        <button 
-                            onClick={handleSimularClick} 
+                        <button
+                            onClick={handleSimularClick}
                             disabled={loading}
                             className={`w-full md:w-auto rounded-full px-8 py-2 font-bold text-white shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2 ${loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                         >
@@ -538,6 +544,14 @@ const RestitutionCurvePage = ({ onBack }) => {
                             ) : (
                                 <><i className="bi bi-play-fill text-xl"></i> {t('common.simulate')}</>
                             )}
+                        </button>
+
+                        <button
+                            onClick={handleReset}
+                            className="rounded-full px-6 py-2 font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors shadow-sm flex items-center justify-center gap-2"
+                            title={t('common.reset')}
+                        >
+                            <i className="bi bi-arrow-counterclockwise text-lg"></i> <span className="hidden sm:inline">{t('common.reset')}</span>
                         </button>
 
                     <ExportButton onClick={() => setIsExportModalOpen(true)} />

@@ -41,6 +41,29 @@ const DEFAULT_MINIMAL_PARAMS = {
   epi: { u_o: 0.0, u_u: 1.55, theta_v: 0.3, theta_w: 0.13, theta_vminus: 0.006, theta_o: 0.006, tau_v1minus: 60.0, tau_v2minus: 1150.0, tau_vplus: 1.4506, tau_w1minus: 60.0, tau_w2minus: 15.0, k_wminus: 65.0, u_wminus: 0.03, tau_wplus: 200.0, tau_fi: 0.165, tau_o1: 400.0, tau_o2: 6.0, tau_so1: 30.0181, tau_so2: 0.9957, k_so: 2.0458, u_so: 0.65, tau_s1: 2.7342, tau_s2: 16.0, k_s: 2.0994, u_s: 0.9087, tau_si: 1.8875, tau_winf: 0.07, w_infstar: 0.94 }
 };
 
+const DEFAULT_PARAMS = {
+  sigma_l: 0.002,
+  sigma_t: 0.002,
+  angle: 0,
+  dt: 0.05,
+  totalTime: 600,
+  downsamplingFactor: 20,
+  Tau_in: 0.3, Tau_out: 6.0, Tau_open: 120.0, Tau_close: 80.0, gate: 0.13,
+  cellType: 'epi',
+  L: 10, dx: 0.05,
+  obstacleCx: 5.0, obstacleCy: 5.0, obstacleRadius: 4.0,
+  slitWidthStart: 1.0, slitWidthEnd: 0.25,
+  fibrosis: true, fibrosisType: 'diffuse', fibrosisDistribution: 'random', fibrosisDensity: 4.5,
+  fibrosisSeed: 12345, fibrosisConductivity: 0.0, fibrosisShape: 'rectangle', fibrosisBorderZone: 0.0,
+  fibrosisRect: { x1: 4.0, y1: 1.0, x2: 6.0, y2: 4.0 },
+  fibrosisCircle: { cx: 2.0, cy: 2.0, radius: 0.5 },
+  fibrosisRegion: { x1: 4.0, y1: 1.0, x2: 6.0, y2: 4.0 },
+};
+
+const DEFAULT_STIMULUS_PARAMS = {
+  cx: 5.0, cy: 0.5, radius: 0.3, startTime: 10, duration: 3, amplitude: 1.0, interval: 0
+};
+
 const SourceSinkPage = ({ onBack }) => {
   const { t } = useTranslation();
 
@@ -65,29 +88,10 @@ const SourceSinkPage = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState('basic');
 
   // Parâmetros do modelo e geometria
-  const [params, setParams] = useState({
-    sigma_l: 0.002,
-    sigma_t: 0.002,
-    angle: 0,
-    dt: 0.05,
-    totalTime: 600,
-    downsamplingFactor: 20,
-    Tau_in: 0.3, Tau_out: 6.0, Tau_open: 120.0, Tau_close: 80.0, gate: 0.13,
-    cellType: 'epi',
-    L: 10, dx: 0.05,
-    obstacleCx: 5.0, obstacleCy: 5.0, obstacleRadius: 4.0,
-    slitWidthStart: 1.0, slitWidthEnd: 0.25,
-    fibrosis: true, fibrosisType: 'diffuse', fibrosisDistribution: 'random', fibrosisDensity: 4.5,
-    fibrosisSeed: 12345, fibrosisConductivity: 0.0, fibrosisShape: 'rectangle', fibrosisBorderZone: 0.0,
-    fibrosisRect: { x1: 4.0, y1: 1.0, x2: 6.0, y2: 4.0 },
-    fibrosisCircle: { cx: 2.0, cy: 2.0, radius: 0.5 },
-    fibrosisRegion: { x1: 4.0, y1: 1.0, x2: 6.0, y2: 4.0 },
-  });
+  const [params, setParams] = useState(DEFAULT_PARAMS);
 
   // Parâmetros do Estímulo
-  const [stimulusParams, setStimulusParams] = useState({
-    cx: 5.0, cy: 0.5, radius: 0.3, startTime: 10, duration: 3, amplitude: 1.0, interval: 0
-  });
+  const [stimulusParams, setStimulusParams] = useState(DEFAULT_STIMULUS_PARAMS);
 
   // Configuração do Worker
   useEffect(() => {
@@ -223,6 +227,28 @@ const SourceSinkPage = ({ onBack }) => {
   const handleSliderChange = (e) => {
     setIsPlaying(false);
     setCurrentFrame(parseInt(e.target.value, 10));
+  };
+
+  const handleReset = () => {
+    if (worker) worker.terminate();
+    setParams(DEFAULT_PARAMS);
+    setStimulusParams(DEFAULT_STIMULUS_PARAMS);
+    setMinimalCustomParams(DEFAULT_MINIMAL_PARAMS);
+    setSimulationResult(null);
+    setIsPlaying(false);
+    setCurrentFrame(0);
+    setProgress(0);
+    setRemainingTime(null);
+    setLoading(false);
+    setSelectedPoint(null);
+
+    const newWorker = new SimulationWorker();
+    newWorker.onmessage = (e) => {
+      const { type, value, remaining, frames, times, fibrosis, N, totalFrames } = e.data;
+      if (type === 'progress') { setProgress(value); if (remaining !== undefined) setRemainingTime(remaining); }
+      else if (type === 'result') { setSimulationResult({ frames, times, fibrosis, N, totalFrames }); setCurrentFrame(0); setLoading(false); setIsPlaying(true); }
+    };
+    setWorker(newWorker);
   };
 
   // Abre o modal com o gráfico do ponto clicado
@@ -615,6 +641,14 @@ const SourceSinkPage = ({ onBack }) => {
                       title={isPlaying ? t('common.pause') : t('common.resume')}
                     >
                       <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} text-2xl ml-${isPlaying ? '0' : '1'}`}></i>
+                    </button>
+
+                    <button
+                      onClick={handleReset}
+                      className="bg-slate-400 hover:bg-slate-500 text-white rounded-full px-4 py-2 font-bold shadow-md transition-transform active:scale-95 flex items-center gap-2 text-sm"
+                      title={t('common.reset')}
+                    >
+                      <i className="bi bi-arrow-counterclockwise"></i> <span className="hidden sm:inline">{t('common.reset')}</span>
                     </button>
 
                     <ExportButton 

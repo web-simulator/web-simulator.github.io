@@ -39,6 +39,45 @@ const DEFAULT_MINIMAL_PARAMS = {
   epi: { u_o: 0.0, u_u: 1.55, theta_v: 0.3, theta_w: 0.13, theta_vminus: 0.006, theta_o: 0.006, tau_v1minus: 60.0, tau_v2minus: 1150.0, tau_vplus: 1.4506, tau_w1minus: 60.0, tau_w2minus: 15.0, k_wminus: 65.0, u_wminus: 0.03, tau_wplus: 200.0, tau_fi: 0.165, tau_o1: 400.0, tau_o2: 6.0, tau_so1: 30.0181, tau_so2: 0.9957, k_so: 2.0458, u_so: 0.65, tau_s1: 2.7342, tau_s2: 16.0, k_s: 2.0994, u_s: 0.9087, tau_si: 1.8875, tau_winf: 0.07, w_infstar: 0.94 }
 };
 
+const DEFAULT_PARAMS = {
+  L: 10.0,
+  dx: 0.1,
+  dt: 0.1, duration: 1000, stride: 10,
+  sigma_l: 0.004, sigma_t: 0.001, angle: 0,
+  tau_in: 0.3, tau_out: 6.0, tau_open: 120.0, tau_close: 140.0, v_gate: 0.13,
+  v_init: 0.0, h_init: 1.0,
+
+  cellType: 'epi',
+  fibrosis: false, fibrosisType: 'compact', fibrosisDistribution: 'region', fibrosisDensity: 10,
+  fibrosisSeed: 12345, fibrosisConductivity: 0.0, fibrosisShape: 'rectangle', fibrosisBorderZone: 0.0,
+  fibrosisRect: { x1: 2.0, y1: 2.0, x2: 5.0, y2: 5.0 },
+  fibrosisCircle: { cx: 5.0, cy: 5.0, radius: 2.0 },
+  fibrosisRegion: { x1: 2.0, y1: 2.0, x2: 5.0, y2: 5.0 },
+  transmurality: false, endo_tau: 80.0, mid_tau: 140.0, epi_tau: 70.0, mid_start: 30, epi_start: 60,
+};
+
+const DEFAULT_STIMULI = [
+  {
+    id: 1,
+    startTime: 0,
+    interval: 0,
+    duration: 2, amplitude: 1.0,
+    shape: 'rectangle',
+    rectParams: { x1: 0.0, y1: 0.0, x2: 0.5, y2: 10.0 },
+    circleParams: { cx: 5.0, cy: 5.0, radius: 0.5 }
+  },
+  {
+    id: 2,
+    startTime: 0,
+    interval: 320,
+    duration: 2,
+    amplitude: 1.0,
+    shape: 'rectangle',
+    rectParams: { x1: 0.0, y1: 5.0, x2: 5.0, y2: 10.0 },
+    circleParams: { cx: 8.0, cy: 3.0, radius: 1 }
+  }
+];
+
 const Model2DPage = ({ onBack }) => {
   const { t } = useTranslation();
 
@@ -68,44 +107,9 @@ const Model2DPage = ({ onBack }) => {
   const [selectedActivation, setSelectedActivation] = useState(0);
 
   // Parâmetros
-  const [params, setParams] = useState({
-    L: 10.0, 
-    dx: 0.1,
-    dt: 0.1, duration: 1000, stride: 10,
-    sigma_l: 0.004, sigma_t: 0.001, angle: 0,
-    tau_in: 0.3, tau_out: 6.0, tau_open: 120.0, tau_close: 140.0, v_gate: 0.13,
-    v_init: 0.0, h_init: 1.0,
-    
-    cellType: 'epi',
-    fibrosis: false, fibrosisType: 'compact', fibrosisDistribution: 'region', fibrosisDensity: 10,
-    fibrosisSeed: 12345, fibrosisConductivity: 0.0, fibrosisShape: 'rectangle', fibrosisBorderZone: 0.0,
-    fibrosisRect: { x1: 2.0, y1: 2.0, x2: 5.0, y2: 5.0 },
-    fibrosisCircle: { cx: 5.0, cy: 5.0, radius: 2.0 },
-    fibrosisRegion: { x1: 2.0, y1: 2.0, x2: 5.0, y2: 5.0 }, 
-    transmurality: false, endo_tau: 80.0, mid_tau: 140.0, epi_tau: 70.0, mid_start: 30, epi_start: 60, 
-  });
+  const [params, setParams] = useState(DEFAULT_PARAMS);
 
-  const [stimuli, setStimuli] = useState([
-    {
-      id: 1, 
-      startTime: 0, 
-      interval: 0, 
-      duration: 2, amplitude: 1.0, 
-      shape: 'rectangle',
-      rectParams: { x1: 0.0, y1: 0.0, x2: 0.5, y2: 10.0 }, 
-      circleParams: { cx: 5.0, cy: 5.0, radius: 0.5 } 
-    },
-    {
-      id: 2,
-      startTime: 0, 
-      interval: 320, 
-      duration: 2,
-      amplitude: 1.0,
-      shape: 'rectangle',
-      rectParams: { x1: 0.0, y1: 5.0, x2: 5.0, y2: 10.0 }, 
-      circleParams: { cx: 8.0, cy: 3.0, radius: 1 } 
-    }
-  ]);
+  const [stimuli, setStimuli] = useState(DEFAULT_STIMULI);
 
   // Inicializa Worker
   useEffect(() => {
@@ -198,6 +202,29 @@ const Model2DPage = ({ onBack }) => {
 
   const removeStimulus = (id) => {
     setStimuli(prev => prev.filter(s => s.id !== id));
+  };
+
+  const handleReset = () => {
+    if (worker) worker.terminate();
+    setParams(DEFAULT_PARAMS);
+    setStimuli(DEFAULT_STIMULI);
+    setMinimalCustomParams(DEFAULT_MINIMAL_PARAMS);
+    setSimulationResult(null);
+    setIsPlaying(false);
+    setCurrentFrame(0);
+    setProgress(0);
+    setRemainingTime(null);
+    setCalculating(false);
+    setSelectedActivation(0);
+    setViewMode('potential');
+
+    let simWorker = selectedModel === 'minimal' ? new MinimalWorker() : new SimulationWorker();
+    simWorker.onmessage = (e) => {
+      const { type, value, remaining, frames, times, fibrosis, activationTimes, apd, N, totalFrames } = e.data;
+      if (type === 'progress') { setProgress(value); if (remaining !== undefined) setRemainingTime(remaining); }
+      else if (type === 'result') { setSimulationResult({ frames, times, fibrosis, activationTimes, apd, N, totalFrames }); setCalculating(false); setCurrentFrame(0); setIsPlaying(true); }
+    };
+    setWorker(simWorker);
   };
 
   const handleStart = () => {
@@ -793,6 +820,16 @@ const Model2DPage = ({ onBack }) => {
                             {viewMode === 'potential' && (
                                 <button onClick={() => setIsPlaying(!isPlaying)} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-md transition-transform active:scale-95">
                                     <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} text-2xl ml-${isPlaying ? '0' : '1'}`}></i>
+                                </button>
+                            )}
+
+                            {simulationResult && !calculating && (
+                                <button
+                                    onClick={handleReset}
+                                    className="bg-slate-400 hover:bg-slate-500 text-white rounded-full px-4 py-2 font-bold shadow-md transition-transform active:scale-95 flex items-center gap-2 text-sm"
+                                    title={t('common.reset')}
+                                >
+                                    <i className="bi bi-arrow-counterclockwise"></i> <span className="hidden sm:inline">{t('common.reset')}</span>
                                 </button>
                             )}
 

@@ -33,6 +33,17 @@ const SettingsSection = ({ title, children, defaultOpen = false }) => {
   );
 };
 
+const DEFAULT_EDITABLE_PARAMS = {
+  k: 2.0,
+  A: 1.0,
+  alpha: 0.1,
+  L: 100,
+  dx: 1,
+  dt: 0.1,
+  totalTime: 100,
+  downsamplingFactor: 10,
+};
+
 const BistablePage = ({ onBack, isEmbedded }) => {
   const { t } = useTranslation();
 
@@ -57,16 +68,7 @@ const BistablePage = ({ onBack, isEmbedded }) => {
   const [activeTab, setActiveTab] = useState('basic');
 
   // Parâmetros da simulação que o usuário pode alterar
-  const [editableParams, setEditableParams] = useState({
-    k: 2.0,
-    A: 1.0,
-    alpha: 0.1,
-    L: 100,
-    dx: 1,
-    dt: 0.1,
-    totalTime: 100,
-    downsamplingFactor: 10,
-  });
+  const [editableParams, setEditableParams] = useState(DEFAULT_EDITABLE_PARAMS);
 
   // Configura Worker quando o componente é montado
   useEffect(() => {
@@ -121,6 +123,13 @@ const BistablePage = ({ onBack, isEmbedded }) => {
       worker.postMessage(editableParams);
     }
   }, [worker, editableParams]);
+
+  const handleReset = useCallback(() => {
+    setEditableParams(DEFAULT_EDITABLE_PARAMS);
+    setSimulationData([]);
+    setIsPlaying(false);
+    setCurrentFrame(0);
+  }, []);
 
   const handleExportGif = useCallback(async () => {
     if (simulationData.length === 0) return;
@@ -334,6 +343,14 @@ const BistablePage = ({ onBack, isEmbedded }) => {
                 >
                   {loading ? <span className="animate-spin"><i className="bi bi-arrow-repeat"></i></span> : <i className="bi bi-play-fill text-xl"></i>}
                   {loading ? t('common.simulating') : t('common.simulate')}
+                </button>
+
+                <button
+                  onClick={handleReset}
+                  className="rounded-full px-6 py-2 font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors shadow-sm flex items-center gap-2"
+                  title={t('common.reset')}
+                >
+                  <i className="bi bi-arrow-counterclockwise text-lg"></i> <span className="hidden sm:inline">{t('common.reset')}</span>
                 </button>
 
                 {simulationData.length > 0 && (

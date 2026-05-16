@@ -14,8 +14,8 @@ import { export1DToGif, exportToPng, export1DToXDMF } from '../../utils/export';
 const SettingsSection = ({ title, children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   return (
-    <details 
-      open={isOpen} 
+    <details
+      open={isOpen}
       onToggle={(e) => setIsOpen(e.target.open)}
       className="group mb-4 bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm"
     >
@@ -30,6 +30,27 @@ const SettingsSection = ({ title, children, defaultOpen = false }) => {
       </div>
     </details>
   );
+};
+
+const DEFAULT_EDITABLE_PARAMS = {
+  k: 2.0,
+  Tau_in: 0.3,
+  Tau_out: 6.0,
+  Tau_open: 120.0,
+  Tau_close: 80.0,
+  gate: 0.13,
+  L: 100,
+  dx: 1,
+  dt: 0.05,
+  totalTime: 500,
+  downsamplingFactor: 10,
+  inicio: 5.0,
+  duracao: 1.0,
+  amplitude: 1.0,
+  posição_do_estímulo: 10,
+  tamanho_do_estímulo: 5,
+  num_estimulos: 8,
+  BCL_S1: 250
 };
 
 const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
@@ -56,26 +77,7 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
   const [activeTab, setActiveTab] = useState('basic');
 
   // Parâmetros exclusivos da propagação padrão 1D
-  const [editableParams, setEditableParams] = useState({
-    k: 2.0,
-    Tau_in: 0.3,
-    Tau_out: 6.0,
-    Tau_open: 120.0,
-    Tau_close: 80.0,
-    gate: 0.13,
-    L: 100,
-    dx: 1,
-    dt: 0.05,
-    totalTime: 500,
-    downsamplingFactor: 10,
-    inicio: 5.0,
-    duracao: 1.0,
-    amplitude: 1.0,
-    posição_do_estímulo: 10,
-    tamanho_do_estímulo: 5,
-    num_estimulos: 8,
-    BCL_S1: 250
-  });
+  const [editableParams, setEditableParams] = useState(DEFAULT_EDITABLE_PARAMS);
 
   // Configura o Worker
   useEffect(() => {
@@ -125,6 +127,13 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
       worker.postMessage({ ...editableParams, BCL: editableParams.BCL_S1 });
     }
   }, [worker, editableParams]);
+
+  const handleReset = useCallback(() => {
+    setEditableParams(DEFAULT_EDITABLE_PARAMS);
+    setSimulationData([]);
+    setIsPlaying(false);
+    setCurrentFrame(0);
+  }, []);
 
   const handleSliderChange = (e) => {
     setIsPlaying(false);
@@ -328,15 +337,23 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
                 <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                     
                     <div className="flex flex-wrap items-center justify-center gap-3">
-                        <button 
-                            onClick={handleSimularClick} 
+                        <button
+                            onClick={handleSimularClick}
                             disabled={loading || exporting}
                             className={`rounded-full px-6 py-2 font-bold text-white shadow-md transition-transform active:scale-95 flex items-center gap-2 ${loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                         >
                              {loading ? <span className="animate-spin"><i className="bi bi-arrow-repeat"></i></span> : <i className="bi bi-play-fill text-xl"></i>}
                              {loading ? t('common.simulating') : t('common.simulate')}
                         </button>
-                        
+
+                        <button
+                            onClick={handleReset}
+                            className="rounded-full px-6 py-2 font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors shadow-sm flex items-center gap-2"
+                            title={t('common.reset')}
+                        >
+                            <i className="bi bi-arrow-counterclockwise text-lg"></i> <span className="hidden sm:inline">{t('common.reset')}</span>
+                        </button>
+
                         {simulationData.length > 0 && (
                              <>
                                 <ExportButton onClick={() => setIsExportModalOpen(true)} disabled={exporting} />

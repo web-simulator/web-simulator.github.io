@@ -27,6 +27,7 @@
     "back": "Back",
     "simulate": "Simulate",
     "resimulate": "Re-Simulate",
+    "reset": "Reset",
     "simulating": "Simulating...",
     "calculating": "Calculating...",
     "ready": "Ready to simulate",
