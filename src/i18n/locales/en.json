@@ -19,7 +19,7 @@
       "ms_1d": { "title": "Mitchell-Schaeffer 1D", "desc": "Mitchell-Schaeffer model extended to one spatial dimension." },
       "model_2d": { "title": "2D Tissue Model", "desc": "Simulates 2D wave propagation using Mitchell-Schaeffer or Minimal Model." },
       "source_sink": { "title": "Source-Sink Mismatch", "desc": "Simulates propagation through a variable gap in an obstacle." },
-      "model_1d": { "title": "1D Fiber Simulation", "desc": "Choose between different models for one-dimensional simulations." },
+      "model_1d": { "title": "1D Cable Equation", "desc": "Choose between different models for one-dimensional simulations." },
       "cv_restitution_1d": { "title": "1D Conduction Velocity Restitution", "desc": "Analyzes how conduction velocity changes with different intervals in a 1D fiber." }
     }
   },

@@ -19,7 +19,7 @@
       "ms_1d": { "title": "Mitchell-Schaeffer 1D", "desc": "Mitchell-Schaeffer estendido para uma dimensão espacial." },
       "model_2d": { "title": "Modelo de Tecido 2D", "desc": "Simula a propagação de ondas 2D usando Mitchell-Schaeffer ou Minimal Model." },
       "source_sink": { "title": "Source-Sink Mismatch", "desc": "Simula a propagação através de uma fenda variável em um obstáculo." },
-      "model_1d": { "title": "Modelos de Fibra 1D", "desc": "Escolha entre diferentes modelos para simulações unidimensionais." },
+      "model_1d": { "title": "Equação do Cabo 1D", "desc": "Escolha entre diferentes modelos para simulações unidimensionais." },
       "cv_restitution_1d": { "title": "Curva de Restituição 1D", "desc": "Analisa como a velocidade de condução varia em diferentes intervalos em uma fibra 1D." }
     }
   },
