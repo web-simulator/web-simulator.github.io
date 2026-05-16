@@ -48,7 +48,7 @@ const Chart = ({ data }) => {
           top: 5,    
           right: 30, 
           left: 20,  
-          bottom: 5,
+          bottom: 25,
         }}
       >
         
@@ -59,12 +59,27 @@ const Chart = ({ data }) => {
         <XAxis 
             dataKey="tempo"
             minTickGap={50} 
+            height={50}
             allowDuplicatedCategory={false}
             tickFormatter={(tick) => typeof tick === 'number' ? tick.toFixed(0) : tick}
+            label={{ 
+              value: t('chart.time_ms'),
+              position: 'insideBottom', 
+              offset: 10,
+              style: { fill: '#666', fontSize: '14px', fontWeight: 'bold' } 
+            }}
         />
         
         {/* Eixo Y */}
-        <YAxis />
+        <YAxis 
+              label={{ 
+              value: t('chart.potential_unit'),
+              angle: -90, 
+              position: 'insideLeft', 
+              style: { textAnchor: 'middle', fill: '#666', fontSize: '14px', fontWeight: 'bold' } 
+            }}
+        
+        />
         
         {/* Exibir valores ao passar o mouse*/}
         <Tooltip 
