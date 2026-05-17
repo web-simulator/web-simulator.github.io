@@ -166,14 +166,24 @@ self.onmessage = (e) => {
       j_min = Math.max(0, j_min); j_max = Math.min(N - 1, j_max);
 
       let generated = 0, attempts = 0;
-      while (generated < numRegions && attempts < numRegions * 5) {
+      const maxAttempts = numRegions * 20; 
+      const visited = new Uint8Array(size).fill(0); 
+      while (generated < numRegions && attempts < maxAttempts) {
         attempts++;
+
         const centerRow = random.nextInt(i_min, i_max);
         const centerCol = random.nextInt(j_min, j_max);
         const idx = centerRow * N + centerCol;
-        Dxx_map[idx] = conductivity; Dyy_map[idx] = conductivity; Dxy_map[idx] = 0.0;
-        fibrosisMap[idx] = conductivity;
-        generated++;
+
+        if (visited[idx] === 0) {
+            Dxx_map[idx] = conductivity; 
+            Dyy_map[idx] = conductivity; 
+            Dxy_map[idx] = 0.0;
+            fibrosisMap[idx] = conductivity;
+            
+            visited[idx] = 1;
+            generated++;
+        }
       }
     }
   }
