@@ -54,19 +54,9 @@ self.onmessage = (e) => {
   const base_Dyy = sigma_l * s2 + sigma_t * c2;
   const base_Dxy = (sigma_l - sigma_t) * cs;
 
-  // Condição CFL
-  const max_D = Math.max(base_Dxx, base_Dyy);
-  const cfl_denominator = 4 * max_D + 2 * Math.abs(base_Dxy);
-  const cfl_limit = (dx * dx) / (cfl_denominator || 1);
-  if (dt > cfl_limit) dt = cfl_limit * 0.9;
+  const size = N * N;
 
-  // Variáveis do minimal model
-  let u = new Float32Array(size).fill(0.0);
-  let v_gate = new Float32Array(size).fill(1.0);
-  let w_gate = new Float32Array(size).fill(1.0);
-  let s_gate = new Float32Array(size).fill(0.0);
-
-  // Mapas de difusão
+  // Inicializar os mapas de difusão
   let Dxx_map = new Float32Array(size).fill(base_Dxx);
   let Dyy_map = new Float32Array(size).fill(base_Dyy);
   let Dxy_map = new Float32Array(size).fill(base_Dxy);
@@ -74,7 +64,7 @@ self.onmessage = (e) => {
   // Mapa de fibrose
   let fibrosisMap = new Float32Array(size).fill(sigma_l);
 
-  // Geração da Fibrose
+  // Gerar fibrose
   if (fibrosisParams && fibrosisParams.enabled) {
     const { conductivity, type, distribution, shape, rectParams, circleParams, regionParams, borderZone = 0, seed, density } = fibrosisParams;
     const lerp = (start, end, t) => start * (1 - t) + end * t;
@@ -84,7 +74,7 @@ self.onmessage = (e) => {
         const { x1, y1, x2, y2 } = rectParams;
         const rx_min = Math.min(x1, x2), rx_max = Math.max(x1, x2);
         const ry_min = Math.min(y1, y2), ry_max = Math.max(y1, y2);
-        
+
         const search_min_x = rx_min - borderZone, search_max_x = rx_max + borderZone;
         const search_min_y = ry_min - borderZone, search_max_y = ry_max + borderZone;
 
@@ -97,7 +87,7 @@ self.onmessage = (e) => {
           for (let j = j_start; j <= j_end; j++) {
             const y = i * dy; const x = j * dx;
             const idx = i * N + j;
-            
+
             const dx_dist = Math.max(rx_min - x, 0, x - rx_max);
             const dy_dist = Math.max(ry_min - y, 0, y - ry_max);
             const distance = Math.sqrt(dx_dist * dx_dist + dy_dist * dy_dist);
@@ -114,7 +104,7 @@ self.onmessage = (e) => {
             }
           }
         }
-      } else {
+      } else if (shape === 'circle') {
         const { cx, cy, radius } = circleParams;
         const totalRadius = radius + borderZone;
         const i_start = Math.max(0, Math.floor((cy - totalRadius) / dy));
@@ -141,39 +131,55 @@ self.onmessage = (e) => {
           }
         }
       }
-    } else { 
+    } else {
       const random = new SeededRandom(seed);
       let numRegions, i_min, i_max, j_min, j_max;
       const pixelArea = dx * dy;
 
       if (type === 'diffuse' && regionParams) {
         const { x1, y1, x2, y2 } = regionParams;
-        i_min = Math.floor(Math.min(y1, y2) / dy);
-        i_max = Math.floor(Math.max(y1, y2) / dy);
-        j_min = Math.floor(Math.min(x1, x2) / dx);
-        j_max = Math.floor(Math.max(x1, x2) / dx);
-        const regionArea = (Math.abs(x2 - x1) * Math.abs(y2 - y1));
-        numRegions = Math.ceil((regionArea * density) / pixelArea);
-      } else {
-        i_min = 0; i_max = N - 1; j_min = 0; j_max = N - 1;
-        numRegions = Math.ceil(((L * L) * density) / pixelArea);
+        i_min = Math.floor(y1 / dy);
+        i_max = Math.floor(y2 / dy);
+        j_min = Math.floor(x1 / dx);
+        j_max = Math.floor(x2 / dx);
+        numRegions = Math.ceil((density / 100) * (i_max - i_min + 1) * (j_max - j_min + 1));
+      } else if (type === 'diffuse' && circleParams) {
+        const { cx, cy, radius } = circleParams;
+        i_min = Math.max(0, Math.floor((cy - radius) / dy));
+        i_max = Math.min(N - 1, Math.floor((cy + radius) / dy));
+        j_min = Math.max(0, Math.floor((cx - radius) / dx));
+        j_max = Math.min(N - 1, Math.floor((cx + radius) / dx));
+        numRegions = Math.ceil((density / 100) * (i_max - i_min + 1) * (j_max - j_min + 1));
       }
-      
-      i_min = Math.max(0, i_min); i_max = Math.min(N - 1, i_max);
-      j_min = Math.max(0, j_min); j_max = Math.min(N - 1, j_max);
 
-      let generated = 0, attempts = 0;
-      while (generated < numRegions && attempts < numRegions * 5) {
-        attempts++;
-        const centerRow = random.nextInt(i_min, i_max);
-        const centerCol = random.nextInt(j_min, j_max);
-        const idx = centerRow * N + centerCol;
-        Dxx_map[idx] = conductivity; Dyy_map[idx] = conductivity; Dxy_map[idx] = 0.0;
+      for (let region = 0; region < numRegions; region++) {
+        const i = random.nextInt(i_min, i_max);
+        const j = random.nextInt(j_min, j_max);
+        const idx = i * N + j;
+        Dxx_map[idx] = conductivity;
+        Dyy_map[idx] = conductivity;
+        Dxy_map[idx] = 0.0;
         fibrosisMap[idx] = conductivity;
-        generated++;
       }
     }
   }
+
+  // Condição CFL
+  let max_D = Math.max(base_Dxx, base_Dyy);
+  if (fibrosisParams && fibrosisParams.enabled) {
+    for (let i = 0; i < size; i++) {
+      max_D = Math.max(max_D, Dxx_map[i], Dyy_map[i]);
+    }
+  }
+  const cfl_denominator = 4 * max_D + 2 * Math.abs(base_Dxy);
+  const cfl_limit = (dx * dx) / (cfl_denominator || 1);
+  if (dt > cfl_limit) dt = cfl_limit * 0.9;
+
+  // Variáveis do minimal model
+  let u = new Float32Array(size).fill(0.0);
+  let v_gate = new Float32Array(size).fill(1.0);
+  let w_gate = new Float32Array(size).fill(1.0);
+  let s_gate = new Float32Array(size).fill(0.0);
 
   // Preparação de Estímulos
   const stimulus_maps = [];
