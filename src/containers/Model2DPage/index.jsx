@@ -348,7 +348,7 @@ const Model2DPage = ({ onBack }) => {
   let currentChartData = null;
   let currentFibrosisMap = null;
   let N_dimension = simulationResult ? simulationResult.N : Math.round((parseFloat(params.L) || 10.0) / (parseFloat(params.dx) || 0.1));
-  let maxValue = selectedModel === 'minimal' ? 2.0 : 1.0;
+  let maxValue = selectedModel === 'minimal' ? 1.0 : 1.0;
 
   if (simulationResult) {
       const { frames, fibrosis, N, activationTimes, apd } = simulationResult;
