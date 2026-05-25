@@ -14,17 +14,11 @@ class SeededRandom {
   }
 }
 
-// Shader WGSL completo com suporte a tensores anisotrópicos e correntes de estímulo dinâmicas
+// Shader WGSL completo
 const SIMULATION_SHADER = `
   struct UniformParams {
-    N: f32,
-    dx: f32,
-    dt: f32,
-    tau_in: f32,
-    tau_out: f32,
-    tau_open: f32,
-    tau_close: f32,
-    v_gate: f32,
+    N: f32, dx: f32, dt: f32,
+    tau_in: f32, tau_out: f32, tau_open: f32, tau_close: f32, v_gate: f32,
   };
 
   @group(0) @binding(0) var<uniform> params: UniformParams;
@@ -39,22 +33,16 @@ const SIMULATION_SHADER = `
   @compute @workgroup_size(16, 16)
   fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let n = u32(params.N);
-    let j = id.x; // Coluna
-    let i = id.y; // Linha
+    let j = id.x; 
+    let i = id.y; 
 
-    if (j >= n || i >= n) {
-      return;
-    }
-
+    if (j >= n || i >= n) { return; }
     let idx = i * n + j;
 
-    // Condição de contorno de Neumann (espelha o vizinho interno imediato)
     if (i == 0u || i == n - 1u || j == 0u || j == n - 1u) {
-      var mirror_i = i;
-      var mirror_j = j;
+      var mirror_i = i; var mirror_j = j;
       if (i == 0u) { mirror_i = 1u; } else if (i == n - 1u) { mirror_i = n - 2u; }
       if (j == 0u) { mirror_j = 1u; } else if (j == n - 1u) { mirror_j = n - 2u; }
-      
       v_out[idx] = v_in[mirror_i * n + mirror_j];
       return;
     }
@@ -62,20 +50,12 @@ const SIMULATION_SHADER = `
     let vp = v_in[idx];
     let hp = h_state[idx];
     
-    // Tensores de difusão locais
-    let Dxx = dxx_map[idx];
-    let Dyy = dyy_map[idx];
-    let Dxy = dxy_map[idx];
+    let Dxx = dxx_map[idx]; let Dyy = dyy_map[idx]; let Dxy = dxy_map[idx];
     let stimulus = stimulus_map[idx];
 
-    // 1. Variável de porta 'h' (Rush-Larsen)
-    var alpha_h: f32 = 0.0;
-    var beta_h: f32 = 0.0;
-    if (vp < params.v_gate) {
-      alpha_h = 1.0 / params.tau_open;
-    } else {
-      beta_h = 1.0 / params.tau_close;
-    }
+    var alpha_h: f32 = 0.0; var beta_h: f32 = 0.0;
+    if (vp < params.v_gate) { alpha_h = 1.0 / params.tau_open; } 
+    else { beta_h = 1.0 / params.tau_close; }
 
     let sum_ab = alpha_h + beta_h;
     var h_new = hp;
@@ -85,26 +65,21 @@ const SIMULATION_SHADER = `
       h_state[idx] = h_new;
     }
 
-    // 2. Operador Laplaciano Anisotrópico
     let inv_dx2 = 1.0 / (params.dx * params.dx);
     let inv_4dx2 = 1.0 / (4.0 * params.dx * params.dx);
 
     let d2v_dx2 = (v_in[idx - 1u] - 2.0 * vp + v_in[idx + 1u]) * inv_dx2;
     let d2v_dy2 = (v_in[idx - n] - 2.0 * vp + v_in[idx + n]) * inv_dx2;
     
-    let v_dr = v_in[idx + n + 1u];
-    let v_dl = v_in[idx + n - 1u];
-    let v_ur = v_in[idx - n + 1u];
-    let v_ul = v_in[idx - n - 1u];
+    let v_dr = v_in[idx + n + 1u]; let v_dl = v_in[idx + n - 1u];
+    let v_ur = v_in[idx - n + 1u]; let v_ul = v_in[idx - n - 1u];
     let d2v_dxdy = (v_dr - v_dl - v_ur + v_ul) * inv_4dx2;
 
     let lap_v = (Dxx * d2v_dx2) + (Dyy * d2v_dy2) + (2.0 * Dxy * d2v_dxdy);
 
-    // 3. Correntes de Mitchell-Schaeffer
     let j_in  = (h_new * vp * vp * (1.0 - vp)) / params.tau_in;
     let j_out = -vp / params.tau_out;
 
-    // Atualização do Potencial com o Estímulo injetado
     var v_next = vp + params.dt * (lap_v + j_in + j_out + stimulus);
 
     if (v_next < 0.0) { v_next = 0.0; }
@@ -118,16 +93,31 @@ export async function runGPU2DSimulation(payload, onProgress) {
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
 
-  const { 
-    sigma_l, sigma_t, angle, 
-    L, N, totalTime, downsamplingFactor, 
-    stimuli, fibrosisParams 
-  } = payload;
+  const { sigma_l, sigma_t, angle, L, N, totalTime, stimuli, fibrosisParams } = payload;
 
-  let dt = payload.dt;
-  const dx = L / N;
-  const dy = dx;
+  let dt = payload.dt || 0.1;
+  let downsamplingFactor = payload.downsamplingFactor || 10;
+  const dx = L / N; const dy = dx;
   const size = N * N;
+
+  const MAX_UI_N = 300;
+  let spatialStride = 1;
+  let N_out = N;
+  if (N > MAX_UI_N) {
+      spatialStride = Math.ceil(N / MAX_UI_N);
+      N_out = Math.ceil(N / spatialStride);
+  }
+  const outSize = N_out * N_out;
+
+  const steps = Math.floor(totalTime / dt);
+  const MAX_FRAMES = 1000; 
+  let temporalStride = downsamplingFactor;
+
+  if (Math.floor(steps / temporalStride) > MAX_FRAMES) {
+      temporalStride = Math.ceil(steps / MAX_FRAMES);
+      console.log(`Malha densa: Stride temporal elevado para ${temporalStride} iter/frame.`);
+  }
+  const expectedFrames = Math.floor(steps / temporalStride) + 1;
 
   // CFL E TENSORES
   const rad = (angle * Math.PI) / 180.0;
@@ -142,10 +132,9 @@ export async function runGPU2DSimulation(payload, onProgress) {
   const cfl_limit = (dx * dx) / ((4 * max_D + 2 * Math.abs(base_Dxy)) || 1); 
   if (dt > cfl_limit) dt = cfl_limit * 0.9;
 
-  // Alocação e Geração dos Mapas de Tecido na CPU
+  // Alocação da Física
   const initialV = new Float32Array(size).fill(payload.v_init || 0.0);
   const initialH = new Float32Array(size).fill(payload.h_init || 1.0);
-  
   let Dxx_map = new Float32Array(size).fill(base_Dxx);
   let Dyy_map = new Float32Array(size).fill(base_Dyy);
   let Dxy_map = new Float32Array(size).fill(base_Dxy);
@@ -218,10 +207,8 @@ export async function runGPU2DSimulation(payload, onProgress) {
 
       if (type === 'diffuse' && regionParams) {
         const { x1, y1, x2, y2 } = regionParams;
-        i_min = Math.max(0, Math.floor(Math.min(y1, y2) / dy));
-        i_max = Math.min(N - 1, Math.floor(Math.max(y1, y2) / dy));
-        j_min = Math.max(0, Math.floor(Math.min(x1, x2) / dx));
-        j_max = Math.min(N - 1, Math.floor(Math.max(x1, x2) / dx));
+        i_min = Math.max(0, Math.floor(Math.min(y1, y2) / dy)); i_max = Math.min(N - 1, Math.floor(Math.max(y1, y2) / dy));
+        j_min = Math.max(0, Math.floor(Math.min(x1, x2) / dx)); j_max = Math.min(N - 1, Math.floor(Math.max(x1, x2) / dx));
         numRegions = Math.ceil(((Math.abs(x2 - x1) * Math.abs(y2 - y1)) * density) / pixelArea);
       } else {
         numRegions = Math.ceil(((L * L) * density) / pixelArea);
@@ -252,8 +239,7 @@ export async function runGPU2DSimulation(payload, onProgress) {
         for (let j=Math.min(j1,j2); j<=Math.max(j1,j2); j++) 
           if (i>=0&&i<N&&j>=0&&j<N) map[i*N+j]=1;
     } else { 
-      const { cx, cy, radius } = stim.circleParams;
-      const rSq = radius*radius;
+      const { cx, cy, radius } = stim.circleParams; const rSq = radius*radius;
       for (let i=0; i<N; i++) 
         for (let j=0; j<N; j++) 
           if (((j*dx-cx)**2)+((i*dy-cy)**2)<=rSq) map[i*N+j]=1;
@@ -272,10 +258,7 @@ export async function runGPU2DSimulation(payload, onProgress) {
     return buf;
   };
 
-  const uniformParams = new Float32Array([
-    N, dx, dt, payload.Tau_in, payload.Tau_out, payload.Tau_open, payload.Tau_close, payload.gate
-  ]);
-
+  const uniformParams = new Float32Array([N, dx, dt, payload.Tau_in, payload.Tau_out, payload.Tau_open, payload.Tau_close, payload.gate]);
   const bufParams = createBuffer(uniformParams, GPUBufferUsage.UNIFORM);
   const bufH = createBuffer(initialH, GPUBufferUsage.STORAGE);
   const bufDxx = createBuffer(Dxx_map, GPUBufferUsage.STORAGE);
@@ -295,14 +278,9 @@ export async function runGPU2DSimulation(payload, onProgress) {
   const makeBindGroup = (readBuf, writeBuf) => device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [
-      { binding: 0, resource: { buffer: bufParams } },
-      { binding: 1, resource: { buffer: readBuf } },
-      { binding: 2, resource: { buffer: writeBuf } },
-      { binding: 3, resource: { buffer: bufH } },
-      { binding: 4, resource: { buffer: bufDxx } },
-      { binding: 5, resource: { buffer: bufDyy } },
-      { binding: 6, resource: { buffer: bufDxy } },
-      { binding: 7, resource: { buffer: bufStimulus } },
+      { binding: 0, resource: { buffer: bufParams } }, { binding: 1, resource: { buffer: readBuf } }, { binding: 2, resource: { buffer: writeBuf } },
+      { binding: 3, resource: { buffer: bufH } }, { binding: 4, resource: { buffer: bufDxx } }, { binding: 5, resource: { buffer: bufDyy } },
+      { binding: 6, resource: { buffer: bufDxy } }, { binding: 7, resource: { buffer: bufStimulus } },
     ],
   });
 
@@ -311,62 +289,131 @@ export async function runGPU2DSimulation(payload, onProgress) {
 
   const stagingBuffer = device.createBuffer({ size: initialV.byteLength, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
 
-  const steps = Math.floor(totalTime / dt);
-  const expectedFrames = Math.floor(steps / downsamplingFactor) + 1;
-  const framesBuffer = new Float32Array(expectedFrames * size);
+  // Saída
+  const framesBuffer = new Array(expectedFrames);
   const timesBuffer = new Float32Array(expectedFrames);
-  
-  // O quadro 0 reflete o estado inicial exato
-  framesBuffer.set(initialV, 0);
+
+  const initialV_out = new Float32Array(outSize);
+  let out_fibrosisMap = new Float32Array(outSize);
+  for (let i = 0; i < N_out; i++) {
+      for (let j = 0; j < N_out; j++) {
+          const origIdx = (i * spatialStride) * N + (j * spatialStride);
+          const outIdx = i * N_out + j;
+          if ((i * spatialStride) < N && (j * spatialStride) < N) {
+              initialV_out[outIdx] = initialV[origIdx];
+              out_fibrosisMap[outIdx] = fibrosisMap[origIdx];
+          }
+      }
+  }
+
+  framesBuffer[0] = initialV_out;
   timesBuffer[0] = 0;
   let frameIndex = 1;
+
+  const activationState = new Uint8Array(outSize).fill(0);
+  const activationStartTime = new Float32Array(outSize).fill(-1);
+  const activationCount = new Uint32Array(outSize).fill(0);
+  const activationTimes = [new Float32Array(outSize).fill(-1)];
+  const apd = [new Float32Array(outSize).fill(-1)];
+  let maxActivations = 1; const threshold = 0.3;
 
   const workgroupCount = Math.ceil(N / 16);
   let activeStimulusIndex = -1;
 
-  // EXECUÇÃO
-  for (let t = 0; t < steps; t += downsamplingFactor) {
-    const currentSteps = Math.min(downsamplingFactor, steps - t);
-    const currentTimeBase = t * dt;
-    let nextStimulusIndex = -1;
-    for (let i = 0; i < stimulus_timings.length; i++) {
-      const timing = stimulus_timings[i];
-      if (currentTimeBase >= timing.startTime && currentTimeBase < timing.endTime) {
-        nextStimulusIndex = i;
-        break;
+  // EXECUÇÃO ORQUESTRADA DA GPU
+  for (let t = 0; t < steps; t += temporalStride) {
+    const currentSteps = Math.min(temporalStride, steps - t);
+    let s = 0;
+
+    while (s < currentSteps) {
+      const currentTimeBase = (t + s) * dt;
+      let nextEventTime = totalTime + 1;
+      let nextStimulusIndex = -1;
+
+      for (let i = 0; i < stimulus_timings.length; i++) {
+        const st = stimulus_timings[i];
+        if (currentTimeBase >= st.startTime && currentTimeBase < st.endTime) nextStimulusIndex = i;
+        if (st.startTime > currentTimeBase && st.startTime < nextEventTime) nextEventTime = st.startTime;
+        if (st.endTime > currentTimeBase && st.endTime < nextEventTime) nextEventTime = st.endTime;
       }
-    }
 
-    if (nextStimulusIndex !== activeStimulusIndex) {
-      activeStimulusIndex = nextStimulusIndex;
-      if (nextStimulusIndex !== -1) {
-        const timing = stimulus_timings[nextStimulusIndex];
-        const map = stimulus_maps[nextStimulusIndex];
-        for (let k = 0; k < size; k++) currentStimulusArray[k] = map[k] * timing.amplitude;
-      } else {
-        currentStimulusArray.fill(0);
+      if (nextStimulusIndex !== activeStimulusIndex) {
+        activeStimulusIndex = nextStimulusIndex;
+        if (activeStimulusIndex !== -1) {
+          const timing = stimulus_timings[activeStimulusIndex];
+          const map = stimulus_maps[activeStimulusIndex];
+          for (let k = 0; k < size; k++) currentStimulusArray[k] = map[k] * timing.amplitude;
+        } else {
+          currentStimulusArray.fill(0);
+        }
+        device.queue.writeBuffer(bufStimulus, 0, currentStimulusArray);
       }
-      device.queue.writeBuffer(bufStimulus, 0, currentStimulusArray);
+
+      const stepsUntilEvent = Math.ceil((nextEventTime - currentTimeBase) / dt);
+      const stepsToRunNow = Math.max(1, Math.min(currentSteps - s, stepsUntilEvent));
+
+      const commandEncoder = device.createCommandEncoder();
+      for (let run = 0; run < stepsToRunNow; run++) {
+        const pass = commandEncoder.beginComputePass();
+        pass.setPipeline(pipeline);
+        pass.setBindGroup(0, ((t + s + run) % 2 === 0) ? bindGroupA : bindGroupB);
+        pass.dispatchWorkgroups(workgroupCount, workgroupCount);
+        pass.end();
+      }
+      device.queue.submit([commandEncoder.finish()]);
+      s += stepsToRunNow;
     }
 
-    const commandEncoder = device.createCommandEncoder();
-    for (let s = 0; s < currentSteps; s++) {
-      const pass = commandEncoder.beginComputePass();
-      pass.setPipeline(pipeline);
-      pass.setBindGroup(0, ((t + s) % 2 === 0) ? bindGroupA : bindGroupB);
-      pass.dispatchWorkgroups(workgroupCount, workgroupCount);
-      pass.end();
-    }
-
+    // Cpu
+    const commandEncoderRead = device.createCommandEncoder();
     const latestBuf = ((t + currentSteps) % 2 === 0) ? bufV_A : bufV_B;
-    commandEncoder.copyBufferToBuffer(latestBuf, 0, stagingBuffer, 0, initialV.byteLength);
-    device.queue.submit([commandEncoder.finish()]);
+    commandEncoderRead.copyBufferToBuffer(latestBuf, 0, stagingBuffer, 0, initialV.byteLength);
+    device.queue.submit([commandEncoderRead.finish()]);
 
     await stagingBuffer.mapAsync(GPUMapMode.READ);
     if (frameIndex < expectedFrames) {
-      framesBuffer.set(new Float32Array(stagingBuffer.getMappedRange()), frameIndex * size);
-      timesBuffer[frameIndex] = (t + currentSteps) * dt;
+      const fullFrame = new Float32Array(stagingBuffer.getMappedRange());
+      const currentTime = (t + currentSteps) * dt;
+      let outFrame;
+
+      if (spatialStride === 1) {
+        outFrame = fullFrame.slice();
+      } else {
+        outFrame = new Float32Array(outSize);
+        for (let i = 0; i < N_out; i++) {
+          for (let j = 0; j < N_out; j++) {
+            outFrame[i * N_out + j] = fullFrame[(i * spatialStride) * N + (j * spatialStride)];
+          }
+        }
+      }
+
+      framesBuffer[frameIndex] = outFrame;
+      timesBuffer[frameIndex] = currentTime;
       frameIndex++;
+
+      for (let i = 0; i < outSize; i++) {
+        const volt = outFrame[i];
+        if (activationState[i] === 0) {
+            if (volt >= threshold) {
+                activationState[i] = 1; activationStartTime[i] = currentTime;
+                let c = activationCount[i]; activationCount[i]++;
+                if (c >= maxActivations) {
+                    maxActivations++;
+                    activationTimes.push(new Float32Array(outSize).fill(-1));
+                    apd.push(new Float32Array(outSize).fill(-1));
+                }
+                activationTimes[c][i] = currentTime;
+            }
+        } else if (activationState[i] === 1) {
+            if (volt < threshold) {
+                activationState[i] = 2;
+                let c = activationCount[i] - 1;
+                if (c >= 0) apd[c][i] = currentTime - activationStartTime[i];
+            }
+        } else if (activationState[i] === 2) {
+            if (volt < 0.1) activationState[i] = 0;
+        }
+      }
     }
     stagingBuffer.unmap();
 
@@ -380,10 +427,16 @@ export async function runGPU2DSimulation(payload, onProgress) {
   return {
     frames: framesBuffer,
     times: timesBuffer,
-    fibrosis: fibrosisMap,
-    activationTimes: [],
-    apd: [],
-    N: N,
+    fibrosis: out_fibrosisMap,
+    activationTimes: activationTimes,
+    apd: apd,
+    N: N_out, 
     totalFrames: frameIndex
   };
+}
+
+export async function checkWebGPUSupport() {
+  if (!navigator.gpu) return false;
+  try { return (await navigator.gpu.requestAdapter()) !== null; } 
+  catch (e) { return false; }
 }

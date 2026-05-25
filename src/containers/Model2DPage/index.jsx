@@ -113,6 +113,16 @@ const Model2DPage = ({ onBack }) => {
 
   const [stimuli, setStimuli] = useState(DEFAULT_STIMULI);
 
+  // Verificação de Suporte a WebGPU
+  const [hasGPU, setHasGPU] = useState(false);
+
+  useEffect(() => {
+    checkWebGPUSupport().then(supported => {
+      setHasGPU(supported);
+      if (supported) console.log("GPU detectada");
+    });
+  }, []);
+
   // Inicializa Worker
   useEffect(() => {
     let simWorker;
@@ -229,7 +239,7 @@ const Model2DPage = ({ onBack }) => {
     setWorker(simWorker);
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (!worker) return;
 
     if (simulationResult) {
@@ -334,7 +344,7 @@ const Model2DPage = ({ onBack }) => {
 
     // FLUXO PADRÃO (CPU WORKER)
     worker.postMessage(payload);
-};
+  };
 
   const handleStop = () => {
       if (worker) worker.terminate();
@@ -394,9 +404,13 @@ const Model2DPage = ({ onBack }) => {
       N_dimension = N;
     
       if (viewMode === 'potential') {
-          const start = currentFrame * N * N;
-          const end = start + N * N;
-          currentChartData = frames.subarray(start, end);
+          if (Array.isArray(frames)) {
+              currentChartData = frames[currentFrame];
+          } else {
+              const start = currentFrame * N * N;
+              const end = start + N * N;
+              currentChartData = frames.subarray(start, end);
+          }
       } else if (viewMode === 'lat') {
           if (activationTimes && activationTimes.length > 0) {
               const idx = Math.min(selectedActivation, activationTimes.length - 1);
@@ -438,8 +452,11 @@ const Model2DPage = ({ onBack }) => {
     const { frames, times, N, totalFrames } = simulationResult;
     const idx = selectedPoint.i * N + selectedPoint.j;
     const timeseries = [];
+    const isGPUArray = Array.isArray(frames);
+    
     for(let f = 0; f < totalFrames; f++) {
-        timeseries.push({ tempo: times[f].toFixed(1), v: frames[f * N * N + idx] });
+        const val = isGPUArray ? frames[f][idx] : frames[f * N * N + idx];
+        timeseries.push({ tempo: times[f].toFixed(1), v: val });
     }
     return timeseries;
   }, [selectedPoint, simulationResult]);
