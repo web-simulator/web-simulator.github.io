@@ -109,16 +109,6 @@ export async function runGPU2DSimulation(payload, onProgress) {
   }
   const outSize = N_out * N_out;
 
-  const steps = Math.floor(totalTime / dt);
-  const MAX_FRAMES = 1000; 
-  let temporalStride = downsamplingFactor;
-
-  if (Math.floor(steps / temporalStride) > MAX_FRAMES) {
-      temporalStride = Math.ceil(steps / MAX_FRAMES);
-      console.log(`Malha densa: Stride temporal elevado para ${temporalStride} iter/frame.`);
-  }
-  const expectedFrames = Math.floor(steps / temporalStride) + 1;
-
   // CFL E TENSORES
   const rad = (angle * Math.PI) / 180.0;
   const c = Math.cos(rad), s = Math.sin(rad);
@@ -128,9 +118,22 @@ export async function runGPU2DSimulation(payload, onProgress) {
   const base_Dyy = sigma_l * s2 + sigma_t * c2;
   const base_Dxy = (sigma_l - sigma_t) * cs;
 
-  const max_D = Math.max(base_Dxx, base_Dyy);
+  let max_D = Math.max(base_Dxx, base_Dyy);
+  if (fibrosisParams && fibrosisParams.enabled) {
+      max_D = Math.max(max_D, fibrosisParams.conductivity);
+  }
   const cfl_limit = (dx * dx) / ((4 * max_D + 2 * Math.abs(base_Dxy)) || 1); 
   if (dt > cfl_limit) dt = cfl_limit * 0.9;
+
+  const steps = Math.floor(totalTime / dt);
+  const MAX_FRAMES = 1000; 
+  let temporalStride = downsamplingFactor;
+
+  if (Math.floor(steps / temporalStride) > MAX_FRAMES) {
+      temporalStride = Math.ceil(steps / MAX_FRAMES);
+      console.log(`Malha densa: Stride temporal elevado para ${temporalStride} iter/frame.`);
+  }
+  const expectedFrames = Math.floor(steps / temporalStride) + 1;
 
   // Alocação da Física
   const initialV = new Float32Array(size).fill(payload.v_init || 0.0);
@@ -287,7 +290,10 @@ export async function runGPU2DSimulation(payload, onProgress) {
   const bindGroupA = makeBindGroup(bufV_A, bufV_B);
   const bindGroupB = makeBindGroup(bufV_B, bufV_A);
 
-  const stagingBuffer = device.createBuffer({ size: initialV.byteLength, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+  const stagingBuffers = [
+    device.createBuffer({ size: initialV.byteLength, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ }),
+    device.createBuffer({ size: initialV.byteLength, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ })
+  ];
 
   // Saída
   const framesBuffer = new Array(expectedFrames);
@@ -319,8 +325,10 @@ export async function runGPU2DSimulation(payload, onProgress) {
 
   const workgroupCount = Math.ceil(N / 16);
   let activeStimulusIndex = -1;
+  let pendingMapPromise = null;
+  let currentStagingIdx = 0;
 
-  // EXECUÇÃO ORQUESTRADA DA GPU
+  // EXECUÇÃO gpu
   for (let t = 0; t < steps; t += temporalStride) {
     const currentSteps = Math.min(temporalStride, steps - t);
     let s = 0;
@@ -367,15 +375,76 @@ export async function runGPU2DSimulation(payload, onProgress) {
     // Cpu
     const commandEncoderRead = device.createCommandEncoder();
     const latestBuf = ((t + currentSteps) % 2 === 0) ? bufV_A : bufV_B;
-    commandEncoderRead.copyBufferToBuffer(latestBuf, 0, stagingBuffer, 0, initialV.byteLength);
+    const stagingBuf = stagingBuffers[currentStagingIdx];
+    commandEncoderRead.copyBufferToBuffer(latestBuf, 0, stagingBuf, 0, initialV.byteLength);
     device.queue.submit([commandEncoderRead.finish()]);
 
-    await stagingBuffer.mapAsync(GPUMapMode.READ);
-    if (frameIndex < expectedFrames) {
-      const fullFrame = new Float32Array(stagingBuffer.getMappedRange());
-      const currentTime = (t + currentSteps) * dt;
-      let outFrame;
+    const prevStagingIdx = currentStagingIdx;
+    const mapPromise = stagingBuf.mapAsync(GPUMapMode.READ);
+    currentStagingIdx = (currentStagingIdx + 1) % 2;
 
+    if (pendingMapPromise) {
+      await pendingMapPromise.promise;
+      const readBuf = stagingBuffers[pendingMapPromise.idx];
+      if (pendingMapPromise.frameIndex < expectedFrames) {
+        const fullFrame = new Float32Array(readBuf.getMappedRange());
+        const currentTime = pendingMapPromise.time;
+        let outFrame;
+
+        if (spatialStride === 1) {
+          outFrame = fullFrame.slice();
+        } else {
+          outFrame = new Float32Array(outSize);
+          for (let i = 0; i < N_out; i++) {
+            for (let j = 0; j < N_out; j++) {
+              outFrame[i * N_out + j] = fullFrame[(i * spatialStride) * N + (j * spatialStride)];
+            }
+          }
+        }
+
+        framesBuffer[pendingMapPromise.frameIndex] = outFrame;
+        timesBuffer[pendingMapPromise.frameIndex] = currentTime;
+
+        for (let i = 0; i < outSize; i++) {
+          const volt = outFrame[i];
+          if (activationState[i] === 0) {
+              if (volt >= threshold) {
+                  activationState[i] = 1; activationStartTime[i] = currentTime;
+                  let c = activationCount[i]; activationCount[i]++;
+                  if (c >= maxActivations) {
+                      maxActivations++;
+                      activationTimes.push(new Float32Array(outSize).fill(-1));
+                      apd.push(new Float32Array(outSize).fill(-1));
+                  }
+                  activationTimes[c][i] = currentTime;
+              }
+          } else if (activationState[i] === 1) {
+              if (volt < threshold) {
+                  activationState[i] = 2;
+                  let c = activationCount[i] - 1;
+                  if (c >= 0) apd[c][i] = currentTime - activationStartTime[i];
+              }
+          } else if (activationState[i] === 2) {
+              if (volt < 0.1) activationState[i] = 0;
+          }
+        }
+      }
+      readBuf.unmap();
+    }
+
+    pendingMapPromise = { promise: mapPromise, idx: prevStagingIdx, frameIndex: frameIndex, time: (t + currentSteps) * dt };
+    frameIndex++;
+
+    if (onProgress) onProgress(Math.round(((t + currentSteps) / steps) * 100));
+  }
+
+  if (pendingMapPromise) {
+    await pendingMapPromise.promise;
+    const readBuf = stagingBuffers[pendingMapPromise.idx];
+    if (pendingMapPromise.frameIndex < expectedFrames) {
+      const fullFrame = new Float32Array(readBuf.getMappedRange());
+      const currentTime = pendingMapPromise.time;
+      let outFrame;
       if (spatialStride === 1) {
         outFrame = fullFrame.slice();
       } else {
@@ -386,10 +455,8 @@ export async function runGPU2DSimulation(payload, onProgress) {
           }
         }
       }
-
-      framesBuffer[frameIndex] = outFrame;
-      timesBuffer[frameIndex] = currentTime;
-      frameIndex++;
+      framesBuffer[pendingMapPromise.frameIndex] = outFrame;
+      timesBuffer[pendingMapPromise.frameIndex] = currentTime;
 
       for (let i = 0; i < outSize; i++) {
         const volt = outFrame[i];
@@ -415,14 +482,12 @@ export async function runGPU2DSimulation(payload, onProgress) {
         }
       }
     }
-    stagingBuffer.unmap();
-
-    if (onProgress) onProgress(Math.round(((t + currentSteps) / steps) * 100));
+    readBuf.unmap();
   }
 
   // Liberação da VRAM
   bufParams.destroy(); bufH.destroy(); bufDxx.destroy(); bufDyy.destroy(); bufDxy.destroy();
-  bufStimulus.destroy(); bufV_A.destroy(); bufV_B.destroy(); stagingBuffer.destroy();
+  bufStimulus.destroy(); bufV_A.destroy(); bufV_B.destroy(); stagingBuffers[0].destroy(); stagingBuffers[1].destroy();
 
   return {
     frames: framesBuffer,
