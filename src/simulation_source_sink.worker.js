@@ -414,7 +414,17 @@ self.onmessage = (e) => {
 
       // Downsampling
       if (t % downsamplingFactor === 0) {
-          framesBuffer.set(v_arr, frameCount * size);
+          if (modelType === 'minimal') {
+              for (let i = 0; i < size; i++) {
+                  if (geometryMap[i] === 0) {
+                      framesBuffer[frameCount * size + i] = -1000.0; // placeholder for obstacle
+                  } else {
+                      framesBuffer[frameCount * size + i] = (v_arr[i] * 85.7) - 84.0;
+                  }
+              }
+          } else {
+              framesBuffer.set(v_arr, frameCount * size);
+          }
           timesBuffer[frameCount] = currentTime;
           frameCount++;
       }

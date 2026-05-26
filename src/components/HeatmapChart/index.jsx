@@ -19,6 +19,7 @@ precision highp float;
 in vec2 v_texCoord;
 uniform sampler2D u_data;
 uniform sampler2D u_fibrosis;
+uniform float u_min_value;
 uniform float u_max_value;
 uniform float u_fib_conductivity;
 uniform bool u_has_fibrosis;
@@ -40,15 +41,15 @@ void main() {
         return;
     }
 
-    if (val < 0.0) {
+    if (val <= -999.0 || (val < 0.0 && u_min_value >= 0.0)) {
         // Not activated
         outColor = vec4(40.0/255.0, 40.0/255.0, 40.0/255.0, 1.0);
         return;
     }
 
     float norm = 0.0;
-    if (u_max_value > 0.0) {
-        norm = clamp(val / u_max_value, 0.0, 1.0);
+    if (u_max_value > u_min_value) {
+        norm = clamp((val - u_min_value) / (u_max_value - u_min_value), 0.0, 1.0);
     }
     
     float hue = (1.0 - norm) * 240.0 / 360.0;
@@ -69,7 +70,7 @@ function createShader(gl, type, source) {
     return shader;
 }
 
-const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fibrosisConductivity, unit = 'V', tooltipLabel }) => {
+const HeatmapChart = ({ data, nCols, minValue = 0, maxValue = 1, onPointClick, fibrosisMap, fibrosisConductivity, unit = 'V', tooltipLabel }) => {
   const canvasRef = useRef(null);
   const { t } = useTranslation();
   const glRef = useRef(null);
@@ -153,6 +154,8 @@ const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fi
     
     const uMaxVal = gl.getUniformLocation(program, "u_max_value");
     gl.uniform1f(uMaxVal, maxValue);
+    const uMinVal = gl.getUniformLocation(program, "u_min_value");
+    gl.uniform1f(uMinVal, minValue);
     
     const uHasFib = gl.getUniformLocation(program, "u_has_fibrosis");
     const uFibCond = gl.getUniformLocation(program, "u_fib_conductivity");
@@ -202,7 +205,7 @@ const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fi
     // Draw
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     
-  }, [data, nCols, maxValue, fibrosisMap, fibrosisConductivity]);
+  }, [data, nCols, maxValue, minValue, fibrosisMap, fibrosisConductivity]);
 
   // Tooltip
   const handleMouseMove = (event) => {
@@ -219,7 +222,8 @@ const HeatmapChart = ({ data, nCols, maxValue = 1, onPointClick, fibrosisMap, fi
     const index = i * nCols + j;
     if (index >= 0 && index < data.length) {
       const value = data[index];
-      const isValid = !isNaN(value) && value >= 0;
+      // Since it can be negative for potential now, we check against -999.0
+      const isValid = !isNaN(value) && value > -999.0;
       const displayValue = isValid ? value.toFixed(2) : '-';
 
       setTooltip({

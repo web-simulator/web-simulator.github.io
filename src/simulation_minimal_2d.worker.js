@@ -456,7 +456,7 @@ self.onmessage = (e) => {
 
     if (t % downsamplingFactor === 0) {
       for (let i = 0; i < size; i++) {
-        framesBuffer[frameCount * size + i] = u[i] / 1.55; 
+        framesBuffer[frameCount * size + i] = (u[i] * 85.7) - 84.0; 
       }
       
       timesBuffer[frameCount] = currentTime;

@@ -397,7 +397,8 @@ const Model2DPage = ({ onBack }) => {
   let currentChartData = null;
   let currentFibrosisMap = null;
   let N_dimension = simulationResult ? simulationResult.N : Math.round((parseFloat(params.L) || 10.0) / (parseFloat(params.dx) || 0.1));
-  let maxValue = selectedModel === 'minimal' ? 1.0 : 1.0;
+  let maxValue = (selectedModel === 'minimal' && viewMode === 'potential') ? 15.0 : 1.0;
+  let minValue = (selectedModel === 'minimal' && viewMode === 'potential') ? -85.0 : 0.0;
 
   if (simulationResult) {
       const { frames, fibrosis, N, activationTimes, apd } = simulationResult;
@@ -436,7 +437,7 @@ const Model2DPage = ({ onBack }) => {
   }
 
   // define unidade do tooltip
-  let chartUnit = 'V';
+  let chartUnit = (selectedModel === 'minimal' && viewMode === 'potential') ? 'mV' : 'V';
   let chartLabel = t('chart.tooltip');
 
   if (viewMode === 'lat') {
@@ -820,6 +821,7 @@ const Model2DPage = ({ onBack }) => {
                         data={currentChartData} 
                         nCols={N_dimension} 
                         maxValue={maxValue}
+                        minValue={minValue}
                         onPointClick={(point) => { setSelectedPoint(point); setIsChartModalOpen(true); }}
                         fibrosisMap={currentFibrosisMap} 
                         fibrosisConductivity={params.fibrosisConductivity}
@@ -834,7 +836,7 @@ const Model2DPage = ({ onBack }) => {
                       )}
                     </div>
                     <div className="hidden sm:block">
-                      <Colorbar maxValue={maxValue} minValue={0} />
+                      <Colorbar maxValue={maxValue} minValue={minValue} />
                     </div>
                   </>
                 );

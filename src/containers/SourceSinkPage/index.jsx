@@ -280,7 +280,9 @@ const SourceSinkPage = ({ onBack }) => {
   let currentChartData = null;
   let currentGeometryMap = null;
   let N_dimension = simulationResult ? simulationResult.N : Math.round((params.L / params.dx));
-  const heatmapMaxValue = selectedModel === 'minimal' ? 2.0 : 1.0;
+  const heatmapMaxValue = selectedModel === 'minimal' ? 15.0 : 1.0;
+  const heatmapMinValue = selectedModel === 'minimal' ? -85.0 : 0.0;
+  const chartUnit = selectedModel === 'minimal' ? 'mV' : 'V';
 
   if (simulationResult) {
     const { frames, fibrosis, N } = simulationResult;
@@ -583,6 +585,8 @@ const SourceSinkPage = ({ onBack }) => {
                         data={currentChartData}
                         nCols={N_dimension}
                         maxValue={heatmapMaxValue}
+                        minValue={heatmapMinValue}
+                        unit={chartUnit}
                         onPointClick={handlePointClick}
                         fibrosisMap={currentGeometryMap}
                         fibrosisConductivity={params.fibrosis ? params.fibrosisConductivity : 0.0}
@@ -596,7 +600,7 @@ const SourceSinkPage = ({ onBack }) => {
                 )}
               </div>
               <div className="hidden sm:block">
-                <Colorbar maxValue={heatmapMaxValue} minValue={0} />
+                <Colorbar maxValue={heatmapMaxValue} minValue={heatmapMinValue} />
               </div>
             </div>
           </div>
