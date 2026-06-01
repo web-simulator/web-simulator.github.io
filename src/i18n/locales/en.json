@@ -45,6 +45,7 @@
     "fibrosis": "Fibrosis",
     "transmurality": "Transmurality",
     "enable_fibrosis": "Enable Fibrosis",
+    "hardware_acceleration": "Hardware Acceleration (GPU)",
     "enable_transmurality": "Enable Transmurality",
     "tissue_properties": "Tissue Properties",
     "heterogeneity": "Heterogeneity",
