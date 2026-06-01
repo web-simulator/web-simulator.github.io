@@ -13,6 +13,7 @@ import ExportModal from '../../components/ExportModal';
 import { export2DToGif, exportToPng, export2DToXDMF } from '../../utils/export';
 import { checkWebGPUSupport } from '../../utils/gpuDetection';
 import { runGPU2DSimulation } from '../../utils/webgpu_simulation';
+import { runMinimalGPU2DSimulation } from '../../utils/webgpu_minimal_simulation';
 
 const SettingsSection = ({ title, children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -115,6 +116,7 @@ const Model2DPage = ({ onBack }) => {
 
   // Verificação de Suporte a WebGPU
   const [hasGPU, setHasGPU] = useState(false);
+  const [useGPU, setUseGPU] = useState(true);
 
   useEffect(() => {
     checkWebGPUSupport().then(supported => {
@@ -311,13 +313,18 @@ const Model2DPage = ({ onBack }) => {
       stimuli: safeStimuli, minimalCellParams: safeMinimalParams
     };
 
-    // Execução com webgpu para modelo ms
-    if (typeof hasGPU !== 'undefined' && hasGPU && selectedModel === 'ms') {
+    // Execução com webgpu
+    if (typeof hasGPU !== 'undefined' && hasGPU && useGPU) {
         try {
             const startTimeReal = performance.now();
             
+            let gpuRunner = runGPU2DSimulation;
+            if (selectedModel === 'minimal') {
+                gpuRunner = runMinimalGPU2DSimulation;
+            }
+
             // Chama a simulação na GPU aguardando a resposta final
-            const result = await runGPU2DSimulation(payload, (prog) => {
+            const result = await gpuRunner(payload, (prog) => {
                 setProgress(prog);
                 
                 // Cálculo de estimativa de tempo restant
@@ -584,6 +591,12 @@ const Model2DPage = ({ onBack }) => {
           <h1 className="text-xl font-bold text-slate-800 hidden sm:block">{t('home.models.model_2d.title')}</h1>
         </div>
         <div className="flex items-center gap-3">
+            {hasGPU && (
+                <div className="hidden sm:flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 mr-2">
+                    <input type="checkbox" checked={useGPU} onChange={(e) => setUseGPU(e.target.checked)} id="chk-gpu-header" className="rounded text-emerald-600 cursor-pointer" />
+                    <label htmlFor="chk-gpu-header" className="text-sm font-medium text-emerald-700 cursor-pointer whitespace-nowrap">{t('common.hardware_acceleration')}</label>
+                </div>
+            )}
             <span className="text-sm text-slate-500 hidden sm:block">{t('common.select_model')}:</span>
             <select value={selectedModel} onChange={(e) => { setSimulationResult(null); setSelectedModel(e.target.value); }} className="bg-slate-100 border-none text-sm font-medium text-slate-700 py-2 px-4 rounded-lg cursor-pointer focus:ring-2 focus:ring-emerald-500">
                 <option value="ms">{t('common.ms_model')}</option>
@@ -787,6 +800,8 @@ const Model2DPage = ({ onBack }) => {
                             )}
                         </div>
                     )}
+
+
 
                     <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
                         <input type="checkbox" checked={params.transmurality} onChange={(e) => handleChange(e, 'transmurality')} id="chk-trans" className="rounded text-emerald-600 cursor-pointer" />
