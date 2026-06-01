@@ -1,34 +1,40 @@
-// Classe auxiliar para replicação exata da semente de fibrose randômica/difusa
-export class SeededRandom {
-  constructor(seed = Date.now()) {
-    this.seed = seed % 2147483647;
-    if (this.seed <= 0) this.seed += 2147483646;
-  }
-  next() {
-    this.seed = (this.seed * 16807) % 2147483647;
-    return this.seed / 2147483647;
-  }
-  nextInt(min, max) {
-    if (min > max) [min, max] = [max, min];
-    return Math.floor(this.next() * (max - min + 1)) + min;
-  }
-}
+import { SeededRandom } from './webgpu_simulation';
 
-// Shader WGSL completo
-const SIMULATION_SHADER = `
+const MINIMAL_SIMULATION_SHADER = `
+  struct MinimalParams {
+    u_o: f32, u_u: f32, theta_v: f32, theta_w: f32,
+    theta_vminus: f32, theta_o: f32, tau_v1minus: f32, tau_v2minus: f32,
+    tau_vplus: f32, tau_w1minus: f32, tau_w2minus: f32, k_wminus: f32,
+    u_wminus: f32, tau_wplus: f32, tau_fi: f32, tau_o1: f32,
+    tau_o2: f32, tau_so1: f32, tau_so2: f32, k_so: f32,
+    u_so: f32, tau_s1: f32, tau_s2: f32, k_s: f32,
+    u_s: f32, tau_si: f32, tau_winf: f32, w_infstar: f32
+  };
+
   struct UniformParams {
-    N: f32, dx: f32, dt: f32,
-    tau_in: f32, tau_out: f32, tau_open: f32, tau_close: f32, v_gate: f32,
+    N: f32, dx: f32, dt: f32, use_transmurality: f32,
+    mid_start: f32, epi_start: f32, pad1: f32, pad2: f32,
+    p_endo: MinimalParams,
+    p_myo: MinimalParams,
+    p_epi: MinimalParams
   };
 
   @group(0) @binding(0) var<uniform> params: UniformParams;
-  @group(0) @binding(1) var<storage, read> v_in: array<f32>;
-  @group(0) @binding(2) var<storage, read_write> v_out: array<f32>;
-  @group(0) @binding(3) var<storage, read_write> h_state: array<f32>;
-  @group(0) @binding(4) var<storage, read> dxx_map: array<f32>;
-  @group(0) @binding(5) var<storage, read> dyy_map: array<f32>;
-  @group(0) @binding(6) var<storage, read> dxy_map: array<f32>;
-  @group(0) @binding(7) var<storage, read> stimulus_map: array<f32>;
+  @group(0) @binding(1) var<storage, read> u_in: array<f32>;
+  @group(0) @binding(2) var<storage, read_write> u_out: array<f32>;
+  @group(0) @binding(3) var<storage, read> v_in: array<f32>;
+  @group(0) @binding(4) var<storage, read_write> v_out: array<f32>;
+  @group(0) @binding(5) var<storage, read> w_in: array<f32>;
+  @group(0) @binding(6) var<storage, read_write> w_out: array<f32>;
+  @group(0) @binding(7) var<storage, read> s_in: array<f32>;
+  @group(0) @binding(8) var<storage, read_write> s_out: array<f32>;
+  
+  @group(0) @binding(9) var<storage, read> dxx_map: array<f32>;
+  @group(0) @binding(10) var<storage, read> dyy_map: array<f32>;
+  @group(0) @binding(11) var<storage, read> dxy_map: array<f32>;
+  @group(0) @binding(12) var<storage, read> stimulus_map: array<f32>;
+
+
 
   @compute @workgroup_size(16, 16)
   fn main(@builtin(global_invocation_id) id: vec3<u32>) {
@@ -43,58 +49,93 @@ const SIMULATION_SHADER = `
       var mirror_i = i; var mirror_j = j;
       if (i == 0u) { mirror_i = 1u; } else if (i == n - 1u) { mirror_i = n - 2u; }
       if (j == 0u) { mirror_j = 1u; } else if (j == n - 1u) { mirror_j = n - 2u; }
-      v_out[idx] = v_in[mirror_i * n + mirror_j];
+      
+      let midx = mirror_i * n + mirror_j;
+      u_out[idx] = u_in[midx];
+      v_out[idx] = v_in[midx];
+      w_out[idx] = w_in[midx];
+      s_out[idx] = s_in[midx];
       return;
     }
 
-    let vp = v_in[idx];
-    let hp = h_state[idx];
-    
+    var p: MinimalParams;
+    if (params.use_transmurality > 0.5) {
+      let ratio = f32(j) / params.N;
+      if (ratio < params.mid_start) {
+        p = params.p_endo;
+      } else if (ratio < params.epi_start) {
+        p = params.p_myo;
+      } else {
+        p = params.p_epi;
+      }
+    } else {
+      p = params.p_epi;
+    }
+
+    let val_u = u_in[idx];
+    let val_v = v_in[idx];
+    let val_w = w_in[idx];
+    let val_s = s_in[idx];
+
     let Dxx = dxx_map[idx]; let Dyy = dyy_map[idx]; let Dxy = dxy_map[idx];
     let stimulus = stimulus_map[idx];
-
-    var alpha_h: f32 = 0.0; var beta_h: f32 = 0.0;
-    if (vp < params.v_gate) { alpha_h = 1.0 / params.tau_open; } 
-    else { beta_h = 1.0 / params.tau_close; }
-
-    let sum_ab = alpha_h + beta_h;
-    var h_new = hp;
-    if (sum_ab > 1e-10) {
-      let h_inf = alpha_h / sum_ab;
-      h_new = h_inf + (hp - h_inf) * exp(-sum_ab * params.dt);
-      h_state[idx] = h_new;
-    }
 
     let inv_dx2 = 1.0 / (params.dx * params.dx);
     let inv_4dx2 = 1.0 / (4.0 * params.dx * params.dx);
 
-    let d2v_dx2 = (v_in[idx - 1u] - 2.0 * vp + v_in[idx + 1u]) * inv_dx2;
-    let d2v_dy2 = (v_in[idx - n] - 2.0 * vp + v_in[idx + n]) * inv_dx2;
+    let d2u_dx2 = (u_in[idx - 1u] - 2.0 * val_u + u_in[idx + 1u]) * inv_dx2;
+    let d2u_dy2 = (u_in[idx - n] - 2.0 * val_u + u_in[idx + n]) * inv_dx2;
     
-    let v_dr = v_in[idx + n + 1u]; let v_dl = v_in[idx + n - 1u];
-    let v_ur = v_in[idx - n + 1u]; let v_ul = v_in[idx - n - 1u];
-    let d2v_dxdy = (v_dr - v_dl - v_ur + v_ul) * inv_4dx2;
+    let u_dr = u_in[idx + n + 1u]; let u_dl = u_in[idx + n - 1u];
+    let u_ur = u_in[idx - n + 1u]; let u_ul = u_in[idx - n - 1u];
+    let d2u_dxdy = (u_dr - u_dl - u_ur + u_ul) * inv_4dx2;
 
-    let lap_v = (Dxx * d2v_dx2) + (Dyy * d2v_dy2) + (2.0 * Dxy * d2v_dxdy);
+    let lap_u = (Dxx * d2u_dx2) + (Dyy * d2u_dy2) + (2.0 * Dxy * d2u_dxdy);
 
-    let j_in  = (h_new * vp * vp * (1.0 - vp)) / params.tau_in;
-    let j_out = -vp / params.tau_out;
+    var H_u_thv: f32 = 0.0; if (val_u - p.theta_v > 0.0) { H_u_thv = 1.0; }
+    var H_u_thw: f32 = 0.0; if (val_u - p.theta_w > 0.0) { H_u_thw = 1.0; }
+    var H_u_thv_minus: f32 = 0.0; if (val_u - p.theta_vminus > 0.0) { H_u_thv_minus = 1.0; }
+    var H_u_tho: f32 = 0.0; if (val_u - p.theta_o > 0.0) { H_u_tho = 1.0; }
 
-    var v_next = vp + params.dt * (lap_v + j_in + j_out + stimulus);
+    let tau_vminus = (1.0 - H_u_thv_minus) * p.tau_v1minus + H_u_thv_minus * p.tau_v2minus;
+    let tau_wminus = p.tau_w1minus + (p.tau_w2minus - p.tau_w1minus) * (1.0 + tanh(p.k_wminus * (val_u - p.u_wminus))) * 0.5;
+    let tau_so = p.tau_so1 + (p.tau_so2 - p.tau_so1) * (1.0 + tanh(p.k_so * (val_u - p.u_so))) * 0.5;
+    let tau_s = (1.0 - H_u_thw) * p.tau_s1 + H_u_thw * p.tau_s2;
+    let tau_o = (1.0 - H_u_tho) * p.tau_o1 + H_u_tho * p.tau_o2;
 
-    if (v_next < 0.0) { v_next = 0.0; }
-    if (v_next > 1.5) { v_next = 1.5; }
+    let J_fi = -val_v * H_u_thv * (val_u - p.theta_v) * (p.u_u - val_u) / p.tau_fi;
+    let J_so = (val_u - p.u_o) * (1.0 - H_u_thw) / tau_o + H_u_thw / tau_so;
+    let J_si = -H_u_thw * val_w * val_s / p.tau_si;
 
-    v_out[idx] = v_next;
+    var u_next = val_u + params.dt * (lap_u - (J_fi + J_so + J_si) + stimulus);
+    if (u_next < 0.0) { u_next = 0.0; }
+    if (u_next > 2.0) { u_next = 2.0; }
+    u_out[idx] = u_next;
+
+    var v_inf: f32 = 0.0; if (val_u < p.theta_vminus) { v_inf = 1.0; }
+    let tau_v_rl = (p.tau_vplus * tau_vminus) / (p.tau_vplus - p.tau_vplus * H_u_thv + tau_vminus * H_u_thv);
+    let v_inf_rl = (p.tau_vplus * v_inf * (1.0 - H_u_thv)) / (p.tau_vplus - p.tau_vplus * H_u_thv + tau_vminus * H_u_thv);
+    if (tau_v_rl > 1e-10) { v_out[idx] = v_inf_rl + (val_v - v_inf_rl) * exp(-params.dt / tau_v_rl); } else { v_out[idx] = val_v; }
+
+    let w_inf = (1.0 - H_u_tho) * (1.0 - val_u / p.tau_winf) + H_u_tho * p.w_infstar;
+    let tau_w_rl = (p.tau_wplus * tau_wminus) / (p.tau_wplus - p.tau_wplus * H_u_thw + tau_wminus * H_u_thw);
+    let w_inf_rl = (p.tau_wplus * w_inf * (1.0 - H_u_thw)) / (p.tau_wplus - p.tau_wplus * H_u_thw + tau_wminus * H_u_thw);
+    if (tau_w_rl > 1e-10) { w_out[idx] = w_inf_rl + (val_w - w_inf_rl) * exp(-params.dt / tau_w_rl); } else { w_out[idx] = val_w; }
+
+    let s_inf_rl = (1.0 + tanh(p.k_s * (val_u - p.u_s))) * 0.5;
+    if (tau_s > 1e-10) { s_out[idx] = s_inf_rl + (val_s - s_inf_rl) * exp(-params.dt / tau_s); } else { s_out[idx] = val_s; }
   }
 `;
 
-export async function runGPU2DSimulation(payload, onProgress) {
+export async function runMinimalGPU2DSimulation(payload, onProgress) {
   const adapter = await navigator.gpu.requestAdapter();
-  const device = await adapter.requestDevice();
+  const device = await adapter.requestDevice({
+    requiredLimits: {
+      maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage
+    }
+  });
 
   const { sigma_l, sigma_t, angle, L, N, totalTime, stimuli, fibrosisParams } = payload;
-
   let dt = payload.dt || 0.1;
   let downsamplingFactor = payload.downsamplingFactor || 10;
   const dx = L / N; const dy = dx;
@@ -109,7 +150,6 @@ export async function runGPU2DSimulation(payload, onProgress) {
   }
   const outSize = N_out * N_out;
 
-  // CFL E TENSORES
   const rad = (angle * Math.PI) / 180.0;
   const c = Math.cos(rad), s = Math.sin(rad);
   const c2 = c * c, s2 = s * s, cs = c * s;
@@ -135,9 +175,11 @@ export async function runGPU2DSimulation(payload, onProgress) {
   }
   const expectedFrames = Math.floor(steps / temporalStride) + 1;
 
-  // Alocação da Física
-  const initialV = new Float32Array(size).fill(payload.v_init || 0.0);
-  const initialH = new Float32Array(size).fill(payload.h_init || 1.0);
+  const initialU = new Float32Array(size).fill(0.0);
+  const initialV = new Float32Array(size).fill(1.0);
+  const initialW = new Float32Array(size).fill(1.0);
+  const initialS = new Float32Array(size).fill(0.0);
+
   let Dxx_map = new Float32Array(size).fill(base_Dxx);
   let Dyy_map = new Float32Array(size).fill(base_Dyy);
   let Dxy_map = new Float32Array(size).fill(base_Dxy);
@@ -228,7 +270,6 @@ export async function runGPU2DSimulation(payload, onProgress) {
     }
   }
 
-  // MAPAS DE ESTÍMULO
   const stimulus_maps = [];
   const stimulus_timings = [];
   let cumulativeTime = 0;
@@ -254,65 +295,106 @@ export async function runGPU2DSimulation(payload, onProgress) {
     stimulus_timings.push({ startTime, endTime, amplitude: stim.amplitude });
   });
 
-  // ALOCAÇÃO DE BUFFERS NA VRAM
   const createBuffer = (arr, usage) => {
     const buf = device.createBuffer({ size: Math.max(arr.byteLength, 16), usage: usage | GPUBufferUsage.COPY_DST });
     device.queue.writeBuffer(buf, 0, arr);
     return buf;
   };
 
-  const uniformParams = new Float32Array([N, dx, dt, payload.Tau_in, payload.Tau_out, payload.Tau_open, payload.Tau_close, payload.gate]);
-  const bufParams = createBuffer(uniformParams, GPUBufferUsage.UNIFORM);
-  const bufH = createBuffer(initialH, GPUBufferUsage.STORAGE);
+  const COMMON_MINIMAL = {
+    u_o: 0.0, theta_v: 0.3, theta_w: 0.13, tau_vplus: 1.4506, tau_s1: 2.7342, k_s: 2.0994, u_s: 0.9087
+  };
+
+  const getParamArray = (p) => [
+    COMMON_MINIMAL.u_o, p.u_u, COMMON_MINIMAL.theta_v, COMMON_MINIMAL.theta_w,
+    p.theta_vminus, p.theta_o, p.tau_v1minus, p.tau_v2minus,
+    COMMON_MINIMAL.tau_vplus, p.tau_w1minus, p.tau_w2minus, p.k_wminus,
+    p.u_wminus, p.tau_wplus, p.tau_fi, p.tau_o1,
+    p.tau_o2, p.tau_so1, p.tau_so2, p.k_so,
+    p.u_so, COMMON_MINIMAL.tau_s1, p.tau_s2, COMMON_MINIMAL.k_s,
+    COMMON_MINIMAL.u_s, p.tau_si, p.tau_winf, p.w_infstar
+  ];
+
+  const uniformData = new Float32Array(8 + 3 * 28);
+  uniformData[0] = N; uniformData[1] = dx; uniformData[2] = dt; 
+  uniformData[3] = payload.transmuralityParams?.enabled ? 1.0 : 0.0;
+  uniformData[4] = (payload.transmuralityParams?.mid_start || 0) / 100.0; 
+  uniformData[5] = (payload.transmuralityParams?.epi_start || 0) / 100.0;
+  uniformData[6] = 0; uniformData[7] = 0;
+
+  const endoP = getParamArray(payload.minimalCellParams.endo);
+  const myoP = getParamArray(payload.minimalCellParams.myo);
+  const epiP = getParamArray(payload.minimalCellParams.epi);
+  const cellType = payload.cellType || 'epi';
+  const singleP = getParamArray(payload.minimalCellParams[cellType]);
+
+  if (payload.transmuralityParams?.enabled) {
+    uniformData.set(endoP, 8);
+    uniformData.set(myoP, 8 + 28);
+    uniformData.set(epiP, 8 + 56);
+  } else {
+    uniformData.set(singleP, 8);
+    uniformData.set(singleP, 8 + 28);
+    uniformData.set(singleP, 8 + 56);
+  }
+
+  const bufParams = createBuffer(uniformData, GPUBufferUsage.UNIFORM);
   const bufDxx = createBuffer(Dxx_map, GPUBufferUsage.STORAGE);
   const bufDyy = createBuffer(Dyy_map, GPUBufferUsage.STORAGE);
   const bufDxy = createBuffer(Dxy_map, GPUBufferUsage.STORAGE);
-  
-  // Buffer dinâmico de correntes de estímulo
   const currentStimulusArray = new Float32Array(size).fill(0);
   const bufStimulus = createBuffer(currentStimulusArray, GPUBufferUsage.STORAGE);
 
-  let bufV_A = createBuffer(initialV, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC);
-  let bufV_B = device.createBuffer({ size: initialV.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
+  let bufU_A = createBuffer(initialU, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC);
+  let bufU_B = device.createBuffer({ size: initialU.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
+  let bufV_A = createBuffer(initialV, GPUBufferUsage.STORAGE);
+  let bufV_B = device.createBuffer({ size: initialV.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+  let bufW_A = createBuffer(initialW, GPUBufferUsage.STORAGE);
+  let bufW_B = device.createBuffer({ size: initialW.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+  let bufS_A = createBuffer(initialS, GPUBufferUsage.STORAGE);
+  let bufS_B = device.createBuffer({ size: initialS.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
 
-  const module = device.createShaderModule({ code: SIMULATION_SHADER });
+  const module = device.createShaderModule({ code: MINIMAL_SIMULATION_SHADER });
   const pipeline = device.createComputePipeline({ layout: 'auto', compute: { module, entryPoint: 'main' } });
 
-  const makeBindGroup = (readBuf, writeBuf) => device.createBindGroup({
+  const makeBindGroup = (readU, writeU, readV, writeV, readW, writeW, readS, writeS) => device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [
-      { binding: 0, resource: { buffer: bufParams } }, { binding: 1, resource: { buffer: readBuf } }, { binding: 2, resource: { buffer: writeBuf } },
-      { binding: 3, resource: { buffer: bufH } }, { binding: 4, resource: { buffer: bufDxx } }, { binding: 5, resource: { buffer: bufDyy } },
-      { binding: 6, resource: { buffer: bufDxy } }, { binding: 7, resource: { buffer: bufStimulus } },
+      { binding: 0, resource: { buffer: bufParams } }, 
+      { binding: 1, resource: { buffer: readU } }, { binding: 2, resource: { buffer: writeU } },
+      { binding: 3, resource: { buffer: readV } }, { binding: 4, resource: { buffer: writeV } },
+      { binding: 5, resource: { buffer: readW } }, { binding: 6, resource: { buffer: writeW } },
+      { binding: 7, resource: { buffer: readS } }, { binding: 8, resource: { buffer: writeS } },
+      { binding: 9, resource: { buffer: bufDxx } }, { binding: 10, resource: { buffer: bufDyy } },
+      { binding: 11, resource: { buffer: bufDxy } }, { binding: 12, resource: { buffer: bufStimulus } },
     ],
   });
 
-  const bindGroupA = makeBindGroup(bufV_A, bufV_B);
-  const bindGroupB = makeBindGroup(bufV_B, bufV_A);
+  const bindGroupA = makeBindGroup(bufU_A, bufU_B, bufV_A, bufV_B, bufW_A, bufW_B, bufS_A, bufS_B);
+  const bindGroupB = makeBindGroup(bufU_B, bufU_A, bufV_B, bufV_A, bufW_B, bufW_A, bufS_B, bufS_A);
 
   const stagingBuffers = [
-    device.createBuffer({ size: initialV.byteLength, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ }),
-    device.createBuffer({ size: initialV.byteLength, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ })
+    device.createBuffer({ size: initialU.byteLength, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ }),
+    device.createBuffer({ size: initialU.byteLength, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ })
   ];
 
-  // Saída
   const framesBuffer = new Array(expectedFrames);
   const timesBuffer = new Float32Array(expectedFrames);
 
-  const initialV_out = new Float32Array(outSize);
+  const initialU_out = new Float32Array(outSize);
   let out_fibrosisMap = new Float32Array(outSize);
   for (let i = 0; i < N_out; i++) {
       for (let j = 0; j < N_out; j++) {
           const origIdx = (i * spatialStride) * N + (j * spatialStride);
           const outIdx = i * N_out + j;
           if ((i * spatialStride) < N && (j * spatialStride) < N) {
-              initialV_out[outIdx] = initialV[origIdx];
+              initialU_out[outIdx] = (initialU[origIdx] * 85.7) - 84.0;
               out_fibrosisMap[outIdx] = fibrosisMap[origIdx];
           }
       }
   }
 
-  framesBuffer[0] = initialV_out;
+  framesBuffer[0] = initialU_out;
   timesBuffer[0] = 0;
   let frameIndex = 1;
 
@@ -328,7 +410,6 @@ export async function runGPU2DSimulation(payload, onProgress) {
   let pendingMapPromise = null;
   let currentStagingIdx = 0;
 
-  // EXECUÇÃO gpu
   for (let t = 0; t < steps; t += temporalStride) {
     const currentSteps = Math.min(temporalStride, steps - t);
     let s = 0;
@@ -372,11 +453,10 @@ export async function runGPU2DSimulation(payload, onProgress) {
       s += stepsToRunNow;
     }
 
-    // Cpu
     const commandEncoderRead = device.createCommandEncoder();
-    const latestBuf = ((t + currentSteps) % 2 === 0) ? bufV_A : bufV_B;
+    const latestBuf = ((t + currentSteps) % 2 === 0) ? bufU_A : bufU_B;
     const stagingBuf = stagingBuffers[currentStagingIdx];
-    commandEncoderRead.copyBufferToBuffer(latestBuf, 0, stagingBuf, 0, initialV.byteLength);
+    commandEncoderRead.copyBufferToBuffer(latestBuf, 0, stagingBuf, 0, initialU.byteLength);
     device.queue.submit([commandEncoderRead.finish()]);
 
     const prevStagingIdx = currentStagingIdx;
@@ -389,15 +469,16 @@ export async function runGPU2DSimulation(payload, onProgress) {
       if (pendingMapPromise.frameIndex < expectedFrames) {
         const fullFrame = new Float32Array(readBuf.getMappedRange());
         const currentTime = pendingMapPromise.time;
-        let outFrame;
+        let outFrame = new Float32Array(outSize);
 
         if (spatialStride === 1) {
-          outFrame = fullFrame.slice();
+          for (let i = 0; i < outSize; i++) {
+              outFrame[i] = (fullFrame[i] * 85.7) - 84.0;
+          }
         } else {
-          outFrame = new Float32Array(outSize);
           for (let i = 0; i < N_out; i++) {
             for (let j = 0; j < N_out; j++) {
-              outFrame[i * N_out + j] = fullFrame[(i * spatialStride) * N + (j * spatialStride)];
+              outFrame[i * N_out + j] = (fullFrame[(i * spatialStride) * N + (j * spatialStride)] * 85.7) - 84.0;
             }
           }
         }
@@ -406,7 +487,7 @@ export async function runGPU2DSimulation(payload, onProgress) {
         timesBuffer[pendingMapPromise.frameIndex] = currentTime;
 
         for (let i = 0; i < outSize; i++) {
-          const volt = outFrame[i];
+          const volt = (outFrame[i] + 84.0) / 85.7; // convert back to 0-1.5 range for activation threshold
           if (activationState[i] === 0) {
               if (volt >= threshold) {
                   activationState[i] = 1; activationStartTime[i] = currentTime;
@@ -444,14 +525,15 @@ export async function runGPU2DSimulation(payload, onProgress) {
     if (pendingMapPromise.frameIndex < expectedFrames) {
       const fullFrame = new Float32Array(readBuf.getMappedRange());
       const currentTime = pendingMapPromise.time;
-      let outFrame;
+      let outFrame = new Float32Array(outSize);
       if (spatialStride === 1) {
-        outFrame = fullFrame.slice();
+          for (let i = 0; i < outSize; i++) {
+              outFrame[i] = (fullFrame[i] * 85.7) - 84.0;
+          }
       } else {
-        outFrame = new Float32Array(outSize);
         for (let i = 0; i < N_out; i++) {
           for (let j = 0; j < N_out; j++) {
-            outFrame[i * N_out + j] = fullFrame[(i * spatialStride) * N + (j * spatialStride)];
+            outFrame[i * N_out + j] = (fullFrame[(i * spatialStride) * N + (j * spatialStride)] * 85.7) - 84.0;
           }
         }
       }
@@ -459,7 +541,7 @@ export async function runGPU2DSimulation(payload, onProgress) {
       timesBuffer[pendingMapPromise.frameIndex] = currentTime;
 
       for (let i = 0; i < outSize; i++) {
-        const volt = outFrame[i];
+        const volt = (outFrame[i] + 84.0) / 85.7;
         if (activationState[i] === 0) {
             if (volt >= threshold) {
                 activationState[i] = 1; activationStartTime[i] = currentTime;
@@ -485,24 +567,14 @@ export async function runGPU2DSimulation(payload, onProgress) {
     readBuf.unmap();
   }
 
-  // Liberação da VRAM
-  bufParams.destroy(); bufH.destroy(); bufDxx.destroy(); bufDyy.destroy(); bufDxy.destroy();
-  bufStimulus.destroy(); bufV_A.destroy(); bufV_B.destroy(); stagingBuffers[0].destroy(); stagingBuffers[1].destroy();
+  bufParams.destroy(); bufDxx.destroy(); bufDyy.destroy(); bufDxy.destroy();
+  bufStimulus.destroy(); bufU_A.destroy(); bufU_B.destroy(); 
+  bufV_A.destroy(); bufV_B.destroy(); bufW_A.destroy(); bufW_B.destroy();
+  bufS_A.destroy(); bufS_B.destroy();
+  stagingBuffers[0].destroy(); stagingBuffers[1].destroy();
 
   return {
-    frames: framesBuffer,
-    times: timesBuffer,
-    fibrosis: out_fibrosisMap,
-    activationTimes: activationTimes,
-    apd: apd,
-    N: N_out, 
-    totalFrames: frameIndex
+    frames: framesBuffer, times: timesBuffer, fibrosis: out_fibrosisMap,
+    activationTimes: activationTimes, apd: apd, N: N_out, totalFrames: frameIndex
   };
 }
-
-export async function checkWebGPUSupport() {
-  if (!navigator.gpu) return false;
-  try { return (await navigator.gpu.requestAdapter()) !== null; } 
-  catch (e) { return false; }
-}
-
