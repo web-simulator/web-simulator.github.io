@@ -1,129 +1,83 @@
-import { useMemo } from 'react';
-import { t } from 'i18next';
+import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from 'recharts';
 
-// Cores das linhas 
-const LINES_CONFIG = {
-  v: { stroke: "#8884d8", name: t('chart.potential_unit') },
-  h: { stroke: "#82ca9d", name: "Gate h" },
-  gate_v: { stroke: "#ff7300", name: "Gate v" },
-  gate_w: { stroke: "#ff0000", name: "Gate w" },
-  gate_s: { stroke: "#00bfff", name: "Gate s" }
-};
-
-const MAX_DISPLAY_POINTS = 3000; // Limite seguro para SVG sem travar
+const LINE_COLORS = ['#059669', '#3b82f6', '#ef4444', '#f59e0b', '#8b5cf6', '#ec4899'];
 
 const Chart = ({ data }) => {
-  const availableKeys = data && data.length > 0 ? Object.keys(data[0]) : [];
+  if (!data || data.length === 0) return null;
 
-  const displayData = useMemo(() => {
-    if (!data || data.length === 0) return [];
+  const keysInfo = useMemo(() => {
+    const keys = new Set();
     
-    // Se a quantidade de dados for menor que o limite, usa os dados originais
-    if (data.length <= MAX_DISPLAY_POINTS) return data;
-
-    // Amostragem simples para reduzir o número de pontos
-    const factor = Math.ceil(data.length / MAX_DISPLAY_POINTS);
-    const sampled = [];
+    data.forEach(d => {
+      if (d) Object.keys(d).forEach(k => keys.add(k));
+    });
     
-    for (let i = 0; i < data.length; i += factor) {
-      sampled.push(data[i]);
-    }
+    const allKeys = Array.from(keys);
+    const xKey = allKeys.includes('tempo') ? 'tempo' : (allKeys.includes('time') ? 'time' : allKeys[0]);
+    const dataKeys = allKeys.filter(key => key !== 'tempo' && key !== 'time');
     
-    // Garante que o último ponto seja incluído para fechar o gráfico corretamente
-    if (sampled[sampled.length - 1] !== data[data.length - 1]) {
-        sampled.push(data[data.length - 1]);
-    }
-
-    return sampled;
+    return { xKey, dataKeys };
   }, [data]);
 
+  const { xKey, dataKeys } = keysInfo;
+
   return (
-    // Container responsivo para ajustar o gráfico ao tamanho do elemento pai
-    <ResponsiveContainer width="100%" height={400}>
-      {/* Componente principal do gráfico de linhas */}
-      <LineChart
-        data={displayData} // Usa os dados otimizados
-        margin={{
-          top: 5,    
-          right: 30, 
-          left: 20,  
-          bottom: 25,
-        }}
-      >
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
         
-        {/* Traços no gráfico */}
-        <CartesianGrid strokeDasharray="3 3" />
-        
-        {/* Eixo X */}
         <XAxis 
-            dataKey="tempo"
-            minTickGap={50} 
-            height={50}
-            allowDuplicatedCategory={false}
-            tickFormatter={(tick) => typeof tick === 'number' ? tick.toFixed(0) : tick}
-            label={{ 
-              value: t('chart.time_ms'),
-              position: 'insideBottom', 
-              offset: 10,
-              style: { fill: '#666', fontSize: '14px', fontWeight: 'bold' } 
-            }}
+          dataKey={xKey} 
+          stroke="#94a3b8" 
+          fontSize={11} 
+          tickLine={false}
         />
         
-        {/* Eixo Y */}
         <YAxis 
-              label={{ 
-              value: t('chart.potential_unit'),
-              angle: -90, 
-              position: 'insideLeft', 
-              style: { textAnchor: 'middle', fill: '#666', fontSize: '14px', fontWeight: 'bold' } 
-            }}
-        
+          stroke="#94a3b8" 
+          fontSize={11} 
+          tickLine={false}
+          domain={['auto', 'auto']}
         />
         
-        {/* Exibir valores ao passar o mouse*/}
         <Tooltip 
-          formatter={(value, name) => {
-            if (typeof value === 'number') {
-              return [`${value.toFixed(3)}`, name];
+          contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+          labelStyle={{ fontWeight: 'bold', color: '#334155' }}
+          formatter={(value) => {
+            if (Math.abs(value) < 0.01 && value !== 0) {
+              return Number(value).toExponential(2);
             }
-            return [value, name];
+            return Number(value).toFixed(2);
           }}
-          labelFormatter={(label) => `${t('chart.time_ms')}: ${label}`}
         />
         
-        {/* Legenda do gráfico */}
-        <Legend />
-
-        {/* Barra de navegação para zoom e seleção */}
-        <Brush
-          dataKey= "tempo"
-          height={30}
-          stroke="#8884d8"
-          travellerWidth={10}
-          tickFormatter={(tick) => typeof tick === 'number' ? tick.toFixed(0) : tick}
-        />
+        <Legend verticalAlign="top" height={36} iconType="circle" />
         
-        {/* Renderização das linhas */}
-        {Object.keys(LINES_CONFIG).map(key => {
-            if (availableKeys.includes(key)) {
-                return (
-                    <Line 
-                        key={key}
-                        type="monotone"
-                        dataKey={key}
-                        stroke={LINES_CONFIG[key].stroke}
-                        name={LINES_CONFIG[key].name}
-                        dot={false}
-                        isAnimationActive={false} // Desativa animação para performance
-                        strokeWidth={2}
-                        activeDot={{ r: 4 }} // Reduz tamanho do ponto ativo
-                    />
-                );
-            }
-            return null;
+        {dataKeys.map((key, index) => {
+          const isStimulus = key.toLowerCase().includes('estimulo') || key.toLowerCase().includes('stim');
+          
+          return (
+            <Line
+              key={key}
+              type={isStimulus ? 'step' : 'monotone'}
+              dataKey={key}
+              stroke={LINE_COLORS[index % LINE_COLORS.length]}
+              dot={false}
+              strokeWidth={isStimulus ? 1.5 : 2}
+              activeDot={{ r: 4 }}
+              isAnimationActive={false}
+            />
+          );
         })}
-
+        
+        <Brush 
+          dataKey={xKey} 
+          height={30} 
+          stroke="#10b981" 
+          fill="#f8fafc" 
+          travellerWidth={10}
+        />
       </LineChart>
     </ResponsiveContainer>
   );
