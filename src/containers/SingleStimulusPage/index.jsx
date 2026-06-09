@@ -6,12 +6,13 @@ import Modal from '../../components/Modal';
 import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation.worker.js?worker';
 import MinimalWorker from '../../simulation_minimal_0d.worker.js?worker';
+import TenTusscherWorker from '../../simulation_tentusscher_0d.worker.js?worker';
 import ExportModal from '../../components/ExportModal';
 import { useTranslation } from 'react-i18next';
 import { exportToPng, export0DToCSV } from '../../utils/export';
 import './styles.css';
 
-/* Componente para seções expansíveis na sidebar de configurações */
+/* Sidebar */
 const SettingsSection = ({ title, children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   return (
@@ -85,12 +86,22 @@ const DEFAULT_EDITABLE_PARAMS = {
     dt: 0.1,
     tempo_total: 500.0,
     downsamplingFactor: 50,
+  },
+  tentusscher: {
+    cellType: 'epi',
+    inicio: 10.0,
+    duração: 1.0,
+    amplitude: 1.0,
+    dt: 0.02,
+    tempo_total: 500.0,
+    downsamplingFactor: 50,
   }
 };
 
 const MODEL_VARIABLES = {
   ms: ['v', 'h'],
-  minimal: ['v', 'gate_v', 'gate_w', 'gate_s']
+  minimal: ['v', 'gate_v', 'gate_w', 'gate_s'],
+  tentusscher: ['v', 'Cai', 'Nai', 'Ki']
 };
 
 const SingleStimulusPage = ({ onBack }) => {
@@ -100,7 +111,10 @@ const SingleStimulusPage = ({ onBack }) => {
     h: "Gate h",
     gate_v: "Gate v",
     gate_w: "Gate w",
-    gate_s: "Gate s"
+    gate_s: "Gate s",
+    Cai: t('params.Cai'),
+    Nai: t('params.Nai'),
+    Ki: t('params.Ki')
   };
 
   const [data, setData] = useState([]);
@@ -126,13 +140,15 @@ const SingleStimulusPage = ({ onBack }) => {
     let simulationWorker;
     if (selectedModel === 'minimal') {
       simulationWorker = new MinimalWorker();
-      // Reseta a visibilidade para padrão do Minimal (usando as chaves corretas do worker)
       setVisibleVars({ v: true, gate_v: true, gate_w: true, gate_s: true });
+    } else if (selectedModel === 'tentusscher') {
+      simulationWorker = new TenTusscherWorker();
+      setVisibleVars({ v: true, Cai: false, Nai: false, Ki: false });
     } else {
       simulationWorker = new SimulationWorker();
-      // Reseta a visibilidade para padrão do MS
       setVisibleVars({ v: true, h: true });
     }
+    
     setWorker(simulationWorker);
 
     // Define a função chamada quando o worker envia dados
@@ -288,18 +304,28 @@ const SingleStimulusPage = ({ onBack }) => {
                    <p>{t('modals.single.ms.math.eq_h1')}</p>
                    <p>{t('modals.single.ms.math.eq_h2')}</p>
                 </>
-             ) : (
+             ) : modelKey === 'minimal' ? (
                 <>
                    <p>{t('modals.single.minimal.math.eq_u')}</p>
                    <p>{t('modals.single.minimal.math.eq_v')}</p>
                    <p>{t('modals.single.minimal.math.eq_w')}</p>
                    <p>{t('modals.single.minimal.math.eq_s')}</p>
                 </>
+             ) : (
+                <>
+                   <p>{t('modals.single.tentusscher.math.eq_v')}</p>
+                   <p>{t('modals.single.tentusscher.math.eq_ion')}</p>
+                   <p>{t('modals.single.tentusscher.math.eq_gates')}</p>
+                </>
              )}
           </div>
 
-          <h4 className="font-bold text-slate-700 mt-6">{t(`modals.single.${modelKey}.math.numerical`)}</h4>
-          <p className="text-sm text-slate-600 text-justify">{t(`modals.single.${modelKey}.math.numerical_desc`)}</p>
+          {t(`modals.single.${modelKey}.math.numerical`) && (
+              <>
+                <h4 className="font-bold text-slate-700 mt-6">{t(`modals.single.${modelKey}.math.numerical`)}</h4>
+                <p className="text-sm text-slate-600 text-justify">{t(`modals.single.${modelKey}.math.numerical_desc`)}</p>
+              </>
+          )}
         </div>
       );
     }
@@ -324,7 +350,8 @@ const SingleStimulusPage = ({ onBack }) => {
               className="bg-slate-100 border-none text-sm font-medium text-slate-700 py-2 px-4 rounded-lg cursor-pointer focus:ring-2 focus:ring-emerald-500"
             >
                 <option value="ms">Mitchell-Schaeffer</option>
-                <option value="minimal">{t('common.minimal_model') || 'Minimal Model'}</option>
+                <option value="minimal">{t('common.minimal_model')}</option>
+                <option value="tentusscher">{t('common.tentusscher_model')}</option>
             </select>
         </div>
       </header>
@@ -387,7 +414,7 @@ const SingleStimulusPage = ({ onBack }) => {
                     </div>
                 </SettingsSection>
             ) : (
-                <SettingsSection title={t('common.minimal_model') || 'Minimal Model'} defaultOpen={true}>
+                <SettingsSection title={selectedModel === 'minimal' ? t('common.minimal_model') : t('common.tentusscher_model')} defaultOpen={true}>
                      <div className="mb-3">
                          <label className="text-sm font-medium text-slate-700">{t('params.cellType')}</label>
                          <select 
@@ -400,21 +427,23 @@ const SingleStimulusPage = ({ onBack }) => {
                             <option value="myo">{t('params.myo')}</option>
                          </select>
                      </div>
-                     <div className="mt-4 pt-2 border-t border-slate-100">
-                        <p className="text-xs font-semibold text-slate-500 mb-2">{t('common.custom_params')} ({t(`params.${currentParams.cellType}`)})</p>
-                        <div className="grid grid-cols-2 gap-2">
-                             {Object.keys(minimalCustomParams[currentParams.cellType]).map(key => (
-                                <Input 
-                                    key={key} 
-                                    label={t(`params.${key}`) || key} 
-                                    value={minimalCustomParams[currentParams.cellType][key]} 
-                                    onChange={(e) => handleMinimalCustomChange(key, e.target.value)} 
-                                    type="number" 
-                                    className="mb-0" 
-                                />
-                             ))}
-                        </div>
-                     </div>
+                     {selectedModel === 'minimal' && (
+                         <div className="mt-4 pt-2 border-t border-slate-100">
+                            <p className="text-xs font-semibold text-slate-500 mb-2">{t('common.custom_params')} ({t(`params.${currentParams.cellType}`)})</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                 {Object.keys(minimalCustomParams[currentParams.cellType]).map(key => (
+                                    <Input 
+                                        key={key} 
+                                        label={t(`params.${key}`) || key} 
+                                        value={minimalCustomParams[currentParams.cellType][key]} 
+                                        onChange={(e) => handleMinimalCustomChange(key, e.target.value)} 
+                                        type="number" 
+                                        className="mb-0" 
+                                    />
+                                 ))}
+                            </div>
+                         </div>
+                     )}
                 </SettingsSection>
             )}
           </div>
@@ -484,7 +513,7 @@ const SingleStimulusPage = ({ onBack }) => {
             {/* Header das aba */}
             <div className="flex-none border-b border-slate-200 mb-4 px-2">
                <h2 className="text-2xl font-bold text-emerald-800 mb-4">
-                  {selectedModel === 'ms' ? 'Mitchell-Schaeffer' : 'Minimal Model'}
+                  {selectedModel === 'ms' ? 'Mitchell-Schaeffer' : selectedModel === 'minimal' ? 'Minimal Model' : 'Ten Tusscher (2004)'}
                </h2>
                <div className="flex gap-6 overflow-x-auto custom-scrollbar">
                   {['basic', 'advanced', 'math'].map((tab) => (
