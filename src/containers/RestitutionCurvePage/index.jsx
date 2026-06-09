@@ -200,9 +200,10 @@ const RestitutionCurvePage = ({ onBack }) => {
   const chartData = useMemo(() => {
     if (!showTimeSeries || !data) return [];
     if (data.time && !Array.isArray(data)) {
-        const { time, v, h, gate_v, gate_w, gate_s } = data;
+        const { time, v, h, gate_v, gate_w, gate_s, estimulo } = data; 
         const count = time.length;
         const result = [];
+        
         const showV = visibleVars.v && v;
         const showH = visibleVars.h && h;
         const showGateV = visibleVars.gate_v && gate_v;
@@ -216,18 +217,22 @@ const RestitutionCurvePage = ({ onBack }) => {
             if (showGateV) point.gate_v = gate_v[i];
             if (showGateW) point.gate_w = gate_w[i];
             if (showGateS) point.gate_s = gate_s[i];
+            if (estimulo) point.estimulo = estimulo[i]; 
+            
             result.push(point);
         }
         return result;
     }
 
-    // 
     if (Array.isArray(data) && data.length > 0) {
         const activeKeys = ['time', 'tempo', ...Object.keys(visibleVars).filter(k => visibleVars[k])];
+        
         return data.map(point => {
             const newPoint = {};
-            activeKeys.forEach(key => {
-                if (point[key] !== undefined) newPoint[key] = point[key];
+            Object.keys(point).forEach(key => {
+                if (activeKeys.includes(key) || key.toLowerCase().includes('estimulo') || key.toLowerCase().includes('stim')) {
+                    newPoint[key] = point[key];
+                }
             });
             return newPoint;
         });
@@ -498,17 +503,17 @@ const RestitutionCurvePage = ({ onBack }) => {
 
         {/* Conteúdo Principal */}
         <main className="flex-1 bg-slate-100 relative flex flex-col min-h-0">
-            <div ref={chartRef} className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4 bg-slate-100">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4 bg-slate-100">
                 
                 {/* Gráfico de Restituição */}
-                <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 min-h-100">
+                <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 h-[500px]">
                     <h3 className="text-lg font-bold text-slate-700 mb-4 pl-2 border-l-4 border-emerald-500">
                       {curveType === 'apd' ? t("chart.chart_restitution") : t("chart.chart_restitution_cv")}
                     </h3>
                     {restitutionData.length > 0 || analyticalData.length > 0 ? (
-                         <RestitutionChart data={chartRestitutionData} analyticalData={chartAnalyticalData} />
+                           <RestitutionChart data={chartRestitutionData} analyticalData={chartAnalyticalData} />
                     ) : (
-                        <div className="h-87.5 w-full flex flex-col items-center justify-center text-slate-400">
+                        <div className="h-full w-full flex flex-col items-center justify-center text-slate-400">
                              <i className="bi bi-graph-up text-6xl mb-4 opacity-50"></i>
                              <p>{t('common.ready')}</p>
                         </div>
@@ -517,12 +522,12 @@ const RestitutionCurvePage = ({ onBack }) => {
 
                 {/* Série Temporal (Opcional) */}
                 {showTimeSeries && (
-                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 min-h-75">
+                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 h-[400px]">
                         <h3 className="text-lg font-bold text-slate-700 mb-4 pl-2 border-l-4 border-emerald-500">{t('common.stimuli')}</h3>
                         {chartData.length > 0 ? (
                              <Chart data={chartData} />
                         ) : (
-                            <div className="h-62.5 w-full flex flex-col items-center justify-center text-slate-400">
+                            <div className="h-full w-full flex flex-col items-center justify-center text-slate-400">
                                 <p>{t('common.ready')}</p>
                             </div>
                         )}
