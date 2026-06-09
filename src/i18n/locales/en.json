@@ -94,7 +94,8 @@
     "coupling_interval": "Coupling Interval",
     "diastolic_interval": "Diastolic Interval",
     "select_activation": "Select Activation",
-    "activation": "Activation"
+    "activation": "Activation",
+    "tentusscher_model": "Ten Tusscher"
   },
   "chart": {
     "potential_unit": "Potential (V)",
@@ -257,7 +258,10 @@
     "tau_out_desc": "Time constant defining the speed of repolarization (return to rest).",
     "tau_open_desc": "Time for the h-gate to reopen (recovery of excitability).",
     "tau_close_desc": "Time for the h-gate to close (inactivation during plateau).",
-    "v_gate_desc": "Potential threshold that switches the h-gate behavior (open vs close)."
+    "v_gate_desc": "Potential threshold that switches the h-gate behavior (open vs close).",
+    "Cai": "Intracellular Calcium (Cai)",
+    "Nai": "Intracellular Sodium (Nai)",
+    "Ki": "Intracellular Potassium (Ki)"
   },
   "modals": {
     "math_model": "Mathematical Model",
@@ -375,6 +379,28 @@
           "eq_s": "∂s/∂t = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
           "numerical": "Numerical Integration Method",
           "numerical_desc": "To ensure stability with reasonable time steps, the Potential variable (u) is integrated by the Explicit Euler Method, while the gate variables (v, w, s) use the Rush-Larsen method, which is ideal for linear differential equations of gating variables."
+        }
+      },
+      "tentusscher": {
+        "basic": {
+          "title": "What is the Ten Tusscher Model?",
+          "desc": "The Ten Tusscher model is a highly detailed electrophysiological representation of the human ventricle. Unlike 2-variable models, it uses 17 state variables, allowing precise analysis of ionic currents (sodium, potassium, calcium) and intracellular calcium dynamics.",
+          "why_use": "Clinical Utility",
+          "why_use_desc": "Its main strength is the ability to simulate the effect of specific ionic channel blockades (e.g., calcium or sodium blockers) and understand how ionic homeostasis (Cai, Nai, Ki) behaves at different pacing frequencies."
+        },
+        "advanced": {
+          "title": "Memory and Ionic Dynamics",
+          "desc": "This model captures complex electrophysiological 'memory'. Ionic concentrations do not equilibrate instantaneously; they evolve with each beat, making the model ideal for studying arrhythmias caused by calcium overload or ionic imbalances.",
+          "ref": "ten Tusscher, K. H., Noble, D., Noble, P. J., & Panfilov, A. V. (2004). A model for human ventricular tissue."
+        },
+        "math": {
+          "title": "Mathematical Formulation",
+          "desc": "The system solves 17 ODEs simultaneously. The potential V follows Ohm's law and capacitance, while ionic concentrations follow mass conservation and gate dynamics.",
+          "eq_v": "dV/dt = -(I_ion + I_stim)",
+          "eq_ion": "I_ion = IKr + IKs + IK1 + Ito + INa + IbNa + ICaL + IbCa + INaK + INaCa + IpCa + IpK",
+          "eq_gates": "dx/dt = (x_inf - x) / tau_x",
+          "numerical": "Numerical Method",
+          "numerical_desc": "The model uses Euler integration for ionic concentrations and Rush-Larsen for gating variables (x), ensuring numerical stability for the 17 simultaneous differential equations."
         }
       }
     },

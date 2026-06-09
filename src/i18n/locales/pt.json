@@ -94,7 +94,8 @@
     "coupling_interval": "Intervalo de Acoplamento",
     "diastolic_interval": "Intervalo Diastólico",
     "select_activation": "Selecionar Ativação",
-    "activation": "Ativação"
+    "activation": "Ativação",
+    "tentusscher_model": "Ten Tusscher"
   },
   "chart": {
     "potential_unit": "Potencial (V)",
@@ -254,7 +255,10 @@
     "tau_out_desc": "Constante de tempo que define a rapidez da repolarização (retorno ao repouso).",
     "tau_open_desc": "Tempo para o gate h reabrir (recuperação da excitabilidade).",
     "tau_close_desc": "Tempo para o gate h fechar (inativação durante o platô).",
-    "v_gate_desc": "Potencial limiar que alterna o comportamento do gate h (abrir vs fechar)."
+    "v_gate_desc": "Potencial limiar que alterna o comportamento do gate h (abrir vs fechar).",
+    "Cai": "Cálcio Intracelular (Cai)",
+    "Nai": "Sódio Intracelular (Nai)",
+    "Ki": "Potássio Intracelular (Ki)"
   },
   "modals": {
     "math_model": "Modelo Matemático",
@@ -350,6 +354,28 @@
           "numerical_desc": "A integração temporal é realizada utilizando uma abordagem híbrida: o método de Euler Explícito é usado para a variável de potencial elétrico (v), enquanto a variável de gate (h) é integrada pelo método de Rush-Larsen. O uso do Rush-Larsen garante alta estabilidade numérica para a abertura e fechamento do 'portão', pois utiliza uma solução exponencial exata para essa etapa."
         }
       },
+      "tentusscher": {
+        "basic": {
+          "title": "O que é o Modelo Ten Tusscher?",
+          "desc": "O modelo Ten Tusscher é uma representação eletrofisiológica detalhada do ventrículo humano. Diferente dos modelos de 2 variáveis, ele utiliza 17 variáveis de estado, permitindo uma análise precisa das correntes iônicas (sódio, potássio, cálcio) e da dinâmica de cálcio intracelular.",
+          "why_use": "Utilidade Clínica",
+          "why_use_desc": "Sua principal força é a capacidade de simular o efeito de bloqueios específicos em canais iônicos (ex: bloqueadores de cálcio ou sódio) e entender como a homeostase iônica (Cai, Nai, Ki) se comporta em diferentes frequências de batimento."
+        },
+        "advanced": {
+          "title": "Dinâmica de Memória e Íons",
+          "desc": "Este modelo captura 'memória' eletrofisiológica complexa. As concentrações de íons não se equilibram instantaneamente; elas evoluem a cada batimento, tornando o modelo ideal para estudar arritmias causadas por sobrecarga de cálcio ou distúrbios iônicos.",
+          "ref": "ten Tusscher, K. H., Noble, D., Noble, P. J., & Panfilov, A. V. (2004). A model for human ventricular tissue."
+        },
+        "math": {
+          "title": "Formulação Matemática",
+          "desc": "O sistema resolve 17 EDOs simultaneamente. O potencial V segue as leis de Ohm e capacitância, enquanto as concentrações iônicas seguem a conservação de massa e dinâmicas de gate.",
+          "eq_v": "dV/dt = -(I_ion + I_stim)",
+          "eq_ion": "I_ion = IKr + IKs + IK1 + Ito + INa + IbNa + ICaL + IbCa + INaK + INaCa + IpCa + IpK",
+          "eq_gates": "dx/dt = (x_inf - x) / tau_x",
+          "numerical": "Método Numérico",
+          "numerical_desc": "O modelo utiliza integração de Euler para as concentrações iônicas e Rush-Larsen para as variáveis de gating (x), garantindo estabilidade numérica para as 17 equações diferenciais simultâneas."
+        }
+      },
       "minimal": {
         "basic": {
           "title": "O que é o Minimal Model?",
@@ -371,7 +397,7 @@
           "eq_w": "∂w/∂t = (1 - H(u - θ_w))(1 - w)/τ_w⁻ - H(u - θ_w)w/τ_w⁺",
           "eq_s": "∂s/∂t = ((1 + tanh(k_s(u - u_s)))/2 - s)/τ_s",
           "numerical": "Método de Integração Numérica",
-            "numerical_desc": "Para garantir estabilidade com passos de tempo razoáveis, a variável de potencial elétrico (u) é integrada pelo Método de Euler Explícito, enquanto as variáveis de gate (v, w, s) utilizam o método de Rush-Larsen, que é ideal para equações diferenciais lineares de variáveis de gating."
+          "numerical_desc": "Para garantir estabilidade com passos de tempo razoáveis, a variável de potencial elétrico (u) é integrada pelo Método de Euler Explícito, enquanto as variáveis de gate (v, w, s) utilizam o método de Rush-Larsen, que é ideal para equações diferenciais lineares de variáveis de gating."
         }
       }
     },
@@ -716,7 +742,7 @@
         "methods": "Métodos Numéricos",
         "methods_desc": "Para a discretização espacial, é utilizado o Método das Diferenças Finitas Centrais. No tempo, a integração utiliza Euler para a tensão e o método de Rush-Larsen para as variáveis de gate. O cálculo dinâmico do 'dt' baseia-se no tensor máximo de difusão para evitar instabilidades (CFL).",
         "stim_term": "Dxx, Dyy e Dxy são os coeficientes derivados das velocidades sigma_L, sigma_T e do ângulo da fibra."
-  }
+      }
     }
   },
   "export_modal": {
