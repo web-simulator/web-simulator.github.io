@@ -218,22 +218,39 @@ self.onmessage = (e) => {
 
   // Buffers de Saída
   const steps = Math.floor(totalTime / dt);
-  const expectedFrames = Math.floor(steps / downsamplingFactor) + 1;
-  const framesBuffer = new Float32Array(expectedFrames * size);
+  
+  const MAX_FRAMES = 1000;
+  let temporalStride = downsamplingFactor;
+  if (Math.floor(steps / temporalStride) > MAX_FRAMES) {
+      temporalStride = Math.ceil(steps / MAX_FRAMES);
+      console.log(`Malha densa: Stride temporal elevado para ${temporalStride} iter/frame.`);
+  }
+
+  const expectedFrames = Math.floor(steps / temporalStride) + 1;
+  
+  const MAX_UI_N = 300;
+  let spatialStride = 1;
+  let N_out = N;
+  if (N > MAX_UI_N) {
+      spatialStride = Math.ceil(N / MAX_UI_N);
+      N_out = Math.ceil(N / spatialStride);
+  }
+  const outSize = N_out * N_out;
+
+  const framesBuffer = new Float32Array(expectedFrames * outSize);
   const timesBuffer = new Float32Array(expectedFrames);
   
-
   const MAX_ACTIVATIONS_TO_TRACK = 5;
   const activationTimes = new Array(MAX_ACTIVATIONS_TO_TRACK);
   const apd = new Array(MAX_ACTIVATIONS_TO_TRACK);
   for (let c = 0; c < MAX_ACTIVATIONS_TO_TRACK; c++) {
-    activationTimes[c] = new Float32Array(size).fill(-1);
-    apd[c] = new Float32Array(size).fill(-1);
+    activationTimes[c] = new Float32Array(outSize).fill(-1);
+    apd[c] = new Float32Array(outSize).fill(-1);
   }
 
-  const activationState = new Uint8Array(size).fill(0);
-  const activationStartTime = new Float32Array(size).fill(-1);
-  const activationCount = new Uint32Array(size).fill(0);
+  const activationState = new Uint8Array(outSize).fill(0);
+  const activationStartTime = new Float32Array(outSize).fill(-1);
+  const activationCount = new Uint32Array(outSize).fill(0);
   const activationThreshold = 0.3;
 
   let frameCount = 0;
@@ -302,109 +319,50 @@ self.onmessage = (e) => {
             p = singleCellParams;
         }
 
-        // Variáveis locais
         const val_u = u_prev[idx];
         const val_v = v_prev[idx];
         const val_w = w_prev[idx];
         const val_s = s_prev[idx];
 
-        // Difusão
-        const Dxx = Dxx_map[idx];
-        const Dyy = Dyy_map[idx];
-        const Dxy = Dxy_map[idx];
+        // 1. Difusão
+        const lap_u = 
+            Dxx_map[idx] * (u_prev[idx - 1] - 2.0 * val_u + u_prev[idx + 1]) * inv_dx2 +
+            Dyy_map[idx] * (u_prev[idx - N] - 2.0 * val_u + u_prev[idx + N]) * inv_dx2 +
+            Dxy_map[idx] * (u_prev[idx - N + 1] - u_prev[idx - N - 1] - u_prev[idx + N + 1] + u_prev[idx + N - 1]) * inv_4dx2;
 
-        const d2u_dx2 = (u_prev[idx - 1] - 2 * val_u + u_prev[idx + 1]) * inv_dx2;
-        const d2u_dy2 = (u_prev[idx - N] - 2 * val_u + u_prev[idx + N]) * inv_dx2;
-        const d2u_dxdy = (u_prev[idx+N+1] - u_prev[idx+N-1] - u_prev[idx-N+1] + u_prev[idx-N-1]) * inv_4dx2;
+        let I_stim = 0.0;
+        if (stim_map) I_stim = stim_map[idx] * stim_amp;
 
-        const lap_u = (Dxx * d2u_dx2) + (Dyy * d2u_dy2) + (2 * Dxy * d2u_dxdy);
-        const stimulus = stim_map ? stim_map[idx] * stim_amp : 0;
+        let H_u_thv = (val_u >= theta_v) ? 1.0 : 0.0;
+        let H_u_thw = (val_u >= theta_w) ? 1.0 : 0.0;
+        let H_u_tho = (val_u >= u_o) ? 1.0 : 0.0;
 
-        // Atualizações das variáveis
-        const H_u_thv = (val_u - theta_v) > 0 ? 1.0 : 0.0;
-        const H_u_thw = (val_u - theta_w) > 0 ? 1.0 : 0.0;
-        const H_u_thv_minus = (val_u - p.theta_vminus) > 0 ? 1.0 : 0.0;
-        const H_u_tho = (val_u - p.theta_o) > 0 ? 1.0 : 0.0;
+        let J_fi = -val_v * H_u_thv * (val_u - theta_v) * (p.u_u - val_u) / p.tau_fi;
+        let J_so = (val_u - u_o) * (1.0 - H_u_thw) / p.tau_o + H_u_thw / p.tau_so;
+        let J_si = -H_u_thw * val_w * val_s / p.tau_si;
 
-        const tau_vminus = (1.0 - H_u_thv_minus) * p.tau_v1minus + H_u_thv_minus * p.tau_v2minus;
-        const tau_wminus = p.tau_w1minus + (p.tau_w2minus - p.tau_w1minus) * (1.0 + Math.tanh(p.k_wminus * (val_u - p.u_wminus))) * 0.5;
-        const tau_so = p.tau_so1 + (p.tau_so2 - p.tau_so1) * (1.0 + Math.tanh(p.k_so * (val_u - p.u_so))) * 0.5;
-        const tau_s = (1.0 - H_u_thw) * tau_s1 + H_u_thw * p.tau_s2;
-        const tau_o = (1.0 - H_u_tho) * p.tau_o1 + H_u_tho * p.tau_o2;
+        u[idx] = val_u + dt * (lap_u - (J_fi + J_so + J_si) + I_stim);
 
-        const J_fi = -val_v * H_u_thv * (val_u - theta_v) * (p.u_u - val_u) / p.tau_fi;
-        const J_so = (val_u - u_o) * (1.0 - H_u_thw) / tau_o + H_u_thw / tau_so;
-        const J_si = -H_u_thw * val_w * val_s / p.tau_si;
+        let tau_vminus = (1.0 - H_u_tho) * p.tau_v1minus + H_u_tho * p.tau_v2minus;
+        let tau_wminus = p.tau_w1minus + 0.5 * (p.tau_w2minus - p.tau_w1minus) * (1.0 + Math.tanh(p.k_wminus * (val_u - p.u_wminus)));
+        let tau_s = (1.0 - H_u_thw) * tau_s1 + H_u_thw * p.tau_s2;
 
-        // Euler para u
-        u[idx] = val_u + dt * (lap_u - (J_fi + J_so + J_si) + stimulus);
+        let v_inf = (val_u < p.theta_vminus) ? 1.0 : 0.0;
+        let tau_v_rl = (p.tau_vplus * tau_vminus) / (p.tau_vplus - p.tau_vplus * H_u_thv + tau_vminus * H_u_thv);
+        let v_inf_rl = (p.tau_vplus * v_inf * (1.0 - H_u_thv)) / (p.tau_vplus - p.tau_vplus * H_u_thv + tau_vminus * H_u_thv);
+        v_gate[idx] = (tau_v_rl > 1e-10) ? v_inf_rl + (val_v - v_inf_rl) * Math.exp(-dt / tau_v_rl) : val_v;
 
-        // Rush-Larsen para v
-        const v_inf = (val_u < p.theta_vminus) ? 1.0 : 0.0;
-        const tau_v_rl = (tau_vplus * tau_vminus) / (tau_vplus - tau_vplus * H_u_thv + tau_vminus * H_u_thv);
-        const v_inf_rl = (tau_vplus * v_inf * (1 - H_u_thv)) / (tau_vplus - tau_vplus * H_u_thv + tau_vminus * H_u_thv);
-        
-        if (tau_v_rl > 1e-10) {
-            v_gate[idx] = v_inf_rl + (val_v - v_inf_rl) * Math.exp(-dt / tau_v_rl);
-        } else {
-            v_gate[idx] = val_v;
-        }
+        let w_inf = (1.0 - H_u_tho) * (1.0 - val_u / p.tau_winf) + H_u_tho * p.w_infstar;
+        let tau_w_rl = (p.tau_wplus * tau_wminus) / (p.tau_wplus - p.tau_wplus * H_u_thw + tau_wminus * H_u_thw);
+        let w_inf_rl = (p.tau_wplus * w_inf * (1.0 - H_u_thw)) / (p.tau_wplus - p.tau_wplus * H_u_thw + tau_wminus * H_u_thw);
+        w_gate[idx] = (tau_w_rl > 1e-10) ? w_inf_rl + (val_w - w_inf_rl) * Math.exp(-dt / tau_w_rl) : val_w;
 
-        // Rush-Larsen para w_gate
-        const w_inf = (1.0 - H_u_tho) * (1.0 - val_u / p.tau_winf) + H_u_tho * p.w_infstar;
-        const tau_w_rl = (p.tau_wplus * tau_wminus) / (p.tau_wplus - p.tau_wplus * H_u_thw + tau_wminus * H_u_thw);
-        const w_inf_rl = (p.tau_wplus * w_inf * (1 - H_u_thw)) / (p.tau_wplus - p.tau_wplus * H_u_thw + tau_wminus * H_u_thw);
-
-        if (tau_w_rl > 1e-10) {
-            w_gate[idx] = w_inf_rl + (val_w - w_inf_rl) * Math.exp(-dt / tau_w_rl);
-        } else {
-            w_gate[idx] = val_w;
-        }
-
-        // Rush-Larsen para s_gate
-        const s_inf_rl = (1.0 + Math.tanh(k_s * (val_u - u_s))) * 0.5;
-        if (tau_s > 1e-10) {
-            s_gate[idx] = s_inf_rl + (val_s - s_inf_rl) * Math.exp(-dt / tau_s);
-        } else {
-            s_gate[idx] = val_s;
-        }
-
-        // Limites da Voltagem
-        if (u[idx] < 0) u[idx] = 0;
-        if (u[idx] > 2.0) u[idx] = 2.0;
-
-        const volt = u[idx];
-
-        if (activationState[idx] === 0) { // Em repouso
-            if (volt >= activationThreshold) {
-                activationState[idx] = 1; // Ativado
-                activationStartTime[idx] = currentTime;
-                
-                let c = activationCount[idx];
-                activationCount[idx]++;
-                
-                if (c < MAX_ACTIVATIONS_TO_TRACK) {
-                    activationTimes[c][idx] = currentTime;
-                }
-            }
-        } else if (activationState[idx] === 1) { // Ativado
-            if (volt < activationThreshold) {
-                activationState[idx] = 2; // Recuperado
-                let c = activationCount[idx] - 1;
-                if (c >= 0 && c < MAX_ACTIVATIONS_TO_TRACK) {
-                    apd[c][idx] = currentTime - activationStartTime[idx];
-                }
-            }
-        } else if (activationState[idx] === 2) { 
-            // Permite a célula descansar
-            if (volt < 0.05) {
-                activationState[idx] = 0;
-            }
-        }
+        let s_inf_rl = (1.0 + Math.tanh(k_s * (val_u - u_s))) * 0.5;
+        s_gate[idx] = (tau_s > 1e-10) ? s_inf_rl + (val_s - s_inf_rl) * Math.exp(-dt / tau_s) : val_s;
       }
     }
 
-    // Condições de contorno
+    // Condições de Contorno
     for (let i = 0; i < N; i++) {
         u[i*N] = u[i*N+1]; 
         u[i*N+N-1] = u[i*N+N-2];
@@ -415,58 +373,85 @@ self.onmessage = (e) => {
         s_gate[i*N] = s_gate[i*N+1]; 
         s_gate[i*N+N-1] = s_gate[i*N+N-2];
 
-        activationState[i*N] = activationState[i*N+1]; 
-        activationState[i*N+N-1] = activationState[i*N+N-2];
-        activationStartTime[i*N] = activationStartTime[i*N+1]; 
-        activationStartTime[i*N+N-1] = activationStartTime[i*N+N-2];
-        activationCount[i*N] = activationCount[i*N+1];
-        activationCount[i*N+N-1] = activationCount[i*N+N-2];
-
-        for (let c = 0; c < MAX_ACTIVATIONS_TO_TRACK; c++) {
-            activationTimes[c][i*N] = activationTimes[c][i*N+1];
-            activationTimes[c][i*N+N-1] = activationTimes[c][i*N+N-2];
-            apd[c][i*N] = apd[c][i*N+1];
-            apd[c][i*N+N-1] = apd[c][i*N+N-2];
-        }
-    }
-    for (let j = 0; j < N; j++) {
-        u[j] = u[N+j]; 
-        u[(N-1)*N+j] = u[(N-2)*N+j];
-        v_gate[j] = v_gate[N+j]; 
-        v_gate[(N-1)*N+j] = v_gate[(N-2)*N+j];
-        w_gate[j] = w_gate[N+j]; 
-        w_gate[(N-1)*N+j] = w_gate[(N-2)*N+j];
-        s_gate[j] = s_gate[N+j]; 
-        s_gate[(N-1)*N+j] = s_gate[(N-2)*N+j];
-
-        activationState[j] = activationState[N+j]; 
-        activationState[(N-1)*N+j] = activationState[(N-2)*N+j];
-        activationStartTime[j] = activationStartTime[N+j]; 
-        activationStartTime[(N-1)*N+j] = activationStartTime[(N-2)*N+j];
-        activationCount[j] = activationCount[N+j];
-        activationCount[(N-1)*N+j] = activationCount[(N-2)*N+j];
-
-        for (let c = 0; c < MAX_ACTIVATIONS_TO_TRACK; c++) {
-            activationTimes[c][j] = activationTimes[c][N+j];
-            activationTimes[c][(N-1)*N+j] = activationTimes[c][(N-2)*N+j];
-            apd[c][j] = apd[c][N+j];
-            apd[c][(N-1)*N+j] = apd[c][(N-2)*N+j];
-        }
+        u[i] = u[N+i]; 
+        u[(N-1)*N+i] = u[(N-2)*N+i];
+        v_gate[i] = v_gate[N+i]; 
+        v_gate[(N-1)*N+i] = v_gate[(N-2)*N+i];
+        w_gate[i] = w_gate[N+i]; 
+        w_gate[(N-1)*N+i] = w_gate[(N-2)*N+i];
+        s_gate[i] = s_gate[N+i]; 
+        s_gate[(N-1)*N+i] = s_gate[(N-2)*N+i];
     }
 
-    if (t % downsamplingFactor === 0) {
-      for (let i = 0; i < size; i++) {
-        framesBuffer[frameCount * size + i] = (u[i] * 85.7) - 84.0; 
+    if (t % temporalStride === 0) {
+      let outFrame;
+      if (spatialStride === 1) {
+          outFrame = new Float32Array(u);
+      } else {
+          outFrame = new Float32Array(outSize);
+          for (let i = 0; i < N_out; i++) {
+              for (let j = 0; j < N_out; j++) {
+                  outFrame[i * N_out + j] = u[(i * spatialStride) * N + (j * spatialStride)];
+              }
+          }
       }
-      
+
+      for (let i = 0; i < outSize; i++) {
+        framesBuffer[frameCount * outSize + i] = (outFrame[i] * 85.7) - 84.0;
+      }
       timesBuffer[frameCount] = currentTime;
+
+      for (let idx = 0; idx < outSize; idx++) {
+          const volt = outFrame[idx];
+          if (activationState[idx] === 0) {
+              if (volt >= activationThreshold) {
+                  activationState[idx] = 1;
+                  activationStartTime[idx] = currentTime;
+                  
+                  let c = activationCount[idx];
+                  activationCount[idx]++;
+                  
+                  if (c >= MAX_ACTIVATIONS_TO_TRACK) {
+                      activationTimes[MAX_ACTIVATIONS_TO_TRACK - 1][idx] = currentTime;
+                  } else {
+                      activationTimes[c][idx] = currentTime;
+                  }
+              }
+          } else if (activationState[idx] === 1) {
+              if (volt < activationThreshold) {
+                  activationState[idx] = 2;
+                  let c = activationCount[idx] - 1;
+                  if (c >= 0 && c < MAX_ACTIVATIONS_TO_TRACK && apd[c]) {
+                      apd[c][idx] = currentTime - activationStartTime[idx];
+                  }
+              }
+          } else if (activationState[idx] === 2) { 
+              if (volt < 0.1) {
+                  activationState[idx] = 0;
+              }
+          }
+      }
+
       frameCount++;
     }
   }
+
   const validActivationTimes = activationTimes.filter(arr => arr.some(val => val !== -1));
   const validApd = apd.filter(arr => arr.some(val => val !== -1));
 
-  const transferList = [framesBuffer.buffer, timesBuffer.buffer, fibrosisMap.buffer];
+  let out_fibrosisMap;
+  if (spatialStride === 1) {
+      out_fibrosisMap = fibrosisMap;
+  } else {
+      out_fibrosisMap = new Float32Array(outSize);
+      for (let i = 0; i < N_out; i++) {
+          for (let j = 0; j < N_out; j++) {
+              out_fibrosisMap[i * N_out + j] = fibrosisMap[(i * spatialStride) * N + (j * spatialStride)];
+          }
+      }
+  }
+
+  const transferList = [framesBuffer.buffer, timesBuffer.buffer, out_fibrosisMap.buffer];
   validActivationTimes.forEach(arr => transferList.push(arr.buffer));
   validApd.forEach(arr => transferList.push(arr.buffer));
 
@@ -475,10 +460,10 @@ self.onmessage = (e) => {
         type: 'result', 
         frames: framesBuffer, 
         times: timesBuffer,
-        fibrosis: fibrosisMap,
+        fibrosis: out_fibrosisMap,
         activationTimes: validActivationTimes,
         apd: validApd,
-        N,
+        N: N_out,
         totalFrames: frameCount
     }, 
     transferList

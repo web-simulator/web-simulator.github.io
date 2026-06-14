@@ -308,50 +308,74 @@ self.onmessage = (e) => {
                   const h_inf = alpha_h / sum_ab;
                   const h_exp = Math.exp(-sum_ab * dt);
                   h[idx] = h_inf + (hp - h_inf) * h_exp;
-                } else {
-                    h[idx] = hp;
+                    const depth = i / N;
+                    if (depth >= epi_start) tau_in_val = epi_tau;
+                    else if (depth >= mid_start) tau_in_val = mid_tau;
+                    else tau_in_val = endo_tau;
                 }
-
-                // Laplaciano
-                const d2v_dx2 = (v_prev[idx - 1] - 2 * vp + v_prev[idx + 1]) * inv_dx2;
-                const d2v_dy2 = (v_prev[idx - N] - 2 * vp + v_prev[idx + N]) * inv_dx2;
-                const d2v_dxdy = (v_prev[idx+N+1] - v_prev[idx+N-1] - v_prev[idx-N+1] + v_prev[idx-N-1]) * inv_4dx2;
-
-                const lap_v = (Dxx * d2v_dx2) + (Dyy * d2v_dy2) + (2 * Dxy * d2v_dxdy);
-                const J_in = (hp * vp * vp * (1 - vp)) / Tau_in;
-                const J_out = -vp / Tau_out;
                 
-                // Atualiza V
-                v[idx] = vp + dt * (lap_v + J_in + J_out + stimulus);
-                
-                // Limita os valores
-                if (v[idx] < 0) v[idx] = 0;
-                if (v[idx] > 1.5) v[idx] = 1.5;
+                let h_inf = (vp < v_gate) ? 1.0 : 0.0;
+                let tau_h = (vp < v_gate) ? tau_open : tau_close;
+                h_new[idx] = h_inf + (hp - h_inf) * Math.exp(-dt / tau_h);
 
-                // Cálculo de LAT e APD
-                const volt = v[idx];
+                let j_in = (h_new[idx] * vp * vp * (1.0 - vp)) / tau_in_val;
+                let j_out = -vp / tau_out;
 
-                if (activationState[idx] === 0) { // Em repouso
+                let v_next = vp + dt * (lap_v + j_in + j_out + stimulus);
+
+                if (v_next < 0.0) v_next = 0.0;
+                if (v_next > 1.5) v_next = 1.5;
+
+                v_new[idx] = v_next;
+            }
+        }
+        
+        // Atualiza arrays originais e aplica downsampling
+        for (let i = 0; i < size; i++) {
+            v[i] = v_new[i];
+            h[i] = h_new[i];
+        }
+
+        // Processo de subamostragem e registro de APD
+        if (t % temporalStride === 0) {
+            let outFrame;
+            if (spatialStride === 1) {
+                outFrame = new Float32Array(v);
+            } else {
+                outFrame = new Float32Array(outSize);
+                for (let i = 0; i < N_out; i++) {
+                    for (let j = 0; j < N_out; j++) {
+                        outFrame[i * N_out + j] = v[(i * spatialStride) * N + (j * spatialStride)];
+                    }
+                }
+            }
+
+            framesBuffer.set(outFrame, frameCount * outSize);
+            timesBuffer[frameCount] = currentTimeBase;
+
+            for (let idx = 0; idx < outSize; idx++) {
+                const volt = outFrame[idx];
+                if (activationState[idx] === 0) { // Repouso
                     if (volt >= activationThreshold) {
-                        activationState[idx] = 1; // Ativado
-                        activationStartTime[idx] = currentTime;
+                        activationState[idx] = 1; // Ativando
+                        activationStartTime[idx] = currentTimeBase;
                         
                         let c = activationCount[idx];
                         activationCount[idx]++;
                         
                         if (c >= maxActivations) {
                             maxActivations++;
-                            activationTimes.push(new Float32Array(size).fill(-1));
-                            apd.push(new Float32Array(size).fill(-1));
+                            activationTimes.push(new Float32Array(outSize).fill(-1));
+                            apd.push(new Float32Array(outSize).fill(-1));
                         }
-                        activationTimes[c][idx] = currentTime;
+                        activationTimes[c][idx] = currentTimeBase;
                     }
                 } else if (activationState[idx] === 1) { // Ativado
                     if (volt < activationThreshold) {
                         activationState[idx] = 2; // Recuperado
                         let c = activationCount[idx] - 1;
                         if (c >= 0 && apd[c]) {
-                            apd[c][idx] = currentTime - activationStartTime[idx];
+                            apd[c][idx] = currentTimeBase - activationStartTime[idx];
                         }
                     }
                 } else if (activationState[idx] === 2) { 
@@ -360,6 +384,7 @@ self.onmessage = (e) => {
                     }
                 }
             }
+            frameCount++;
         }
         
         // Condições de contorno
@@ -368,51 +393,28 @@ self.onmessage = (e) => {
             v[i*N+N-1] = v[i*N+N-2];
             h[i*N] = h[i*N+1]; 
             h[i*N+N-1] = h[i*N+N-2];
-
-            activationState[i*N] = activationState[i*N+1]; 
-            activationState[i*N+N-1] = activationState[i*N+N-2];
-            activationStartTime[i*N] = activationStartTime[i*N+1]; 
-            activationStartTime[i*N+N-1] = activationStartTime[i*N+N-2];
-            activationCount[i*N] = activationCount[i*N+1];
-            activationCount[i*N+N-1] = activationCount[i*N+N-2];
-
-            for (let c = 0; c < maxActivations; c++) {
-                activationTimes[c][i*N] = activationTimes[c][i*N+1];
-                activationTimes[c][i*N+N-1] = activationTimes[c][i*N+N-2];
-                apd[c][i*N] = apd[c][i*N+1];
-                apd[c][i*N+N-1] = apd[c][i*N+N-2];
-            }
-        }
-        for (let j = 0; j < N; j++) {
-            v[j] = v[N+j]; 
-            v[(N-1)*N+j] = v[(N-2)*N+j];
-            h[j] = h[N+j]; 
-            h[(N-1)*N+j] = h[(N-2)*N+j];
-
-            activationState[j] = activationState[N+j]; 
-            activationState[(N-1)*N+j] = activationState[(N-2)*N+j];
-            activationStartTime[j] = activationStartTime[N+j]; 
-            activationStartTime[(N-1)*N+j] = activationStartTime[(N-2)*N+j];
-            activationCount[j] = activationCount[N+j];
-            activationCount[(N-1)*N+j] = activationCount[(N-2)*N+j];
-
-            for (let c = 0; c < maxActivations; c++) {
-                activationTimes[c][j] = activationTimes[c][N+j];
-                activationTimes[c][(N-1)*N+j] = activationTimes[c][(N-2)*N+j];
-                apd[c][j] = apd[c][N+j];
-                apd[c][(N-1)*N+j] = apd[c][(N-2)*N+j];
-            }
+            
+            v[i] = v[N+i];
+            v[(N-1)*N+i] = v[(N-2)*N+i];
+            h[i] = h[N+i];
+            h[(N-1)*N+i] = h[(N-2)*N+i];
         }
 
-        // Downsampling
-        if (t % downsamplingFactor === 0) {
-            framesBuffer.set(v, frameCount * size);
-            timesBuffer[frameCount] = currentTime;
-            frameCount++;
+    }
+
+    let out_fibrosisMap;
+    if (spatialStride === 1) {
+        out_fibrosisMap = fibrosisMap;
+    } else {
+        out_fibrosisMap = new Float32Array(outSize);
+        for (let i = 0; i < N_out; i++) {
+            for (let j = 0; j < N_out; j++) {
+                out_fibrosisMap[i * N_out + j] = fibrosisMap[(i * spatialStride) * N + (j * spatialStride)];
+            }
         }
     }
 
-    const transferList = [framesBuffer.buffer, timesBuffer.buffer, fibrosisMap.buffer];
+    const transferList = [framesBuffer.buffer, timesBuffer.buffer, out_fibrosisMap.buffer];
     activationTimes.forEach(arr => transferList.push(arr.buffer));
     apd.forEach(arr => transferList.push(arr.buffer));
 
@@ -422,10 +424,10 @@ self.onmessage = (e) => {
             type: 'result', 
             frames: framesBuffer, 
             times: timesBuffer,
-            fibrosis: fibrosisMap,
+            fibrosis: out_fibrosisMap,
             activationTimes,
             apd,
-            N,
+            N: N_out,
             totalFrames: frameCount
         }, 
         transferList

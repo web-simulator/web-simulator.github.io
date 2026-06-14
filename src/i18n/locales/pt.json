@@ -442,6 +442,26 @@
           "numerical": "Método de Integração Numérica",
           "numerical_desc": "O método de Euler Explícito manipula a variável de potencial elétrico (u) enquanto o algoritmo de Rush-Larsen assegura altíssima precisão e estabilidade para as variáveis de gating (v, w, s) durante todo o processo."
         }
+      },
+      "tentusscher": {
+        "basic": {
+          "title": "Protocolo: Múltiplos Estímulos (Ten Tusscher)",
+          "desc": "Submete o modelo detalhado de Ten Tusscher a uma frequência contínua de estimulação. Isso permite observar o comportamento dinâmico e a estabilização das concentrações iônicas intracelulares, como cálcio, sódio e potássio.",
+          "why_use": "Influência dos Parâmetros",
+          "why_use_desc": "O BCL dita o ritmo cardíaco simulado. Ritmos muito rápidos (BCL baixo) impedem a bomba de sódio-potássio e os trocadores de cálcio de reestabelecerem os níveis basais, causando acúmulo intracelular e afetando a duração do potencial de ação."
+        },
+        "advanced": {
+          "title": "Dinâmicas Iônicas de Longo Prazo",
+          "desc": "Modelos iônicos completos possuem 'memória' real. Ao contrário de modelos fenomenológicos, o Ten Tusscher precisa de dezenas ou centenas de batimentos para que o cálcio intracelular e o retículo sarcoplasmático entrem em equilíbrio termodinâmico.",
+          "currents_list": "Durante a estimulação repetitiva, você pode observar mudanças no transiente de Cálcio (Cai), o que diretamente influencia a força de contração simulada em acoplamentos eletromecânicos.",
+          "ref": "ten Tusscher, K. H., Noble, D., Noble, P. J., & Panfilov, A. V. (2004). A model for human ventricular tissue."
+        },
+        "math": {
+          "title": "Equações do Sistema",
+          "desc": "O sistema resolve continuamente as 17 EDOs a cada pulso da corrente de estímulo aplicada periodicamente.",
+          "numerical": "Método de Integração Numérica",
+          "numerical_desc": "A estabilidade em longos períodos é garantida pelos métodos de integração adaptados para as variáveis de gating e concentrações de massa."
+        }
       }
     },
     "s1s2": {
@@ -487,6 +507,28 @@
           "stim_term": "A resposta não linear ao estímulo obedece uma função presente nos termos de ativação e inativação de u.",
           "numerical": "Métodos Numéricos: Euler e Rush-Larsen",
           "numerical_desc": "Devido à complexidade do Minimal Model, usamos o método de Euler Explícito para calcular o potencial elétrico (u). Já as variáveis de controle (v, w, s) são calculadas pelo método de Rush-Larsen. Essa combinação é perfeita para manter a simulação estável e precisa, mesmo lidando com os estímulos curtos e rápidos do protocolo S1-S2."
+        }
+      },
+      "tentusscher": {
+        "basic": {
+          "title": "Protocolo S1-S2 (Ten Tusscher)",
+          "desc": "Aplica o protocolo S1-S2 ao modelo humano detalhado de Ten Tusscher. Isso investiga como as correntes iônicas específicas (como IKr, IKs, ICaL) se recuperam para permitir um batimento prematuro.",
+          "goal": "Refratariedade Iônica",
+          "goal_desc": "O teste de S1-S2 aqui não mapeia apenas o período refratário elétrico, mas também o período refratário do transiente de cálcio. Se o S2 for aplicado prematuramente, a liberação de cálcio do retículo sarcoplasmático (CaSR) pode falhar ou produzir um pico muito reduzido."
+        },
+        "advanced": {
+          "title": "Atraso na Recuperação do Cálcio",
+          "desc": "A corrente de cálcio tipo-L (ICaL) possui recuperação lenta dependente de voltagem e cálcio intracelular. Estímulos muito próximos resultam em menor entrada de cálcio e, portanto, em potencias de ação mais curtos e fracos.",
+          "kinetics": "Trocador Na/Ca e Bomba Na/K",
+          "kinetics_desc": "O acúmulo temporário de sódio e cálcio durante a sequência S1 muda o potencial de reversão, alterando a força motriz das correntes de repolarização. O batimento S2 lida com essa paisagem iônica modificada.",
+          "ref": "ten Tusscher, K. H., Noble, D., Noble, P. J., & Panfilov, A. V. (2004)."
+        },
+        "math": {
+          "title": "Avaliação Computacional",
+          "desc": "O modelo resolve o estímulo extra (S2) injetando a corrente externa `I_stim` no tempo exato, forçando as 17 variáveis a reagirem fora de seu estado de repouso.",
+          "stim_term": "A resposta do potencial V ativa dinamicamente as variáveis de gate m, h, j, xr1, xr2, xs, r, s, d, f.",
+          "numerical": "Métodos Numéricos: Euler e Rush-Larsen",
+          "numerical_desc": "Devido à extrema rigidez (stiffness) do modelo Ten Tusscher durante despolarizações abruptas como o S2, o método de Rush-Larsen é fundamental para manter a estabilidade."
         }
       }
     },
@@ -585,10 +627,33 @@
         },
         "math": {
           "title": "Solução do Modelo Numérico",
-          "desc": "Não sendo possível simplificá-lo numa curva de duas linhas, o gráfico de restituição deste modelo reflete os cálculos absolutos da integração de Euler/Rush-Larsen.",
+"desc": "Não sendo possível simplificá-lo numa curva de duas linhas, o gráfico de restituição deste modelo reflete os cálculos absolutos da integração de Euler/Rush-Larsen.",
           "stim_term": "Onde o acoplamento do platô e o tempo de repolarização definem dinamicamente o DI e o APD correspondente.",
           "numerical": "Relação Direta para a Velocidade de Condução (CV)",
           "numerical_desc": "Devido à presença dos canais rápidos de sódio no sistema, o utilizador pode visualizar a 'Velocidade de Condução'."
+        }
+      },
+      "tentusscher": {
+        "title": "Ten Tusscher",
+        "basic": {
+          "title": "Restituição Iônica (Ten Tusscher)",
+          "desc": "Esta aba constrói a curva de restituição APD vs DI usando o modelo de Ten Tusscher. Ele reflete a verdadeira complexidade iônica do tecido ventricular humano.",
+          "goal": "Restituição Realista",
+          "goal_desc": "A curva de restituição gerada não é uma aproximação fenomenológica. Ela emerge naturalmente da interação entre as correntes de potássio (IKr, IKs, IK1) e cálcio (ICaL) ao longo do tempo."
+        },
+        "advanced": {
+          "title": "Memória de Curto e Longo Prazo",
+          "desc": "Diferente de modelos mais simples, o Ten Tusscher exibe tanto a memória de curto prazo (recuperação de canais) quanto a de longo prazo (acúmulo iônico).",
+          "kinetics": "Declive da Curva",
+          "kinetics_desc": "A inclinação da curva de restituição neste modelo é crucial para validar mecanismos de alternância (Alternans). O modelo Epi, por exemplo, possui uma transição de repolarização mais sensível devido às suas diferentes condutâncias Gks e Gto.",
+          "ref": "ten Tusscher, K. H., Noble, D., Noble, P. J., & Panfilov, A. V. (2004)."
+        },
+        "math": {
+          "title": "Resolução Multi-Variável",
+          "desc": "O gráfico representa a medida de APD90 (tempo até 90% de repolarização) após a integração numérica das 17 equações diferenciais durante os intervalos variáveis do teste.",
+          "stim_term": "O DI é ditado pelo acoplamento S1-S2 contínuo, e as respostas são extraídas de cada simulação completa iterativa.",
+          "numerical": "Precisão e Desempenho",
+          "numerical_desc": "Traçar essa curva exige milhares de passos computacionais. A integração via Rush-Larsen garante estabilidade na fase 0, enquanto a medição do APD ocorre avaliando a queda de tensão real."
         }
       }
     },

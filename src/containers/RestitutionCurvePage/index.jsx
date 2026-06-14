@@ -9,6 +9,7 @@ import RestitutionWorker from '../../simulation_restitution.worker.js?worker';
 import MMSWorker from '../../simulation_mms_restitution_alt.worker.js?worker';
 import DynamicWorker from '../../simulation_dynamic_protocol1.worker.js?worker';
 import MinimalWorker from '../../simulation_minimal_restitution.worker.js?worker';
+import TenTusscherWorker from '../../simulation_tentusscher_restitution.worker.js?worker';
 import ExportModal from '../../components/ExportModal';
 import { useTranslation } from 'react-i18next';
 import { exportToPng } from '../../utils/export';
@@ -41,7 +42,8 @@ const MODEL_VARIABLES = {
   s1s2: ['v', 'h'],
   mms: ['v', 'h'],
   dynamic: ['v', 'h'],
-  minimal: ['v', 'gate_v', 'gate_w', 'gate_s']
+  minimal: ['v', 'gate_v', 'gate_w', 'gate_s'],
+  tentusscher: ['v', 'Cai', 'Nai', 'Ki']
 };
 
 const VARIABLE_LABELS = {
@@ -49,7 +51,10 @@ const VARIABLE_LABELS = {
   h: 'Gate h',
   gate_v: 'Gate v',
   gate_w: 'Gate w',
-  gate_s: 'Gate s'
+  gate_s: 'Gate s',
+  Cai: 'Cai (mM)',
+  Nai: 'Nai (mM)',
+  Ki: 'Ki (mM)'
 };
 
 const DEFAULT_MINIMAL_PARAMS = {
@@ -101,6 +106,11 @@ const DEFAULT_EDITABLE_PARAMS = {
     cellType: 'epi', BCL_S1: 600, BCL_S2_inicial: 500, BCL_S2_final: 200,
     delta_CL: 10, inicio: 10.0, duracao: 1.0, amplitude: 1.0, dt: 0.1,
     num_estimulos_s1: 8, downsamplingFactor: 100
+  },
+  tentusscher: {
+    cellType: 'epi', S1: 400, BCL_S2_inicial: 350, BCL_S2_final: 200,
+    delta_CL: 10, inicio: 10.0, duracao: 1.0, amplitude: 1.0, dt: 0.02,
+    num_estimulos_s1: 5, downsamplingFactor: 100
   }
 };
 
@@ -126,7 +136,7 @@ const RestitutionCurvePage = ({ onBack }) => {
 
   // Função para calcular a curva analítica
   const calculateAnalyticalCurve = useCallback((simulatedData) => {
-    if (!simulatedData || simulatedData.length === 0 || selectedModel === 'minimal') {
+    if (!simulatedData || simulatedData.length === 0 || selectedModel === 'minimal' || selectedModel === 'tentusscher') {
       setAnalyticalData([]);
       return;
     }
@@ -164,11 +174,14 @@ const RestitutionCurvePage = ({ onBack }) => {
     if (selectedModel === 's1s2') simulationWorker = new RestitutionWorker(); 
     else if (selectedModel === 'mms') simulationWorker = new MMSWorker();
     else if (selectedModel === 'minimal') simulationWorker = new MinimalWorker();
+    else if (selectedModel === 'tentusscher') simulationWorker = new TenTusscherWorker();
     else simulationWorker = new DynamicWorker();
 
     // Resetar visibilidade ao trocar de modelo
     if (selectedModel === 'minimal') {
       setVisibleVars({ v: true, gate_v: true, gate_w: true, gate_s: true });
+    } else if (selectedModel === 'tentusscher') {
+      setVisibleVars({ v: true, Cai: false, Nai: false, Ki: false });
     } else {
       setVisibleVars({ v: true, h: true });
     }
@@ -360,6 +373,12 @@ const RestitutionCurvePage = ({ onBack }) => {
                    <p>{t('modals.single.minimal.math.eq_w')}</p>
                    <p>{t('modals.single.minimal.math.eq_s')}</p>
                 </>
+             ) : modelKey === 'tentusscher' ? (
+                <>
+                   <p>{t('modals.single.tentusscher.math.eq_v')}</p>
+                   <p>{t('modals.single.tentusscher.math.eq_ion')}</p>
+                   <p>{t('modals.single.tentusscher.math.eq_gates')}</p>
+                </>
              ) : (
                 <>
                    <p>{t('modals.single.ms.math.eq_v')}</p>
@@ -404,9 +423,9 @@ const RestitutionCurvePage = ({ onBack }) => {
             className="bg-slate-100 border-none text-sm font-medium text-slate-700 py-2 px-4 rounded-lg cursor-pointer focus:ring-2 focus:ring-emerald-500"
           >
             <option value="minimal">{t('modals.restitution.minimal.title')}</option>
-            <option value="s1s2">{t('modals.restitution.s1s2.title')}</option>
-            <option value="mms">{t('modals.restitution.mms.title')}</option>
+            <option value="s1s2">S1-S2 Protocol (MS)</option>
             <option value="dynamic">{t('modals.restitution.dynamic.title')}</option>
+            <option value="tentusscher">{t('common.tentusscher_model')}</option>
           </select>
         </div>
       </header>
@@ -471,20 +490,6 @@ const RestitutionCurvePage = ({ onBack }) => {
             </SettingsSection>
 
             <SettingsSection title={t('common.simulation_params')} defaultOpen={true}>
-              {selectedModel === 'minimal' && (
-                <div className="mb-4">
-                  <label className="text-sm font-medium text-slate-700 mb-1 block">{t('params.cellType')}</label>
-                  <select 
-                    value={currentParams.cellType} 
-                    onChange={(e) => handleChange(e, 'cellType')}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
-                  >
-                    <option value="epi">{t('params.epi')}</option>
-                    <option value="endo">{t('params.endo')}</option>
-                    <option value="myo">{t('params.myo')}</option>
-                  </select>
-                </div>
-              )}
               <div className="grid grid-cols-2 gap-3">
                 {Object.keys(currentParams).filter(key => key !== 'cellType').map((key) => (
                     <Input
@@ -498,6 +503,40 @@ const RestitutionCurvePage = ({ onBack }) => {
                 ))}
               </div>
             </SettingsSection>
+
+            {(selectedModel === 'minimal' || selectedModel === 'tentusscher') && (
+                <SettingsSection title={selectedModel === 'minimal' ? t('modals.restitution.minimal.title') : t('common.tentusscher_model')} defaultOpen={true}>
+                     <div className="mb-3">
+                         <label className="text-sm font-medium text-slate-700">{t('params.cellType')}</label>
+                         <select 
+                            value={currentParams.cellType} 
+                            onChange={(e) => handleChange(e, 'cellType')} 
+                            className="w-full mt-1 px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm"
+                         >
+                            <option value="epi">{t('params.epi')}</option>
+                            <option value="endo">{t('params.endo')}</option>
+                            <option value="myo">{t('params.myo')}</option>
+                         </select>
+                     </div>
+                     {selectedModel === 'minimal' && (
+                         <div className="mt-4 pt-2 border-t border-slate-100">
+                            <p className="text-xs font-semibold text-slate-500 mb-2">{t('common.custom_params')} ({t(`params.${currentParams.cellType}`)})</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                 {Object.keys(minimalCustomParams[currentParams.cellType]).map(key => (
+                                    <Input 
+                                        key={key} 
+                                        label={t(`params.${key}`) || key} 
+                                        value={minimalCustomParams[currentParams.cellType][key]} 
+                                        onChange={(e) => handleMinimalCustomChange(key, e.target.value)} 
+                                        type="number" 
+                                        className="mb-0" 
+                                    />
+                                 ))}
+                            </div>
+                         </div>
+                     )}
+                </SettingsSection>
+            )}
           </div>
         </aside>
 
@@ -583,7 +622,7 @@ const RestitutionCurvePage = ({ onBack }) => {
             
             <div className="flex-none border-b border-slate-200 mb-4 px-2">
                <h2 className="text-2xl font-bold text-emerald-800 mb-4">
-                  {t(`modals.restitution.${selectedModel}.title`)}
+                  {selectedModel === 'tentusscher' ? 'Ten Tusscher (2004)' : t(`modals.restitution.${selectedModel}.title`)}
                </h2>
                <div className="flex gap-6 overflow-x-auto custom-scrollbar">
                   {['basic', 'advanced', 'math'].map((tab) => (

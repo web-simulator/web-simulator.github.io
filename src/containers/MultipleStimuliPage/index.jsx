@@ -6,6 +6,7 @@ import Modal from '../../components/Modal';
 import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation_8_stimuli.worker.js?worker';
 import MinimalWorker from '../../simulation_minimal_0d.worker.js?worker';
+import TenTusscherWorker from '../../simulation_tentusscher_0d.worker.js?worker';
 import ExportModal from '../../components/ExportModal';
 import { useTranslation } from 'react-i18next';
 import { exportToPng, export0DToCSV } from '../../utils/export';
@@ -86,13 +87,24 @@ const DEFAULT_EDITABLE_PARAMS = {
       num_estimulos: 5,
       dt: 0.1,
       downsamplingFactor: 50,
+  },
+  tentusscher: {
+      cellType: 'epi',
+      inicio: 10.0,
+      duração: 1.0,
+      amplitude: 1.0,
+      BCL: 400,
+      num_estimulos: 5,
+      dt: 0.02,
+      downsamplingFactor: 50,
   }
 };
 
 // Configuração das variáveis por modelo
 const MODEL_VARIABLES = {
   ms: ['v', 'h'],
-  minimal: ['v', 'gate_v', 'gate_w', 'gate_s']
+  minimal: ['v', 'gate_v', 'gate_w', 'gate_s'],
+  tentusscher: ['v', 'Cai', 'Nai', 'Ki']
 };
 
 const MultipleStimuliPage = ({ onBack }) => {
@@ -103,7 +115,10 @@ const MultipleStimuliPage = ({ onBack }) => {
     h: 'Gate h',
     gate_v: 'Gate v',
     gate_w: 'Gate w',
-    gate_s: 'Gate s'
+    gate_s: 'Gate s',
+    Cai: t('params.Cai'),
+    Nai: t('params.Nai'),
+    Ki: t('params.Ki')
   };
 
   const [data, setData] = useState([]);
@@ -129,6 +144,9 @@ const MultipleStimuliPage = ({ onBack }) => {
     if (selectedModel === 'minimal') {
       simulationWorker = new MinimalWorker();
       setVisibleVars({ v: true, gate_v: true, gate_w: true, gate_s: true });
+    } else if (selectedModel === 'tentusscher') {
+      simulationWorker = new TenTusscherWorker();
+      setVisibleVars({ v: true, Cai: false, Nai: false, Ki: false });
     } else {
       simulationWorker = new SimulationWorker();
       setVisibleVars({ v: true, h: true });
@@ -189,6 +207,8 @@ const MultipleStimuliPage = ({ onBack }) => {
       if (selectedModel === 'minimal') {
         payload.protocol = 'multiple';
         payload.minimalCellParams = minimalCustomParams;
+      } else if (selectedModel === 'tentusscher') {
+        payload.protocol = 'multiple';
       }
       worker.postMessage(payload);
     }
@@ -245,7 +265,15 @@ const MultipleStimuliPage = ({ onBack }) => {
           
           {modelKey === 'minimal' && (
             <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-2">
-               <pre className="whitespace-pre-wrap font-sans text-sm text-slate-600 leading-relaxed text-justify">
+               <pre className="whitespace-pre-wrap font-sans text-sm text-slate-600 leading-relaxed">
+                  {t(`modals.multiple.${modelKey}.advanced.currents_list`)}
+               </pre>
+            </div>
+          )}
+
+          {modelKey === 'tentusscher' && (
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-2">
+               <pre className="whitespace-pre-wrap font-sans text-sm text-slate-600 leading-relaxed">
                   {t(`modals.multiple.${modelKey}.advanced.currents_list`)}
                </pre>
             </div>
@@ -279,12 +307,18 @@ const MultipleStimuliPage = ({ onBack }) => {
                    <p>{t('modals.single.ms.math.eq_h1')}</p>
                    <p>{t('modals.single.ms.math.eq_h2')}</p>
                 </>
-             ) : (
+             ) : modelKey === 'minimal' ? (
                 <>
                    <p>{t('modals.single.minimal.math.eq_u')}</p>
                    <p>{t('modals.single.minimal.math.eq_v')}</p>
                    <p>{t('modals.single.minimal.math.eq_w')}</p>
                    <p>{t('modals.single.minimal.math.eq_s')}</p>
+                </>
+             ) : (
+                <>
+                   <p>{t('modals.single.tentusscher.math.eq_v')}</p>
+                   <p>{t('modals.single.tentusscher.math.eq_ion')}</p>
+                   <p>{t('modals.single.tentusscher.math.eq_gates')}</p>
                 </>
              )}
           </div>
@@ -314,7 +348,8 @@ const MultipleStimuliPage = ({ onBack }) => {
               className="bg-slate-100 border-none text-sm font-medium text-slate-700 py-2 px-4 rounded-lg cursor-pointer focus:ring-2 focus:ring-emerald-500"
             >
                 <option value="ms">Mitchell-Schaeffer</option>
-                <option value="minimal">{t('modals.restitution.minimal.title') || 'Minimal Model'}</option>
+                <option value="minimal">{t('common.minimal_model')}</option>
+                <option value="tentusscher">{t('common.tentusscher_model')}</option>
             </select>
         </div>
       </header>
@@ -378,7 +413,7 @@ const MultipleStimuliPage = ({ onBack }) => {
                     </div>
                 </SettingsSection>
             ) : (
-                <SettingsSection title={t('modals.restitution.minimal.title') || 'Minimal Model'} defaultOpen={true}>
+                <SettingsSection title={selectedModel === 'minimal' ? t('common.minimal_model') : t('common.tentusscher_model')} defaultOpen={true}>
                      <div className="mb-3">
                          <label className="text-sm font-medium text-slate-700">{t('params.cellType')}</label>
                          <select 
@@ -391,21 +426,22 @@ const MultipleStimuliPage = ({ onBack }) => {
                             <option value="myo">{t('params.myo')}</option>
                          </select>
                      </div>
-                     <div className="mt-4 pt-2 border-t border-slate-100">
-                        <p className="text-xs font-semibold text-slate-500 mb-2">{t('common.custom_params')} ({t(`params.${currentParams.cellType}`)})</p>
-                        <div className="grid grid-cols-2 gap-2">
-                             {Object.keys(minimalCustomParams[currentParams.cellType]).map(key => (
-                                <Input 
-                                    key={key} 
-                                    label={t(`params.${key}`) || key} 
-                                    value={minimalCustomParams[currentParams.cellType][key]} 
-                                    onChange={(e) => handleMinimalCustomChange(key, e.target.value)} 
-                                    type="number" 
-                                    className="mb-0" 
-                                />
-                             ))}
-                        </div>
-                     </div>
+                     {selectedModel === 'minimal' && (
+                         <div className="mt-4 pt-2 border-t border-slate-100">
+                            <p className="text-xs font-semibold text-slate-500 mb-2">{t('common.custom_params')} ({t(`params.${currentParams.cellType}`)})</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                 {Object.keys(minimalCustomParams[currentParams.cellType]).map(key => (
+                                    <Input 
+                                        key={key} 
+                                        label={t(`params.${key}`) || key} 
+                                        value={minimalCustomParams[currentParams.cellType][key]} 
+                                        onChange={(e) => handleMinimalCustomChange(key, e.target.value)} 
+                                        type="number" 
+                                    />
+                                 ))}
+                            </div>
+                         </div>
+                     )}
                 </SettingsSection>
             )}
           </div>
@@ -475,7 +511,7 @@ const MultipleStimuliPage = ({ onBack }) => {
             {/* Header das abas */}
             <div className="flex-none border-b border-slate-200 mb-4 px-2">
                <h2 className="text-2xl font-bold text-emerald-800 mb-4">
-                  {selectedModel === 'ms' ? 'Mitchell-Schaeffer' : 'Minimal Model'}
+                  {selectedModel === 'ms' ? 'Mitchell-Schaeffer' : selectedModel === 'minimal' ? 'Minimal Model' : 'Ten Tusscher (2004)'}
                </h2>
                <div className="flex gap-6 overflow-x-auto custom-scrollbar">
                   {['basic', 'advanced', 'math'].map((tab) => (

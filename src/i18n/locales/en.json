@@ -445,6 +445,26 @@
           "numerical": "Numerical Integration Method",
           "numerical_desc": "Explicit Euler handles the Potential (u) while Rush-Larsen ensures high accuracy for the gating variables (v, w, s) throughout the repetitive pacing protocol."
         }
+      },
+      "tentusscher": {
+        "basic": {
+          "title": "Protocol: Multiple Stimuli (Ten Tusscher)",
+          "desc": "Subjects the detailed Ten Tusscher model to a continuous pacing frequency. This allows observing the dynamic behavior and stabilization of intracellular ion concentrations.",
+          "why_use": "Parameter Influence",
+          "why_use_desc": "The BCL dictates the pacing rate. Very fast rhythms (low BCL) prevent the sodium-potassium pump and calcium exchangers from re-establishing baseline levels, causing intracellular accumulation and affecting the action potential."
+        },
+        "advanced": {
+          "title": "Long-Term Ionic Dynamics",
+          "desc": "Full ionic models possess real 'memory'. The Ten Tusscher model needs dozens or hundreds of beats for intracellular calcium and the sarcoplasmic reticulum to enter thermodynamic equilibrium.",
+          "currents_list": "During repetitive pacing, you can observe changes in the Calcium transient (Cai), which directly influences the simulated contraction force in electromechanical coupling.",
+          "ref": "ten Tusscher, K. H., Noble, D., Noble, P. J., & Panfilov, A. V. (2004). A model for human ventricular tissue."
+        },
+        "math": {
+          "title": "System Equations",
+          "desc": "The system continuously solves the 17 ODEs at each pulse of the periodically applied stimulus current.",
+          "numerical": "Numerical Integration Method",
+          "numerical_desc": "Stability over long periods is guaranteed by integration methods tailored for gating variables (Rush-Larsen) and mass concentrations (Euler)."
+        }
       }
     },
     "s1s2": { 
@@ -491,9 +511,31 @@
           "numerical": "Numerical Methods: Euler and Rush-Larsen",
           "numerical_desc": "Due to the complexity of the Minimal Model, we use the Explicit Euler method to calculate the Potential (u). The control variables (v, w, s), on the other hand, are calculated by the Rush-Larsen method. This combination is perfect to keep the simulation stable and accurate, even when dealing with the short and fast stimuli of the S1-S2 protocol."
         }
+      },
+      "tentusscher": {
+        "basic": {
+          "title": "S1-S2 Protocol (Ten Tusscher)",
+          "desc": "Applies the S1-S2 protocol to the detailed human Ten Tusscher model. This investigates how specific ionic currents (such as IKr, IKs, ICaL) recover to allow a premature beat.",
+          "goal": "Ionic Refractoriness",
+          "goal_desc": "The S1-S2 test here maps not only the electrical refractory period but also the calcium transient refractory period. If S2 is applied prematurely, calcium release from the sarcoplasmic reticulum (CaSR) may fail or produce a much smaller peak."
+        },
+        "advanced": {
+          "title": "Calcium Recovery Delay",
+          "desc": "The L-type calcium current (ICaL) has slow recovery dependent on voltage and intracellular calcium. Closely coupled stimuli result in less calcium entry and thus shorter, weaker action potentials.",
+          "kinetics": "Na/Ca Exchanger and Na/K Pump",
+          "kinetics_desc": "The temporary accumulation of sodium and calcium during the S1 sequence shifts the reversal potential, changing the driving force of repolarization currents. The S2 beat deals with this altered ionic landscape.",
+          "ref": "ten Tusscher, K. H., Noble, D., Noble, P. J., & Panfilov, A. V. (2004)."
+        },
+        "math": {
+          "title": "Computational Evaluation",
+          "desc": "The model resolves the extra stimulus (S2) by injecting the external current `I_stim` at the exact time, forcing the 17 variables to react outside their resting state.",
+          "stim_term": "The Potential V response dynamically activates the gating variables m, h, j, xr1, xr2, xs, r, s, d, f.",
+          "numerical": "Numerical Methods: Euler and Rush-Larsen",
+          "numerical_desc": "Due to the extreme stiffness of the Ten Tusscher model during abrupt depolarizations like S2, the Rush-Larsen method is fundamental to maintain stability."
+        }
       }
     },
-    "restitution": { 
+    "restitution": {
       "desc": "Restitution Curves APD vs DI",
       "what_is": "What is a Restitution Curve?",
       "what_is_desc": "The restitution curve describes the relationship between the Action Potential Duration (APD) and the Diastolic Interval (DI). It is crucial for understanding cardiac stability and the mechanism of alternans.",
@@ -592,6 +634,29 @@
           "stim_term": "Where plateau coupling and repolarization time dynamically define the DI and the corresponding APD.",
           "numerical": "Direct Proxy for Conduction Velocity (CV)",
           "numerical_desc": "Because fast sodium channels are embedded in the system, the user can select 'Conduction Velocity' mode at the top. This mode collects the peak of maximum dV/dt derivative (which scales directly with Wave Speed in real cardiac tissue), building the classic, useful, and revealing CV restitution graph used by clinicians."
+        }
+      },
+      "tentusscher": {
+        "title": "Ten Tusscher",
+        "basic": {
+          "title": "Ionic Restitution (Ten Tusscher)",
+          "desc": "This tab builds the APD vs DI restitution curve using the Ten Tusscher model. It reflects the true ionic complexity of human ventricular tissue.",
+          "goal": "Realistic Restitution",
+          "goal_desc": "The generated restitution curve is not a phenomenological approximation. It naturally emerges from the interplay between potassium (IKr, IKs, IK1) and calcium (ICaL) over time."
+        },
+        "advanced": {
+          "title": "Short and Long-Term Memory",
+          "desc": "Unlike simpler models, Ten Tusscher exhibits both short-term memory (channel recovery) and long-term memory (ion accumulation).",
+          "kinetics": "Curve Slope",
+          "kinetics_desc": "The slope of the restitution curve in this model is crucial for validating alternans mechanisms. The Epi model, for example, has a more sensitive repolarization transition due to its different Gks and Gto conductances.",
+          "ref": "ten Tusscher, K. H., Noble, D., Noble, P. J., & Panfilov, A. V. (2004)."
+        },
+        "math": {
+          "title": "Multi-Variable Resolution",
+          "desc": "The graph plots the measure of APD90 (time to 90% repolarization) after numerical integration of the 17 differential equations during the variable intervals of the test.",
+          "stim_term": "The DI is dictated by continuous S1-S2 coupling, and responses are extracted from each complete iterative simulation.",
+          "numerical": "Precision and Performance",
+          "numerical_desc": "Plotting this curve requires thousands of computational steps. Rush-Larsen integration ensures stability in phase 0, while APD measurement occurs by evaluating the actual voltage drop."
         }
       }
     },

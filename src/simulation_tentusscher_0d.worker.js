@@ -7,10 +7,31 @@ self.onmessage = (e) => {
       duração,
       amplitude,
       cellType,
-      downsamplingFactor
+      downsamplingFactor,
+      protocol = 'single',
+      BCL = 1000,
+      num_estimulos = 1,
+      s2_start = 0
     } = params;
   
-    const passos = parseInt(tempo_total / dt, 10);
+    let computed_tempo_total = tempo_total;
+    if (!computed_tempo_total) {
+        if (protocol === 'single') {
+            computed_tempo_total = Math.max(1000, inicio + duração + 500);
+        } else if (protocol === 'multiple' || protocol === 'restitution') {
+            computed_tempo_total = inicio + (num_estimulos * BCL) + 200;
+        } else if (protocol === 's1s2') {
+            // No S1S2Page, os nomes variam. Fallback: params.num_estimulos_s1, params.BCL_S1
+            const num_s1 = params.num_estimulos_s1 || num_estimulos || 1;
+            const bcl_s1 = params.BCL_S1 || BCL || 1000;
+            const s2_interval = params.intervalo_S2 || s2_start || 200;
+            computed_tempo_total = inicio + ((num_s1 - 1) * bcl_s1) + s2_interval + 300;
+        } else {
+            computed_tempo_total = 1000;
+        }
+    }
+
+    const passos = parseInt(computed_tempo_total / dt, 10);
     const sampledData = [];
   
     // Valores de repouso das variáveis
@@ -28,8 +49,34 @@ self.onmessage = (e) => {
       let t = i * dt;
       let stim = 0;
       
-      if (t >= inicio && t < inicio + duração) {
-        stim = amplitude * 50.0; 
+      if (protocol === 'single') {
+          if (t >= inicio && t < inicio + duração) {
+              stim = amplitude * 50.0; 
+          }
+      } else if (protocol === 'multiple' || protocol === 'restitution') {
+          const num_s1 = params.num_estimulos_s1 || num_estimulos || 1;
+          const bcl_s1 = params.BCL_S1 || BCL || 1000;
+          for (let s = 0; s < num_s1; s++) {
+              let t_stim = inicio + s * bcl_s1;
+              if (t >= t_stim && t < t_stim + duração) {
+                  stim = amplitude * 50.0;
+                  break;
+              }
+          }
+      } else if (protocol === 's1s2') {
+          const num_s1 = params.num_estimulos_s1 || num_estimulos || 1;
+          const bcl_s1 = params.BCL_S1 || BCL || 1000;
+          for (let s = 0; s < num_s1; s++) {
+              let t_stim = inicio + s * bcl_s1;
+              if (t >= t_stim && t < t_stim + duração) {
+                  stim = amplitude * 50.0;
+                  break;
+              }
+          }
+          const s2_start_time = params.s2_start || (inicio + ((num_s1 - 1) * bcl_s1) + (params.intervalo_S2 || 200));
+          if (t >= s2_start_time && t < s2_start_time + duração) {
+              stim = amplitude * 50.0;
+          }
       }
   
       let safe_Cai  = Math.max(Cai, 1e-7);

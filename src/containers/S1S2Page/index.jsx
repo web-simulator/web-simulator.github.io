@@ -6,6 +6,7 @@ import Modal from '../../components/Modal';
 import ExportButton from '../../components/ExportButton';
 import SimulationWorker from '../../simulation_s1_s2.worker.js?worker';
 import MinimalWorker from '../../simulation_minimal_0d.worker.js?worker';
+import TenTusscherWorker from '../../simulation_tentusscher_0d.worker.js?worker';
 import ExportModal from '../../components/ExportModal';
 import { useTranslation } from 'react-i18next';
 import { exportToPng } from '../../utils/export';
@@ -101,12 +102,24 @@ const DEFAULT_EDITABLE_PARAMS = {
       dt: 0.1,
       num_estimulos_s1: 5,
       downsamplingFactor: 50,
+  },
+  tentusscher: {
+      cellType: 'epi',
+      S1: 400,
+      S2: 300,
+      intervalo: 50,
+      duração: 1.0,
+      amplitude: 1.0,
+      dt: 0.02,
+      num_estimulos_s1: 5,
+      downsamplingFactor: 50,
   }
 };
 
 const MODEL_VARIABLES = {
   ms: ['v', 'h'],
-  minimal: ['v', 'gate_v', 'gate_w', 'gate_s']
+  minimal: ['v', 'gate_v', 'gate_w', 'gate_s'],
+  tentusscher: ['v', 'Cai', 'Nai', 'Ki']
 };
 
 const VARIABLE_LABELS = {
@@ -114,7 +127,10 @@ const VARIABLE_LABELS = {
   h: 'Gate h',
   gate_v: 'Gate v',
   gate_w: 'Gate w',
-  gate_s: 'Gate s'
+  gate_s: 'Gate s',
+  Cai: 'Cai (mM)',
+  Nai: 'Nai (mM)',
+  Ki: 'Ki (mM)'
 };
 
 const S1S2Page = ({ onBack }) => {
@@ -139,6 +155,9 @@ const S1S2Page = ({ onBack }) => {
     if (selectedModel === 'minimal') {
       simulationWorker = new MinimalWorker();
       setVisibleVars({ v: true, gate_v: true, gate_w: true, gate_s: true });
+    } else if (selectedModel === 'tentusscher') {
+      simulationWorker = new TenTusscherWorker();
+      setVisibleVars({ v: true, Cai: false, Nai: false, Ki: false });
     } else {
       simulationWorker = new SimulationWorker();
       setVisibleVars({ v: true, h: true });
@@ -214,6 +233,9 @@ const S1S2Page = ({ onBack }) => {
       if (selectedModel === 'minimal') {
         payload.protocol = 's1s2';
         payload.minimalCellParams = minimalCustomParams;
+      } else if (selectedModel === 'tentusscher') {
+        payload.protocol = 's1s2';
+        payload.s2_start = payload.inicio + ((payload.num_estimulos_s1 - 1) * payload.BCL_S1) + payload.intervalo_S2;
       }
       
       worker.postMessage(payload);
@@ -295,12 +317,18 @@ const S1S2Page = ({ onBack }) => {
                    <p>{t('modals.single.ms.math.eq_h1')}</p>
                    <p>{t('modals.single.ms.math.eq_h2')}</p>
                 </>
-             ) : (
+             ) : modelKey === 'minimal' ? (
                 <>
                    <p>{t('modals.single.minimal.math.eq_u')}</p>
                    <p>{t('modals.single.minimal.math.eq_v')}</p>
                    <p>{t('modals.single.minimal.math.eq_w')}</p>
                    <p>{t('modals.single.minimal.math.eq_s')}</p>
+                </>
+             ) : (
+                <>
+                   <p>{t('modals.single.tentusscher.math.eq_v')}</p>
+                   <p>{t('modals.single.tentusscher.math.eq_ion')}</p>
+                   <p>{t('modals.single.tentusscher.math.eq_gates')}</p>
                 </>
              )}
           </div>
@@ -333,6 +361,7 @@ const S1S2Page = ({ onBack }) => {
             >
                 <option value="ms">Mitchell-Schaeffer</option>
                 <option value="minimal">{t('modals.restitution.minimal.title')}</option>
+                <option value="tentusscher">{t('common.tentusscher_model')}</option>
             </select>
         </div>
       </header>
@@ -396,7 +425,7 @@ const S1S2Page = ({ onBack }) => {
                     </div>
                 </SettingsSection>
             ) : (
-                <SettingsSection title={t('modals.restitution.minimal.title')} defaultOpen={true}>
+                <SettingsSection title={selectedModel === 'minimal' ? t('modals.restitution.minimal.title') : t('common.tentusscher_model')} defaultOpen={true}>
                      <div className="mb-3">
                          <label className="text-sm font-medium text-slate-700">{t('params.cellType')}</label>
                          <select 
@@ -409,21 +438,23 @@ const S1S2Page = ({ onBack }) => {
                             <option value="myo">{t('params.myo')}</option>
                          </select>
                      </div>
-                     <div className="mt-4 pt-2 border-t border-slate-100">
-                        <p className="text-xs font-semibold text-slate-500 mb-2">{t('common.custom_params')} ({t(`params.${currentParams.cellType}`)})</p>
-                        <div className="grid grid-cols-2 gap-2">
-                             {Object.keys(minimalCustomParams[currentParams.cellType]).map(key => (
-                                <Input 
-                                    key={key} 
-                                    label={t(`params.${key}`) || key} 
-                                    value={minimalCustomParams[currentParams.cellType][key]} 
-                                    onChange={(e) => handleMinimalCustomChange(key, e.target.value)} 
-                                    type="number" 
-                                    className="mb-0" 
-                                />
-                             ))}
-                        </div>
-                     </div>
+                     {selectedModel === 'minimal' && (
+                         <div className="mt-4 pt-2 border-t border-slate-100">
+                            <p className="text-xs font-semibold text-slate-500 mb-2">{t('common.custom_params')} ({t(`params.${currentParams.cellType}`)})</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                 {Object.keys(minimalCustomParams[currentParams.cellType]).map(key => (
+                                    <Input 
+                                        key={key} 
+                                        label={t(`params.${key}`) || key} 
+                                        value={minimalCustomParams[currentParams.cellType][key]} 
+                                        onChange={(e) => handleMinimalCustomChange(key, e.target.value)} 
+                                        type="number" 
+                                        className="mb-0" 
+                                    />
+                                 ))}
+                            </div>
+                         </div>
+                     )}
                 </SettingsSection>
             )}
           </div>
@@ -507,7 +538,7 @@ const S1S2Page = ({ onBack }) => {
             
             <div className="flex-none border-b border-slate-200 mb-4 px-2">
                <h2 className="text-2xl font-bold text-emerald-800 mb-4">
-                  {selectedModel === 'ms' ? 'Mitchell-Schaeffer' : 'Minimal Model'}
+                  {selectedModel === 'ms' ? 'Mitchell-Schaeffer' : selectedModel === 'minimal' ? 'Minimal Model' : 'Ten Tusscher (2004)'}
                </h2>
                <div className="flex gap-6 overflow-x-auto custom-scrollbar">
                   {['basic', 'advanced', 'math'].map((tab) => (
