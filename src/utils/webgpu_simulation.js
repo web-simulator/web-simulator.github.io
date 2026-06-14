@@ -91,7 +91,11 @@ const SIMULATION_SHADER = `
 
 export async function runGPU2DSimulation(payload, onProgress) {
   const adapter = await navigator.gpu.requestAdapter();
-  const device = await adapter.requestDevice();
+  const requiredLimits = {};
+  if (adapter.limits.maxBufferSize) requiredLimits.maxBufferSize = adapter.limits.maxBufferSize;
+  if (adapter.limits.maxStorageBufferBindingSize) requiredLimits.maxStorageBufferBindingSize = adapter.limits.maxStorageBufferBindingSize;
+  if (adapter.limits.maxComputeWorkgroupStorageSize) requiredLimits.maxComputeWorkgroupStorageSize = adapter.limits.maxComputeWorkgroupStorageSize;
+  const device = await adapter.requestDevice({ requiredLimits });
 
   const { sigma_l, sigma_t, angle, L, N, totalTime, stimuli, fibrosisParams } = payload;
 
@@ -330,6 +334,12 @@ export async function runGPU2DSimulation(payload, onProgress) {
 
   // EXECUÇÃO gpu
   for (let t = 0; t < steps; t += temporalStride) {
+    if (payload.abortSignal && payload.abortSignal.aborted) {
+        bufParams.destroy(); bufH.destroy(); bufDxx.destroy(); bufDyy.destroy(); bufDxy.destroy();
+        bufStimulus.destroy(); bufV_A.destroy(); bufV_B.destroy(); stagingBuffers[0].destroy(); stagingBuffers[1].destroy();
+        throw new Error("Simulation aborted by user");
+    }
+
     const currentSteps = Math.min(temporalStride, steps - t);
     let s = 0;
 

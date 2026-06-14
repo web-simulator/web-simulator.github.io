@@ -91,6 +91,7 @@ const Model2DPage = ({ onBack }) => {
   const [progress, setProgress] = useState(0);
   const [remainingTime, setRemainingTime] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const abortControllerRef = useRef(null);
   const [viewMode, setViewMode] = useState('potential');
   const chartContainerRef = useRef(null);
   
@@ -251,6 +252,7 @@ const Model2DPage = ({ onBack }) => {
         simulationResult.apd = null;
     }
 
+    abortControllerRef.current = new AbortController();
     setCalculating(true); 
     setSimulationResult(null); 
     setProgress(0); 
@@ -310,7 +312,8 @@ const Model2DPage = ({ onBack }) => {
       transmuralityParams: {
         enabled: params.transmurality, endo_tau: safeParams.endo_tau, mid_tau: safeParams.mid_tau, epi_tau: safeParams.epi_tau, mid_start: safeParams.mid_start, epi_start: safeParams.epi_start
       },
-      stimuli: safeStimuli, minimalCellParams: safeMinimalParams
+      stimuli: safeStimuli, minimalCellParams: safeMinimalParams,
+      abortSignal: abortControllerRef.current.signal
     };
 
     // Execução com webgpu
@@ -342,6 +345,11 @@ const Model2DPage = ({ onBack }) => {
             setIsPlaying(true);
             return;
         } catch (error) {
+            if (error.name === 'AbortError' || error.message === 'Simulation aborted by user') {
+                console.log("Simulação abortada na GPU pelo usuário.");
+                setCalculating(false);
+                return;
+            }
             console.error("Erro na execução via WebGPU. Acionando fallback automático para CPU Worker:", error);
             // Se falhar limpa os estados e deixa o fluxo continuar para a CPU
             setProgress(0);
@@ -354,6 +362,9 @@ const Model2DPage = ({ onBack }) => {
   };
 
   const handleStop = () => {
+      if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+      }
       if (worker) worker.terminate();
 
       if (simulationResult) {

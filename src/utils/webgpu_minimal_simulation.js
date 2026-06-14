@@ -129,12 +129,14 @@ const MINIMAL_SIMULATION_SHADER = `
 
 export async function runMinimalGPU2DSimulation(payload, onProgress) {
   const adapter = await navigator.gpu.requestAdapter();
-  const device = await adapter.requestDevice({
-    requiredLimits: {
+  const requiredLimits = {
       maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage
-    }
-  });
-
+  };
+  if (adapter.limits.maxBufferSize) requiredLimits.maxBufferSize = adapter.limits.maxBufferSize;
+  if (adapter.limits.maxStorageBufferBindingSize) requiredLimits.maxStorageBufferBindingSize = adapter.limits.maxStorageBufferBindingSize;
+  if (adapter.limits.maxComputeWorkgroupStorageSize) requiredLimits.maxComputeWorkgroupStorageSize = adapter.limits.maxComputeWorkgroupStorageSize;
+  
+  const device = await adapter.requestDevice({ requiredLimits });
   const { sigma_l, sigma_t, angle, L, N, totalTime, stimuli, fibrosisParams } = payload;
   let dt = payload.dt || 0.1;
   let downsamplingFactor = payload.downsamplingFactor || 10;
@@ -411,6 +413,15 @@ export async function runMinimalGPU2DSimulation(payload, onProgress) {
   let currentStagingIdx = 0;
 
   for (let t = 0; t < steps; t += temporalStride) {
+    if (payload.abortSignal && payload.abortSignal.aborted) {
+        bufParams.destroy(); bufDxx.destroy(); bufDyy.destroy(); bufDxy.destroy();
+        bufStimulus.destroy(); bufU_A.destroy(); bufU_B.destroy(); 
+        bufV_A.destroy(); bufV_B.destroy(); bufW_A.destroy(); bufW_B.destroy();
+        bufS_A.destroy(); bufS_B.destroy();
+        stagingBuffers[0].destroy(); stagingBuffers[1].destroy();
+        throw new Error("Simulation aborted by user");
+    }
+
     const currentSteps = Math.min(temporalStride, steps - t);
     let s = 0;
 
