@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, memo } from 'react';
 import { t } from 'i18next';
 
-// Gráfico de cores 
-const SpatiotemporalChart = ({ simulationData, currentFrame, onPointClick }) => {
+const SpatiotemporalChart = ({ simulationData, currentFrame, onPointClick, valueDomain = [0, 1] }) => {
   const canvasRef = useRef(null);
 
   // Desenha o gráfico
@@ -29,10 +28,12 @@ const SpatiotemporalChart = ({ simulationData, currentFrame, onPointClick }) => 
     const cellWidth = width / numPoints; 
     const cellHeight = height;
 
-    // O valor v varia de 0 a 1
+    // O valor v varia conforme o domínio passado
     const getColor = (value) => {
+      const [minV, maxV] = valueDomain;
+      let normalizedValue = (value - minV) / (maxV - minV);
       // Normaliza o valor para garantir que esteja entre 0 e 1
-      const normalizedValue = Math.max(0, Math.min(1, value || 0)); 
+      normalizedValue = Math.max(0, Math.min(1, normalizedValue || 0)); 
       const hue = (1 - normalizedValue) * 240; // 240 é azul, 0 é vermelho
       return `hsl(${hue}, 100%, 50%)`;
     };
@@ -43,7 +44,7 @@ const SpatiotemporalChart = ({ simulationData, currentFrame, onPointClick }) => 
       ctx.fillStyle = getColor(value);
       ctx.fillRect(x * cellWidth, 0, Math.ceil(cellWidth), cellHeight); 
     }
-  }, [simulationData, currentFrame]); // Re-executa quando os dados mudam
+  }, [simulationData, currentFrame, valueDomain]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

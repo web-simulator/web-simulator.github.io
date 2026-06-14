@@ -4,6 +4,8 @@ import MitchellSchaeffer1DPage from '../MitchellSchaeffer1DPage';
 import BistablePage from '../BistablePage';
 import FitzHughNagumoPage from '../FitzHughNagumoPage';
 
+import TenTusscher1DPage from '../TenTusscher1DPage';
+
 const Model1DPage = ({ onBack }) => {
   const { t } = useTranslation();
   const [selectedModel, setSelectedModel] = useState('ms_1d');
@@ -35,6 +37,7 @@ const Model1DPage = ({ onBack }) => {
             <option value="ms_1d">{t('home.models.ms_1d.title', 'Mitchell-Schaeffer')}</option>
             <option value="fhn">{t('home.models.fhn.title', 'FitzHugh-Nagumo')}</option>
             <option value="bistable">{t('home.models.bistable.title', 'Bistable')}</option>
+            <option value="tentusscher">{t('common.tentusscher_model', 'Ten Tusscher ')}</option>
           </select>
         </div>
       </header>
@@ -44,6 +47,7 @@ const Model1DPage = ({ onBack }) => {
         {selectedModel === 'ms_1d' && <MitchellSchaeffer1DPage isEmbedded={true} />}
         {selectedModel === 'fhn' && <FitzHughNagumoPage isEmbedded={true} />}
         {selectedModel === 'bistable' && <BistablePage isEmbedded={true} />}
+        {selectedModel === 'tentusscher' && <TenTusscher1DPage isEmbedded={true} />}
       </div>
     </div>
   );

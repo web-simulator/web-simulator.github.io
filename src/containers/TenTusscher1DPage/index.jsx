@@ -1,15 +1,18 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import MS1DChart from '../../components/MS1DChart';
-import SpatiotemporalChart from '../../components/SpatiotemporalChart';
-import Input from '../../components/Input';
-import Button from '../../components/Button';
-import Modal from '../../components/Modal';
-import Chart from '../../components/Chart';
-import ExportButton from '../../components/ExportButton';
-import SimulationWorker from '../../simulation_ms_1d.worker.js?worker';
-import ExportModal from '../../components/ExportModal';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import SimulationWorker from '../../simulation_tentusscher_1d.worker.js?worker';
+import { runGPU1DTenTusscher } from '../../utils/webgpu_tentusscher_1d';
 import { export1DToGif, exportToPng, export1DToXDMF } from '../../utils/export';
+
+// Componentes da UI
+import Button from '../../components/Button';
+import Input from '../../components/Input';
+import Chart from '../../components/Chart';
+import TenTusscher1DChart from '../../components/TenTusscher1DChart';
+import SpatiotemporalChart from '../../components/SpatiotemporalChart';
+import Modal from '../../components/Modal';
+import ExportButton from '../../components/ExportButton';
+import ExportModal from '../../components/ExportModal';
 
 const SettingsSection = ({ title, children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -33,41 +36,35 @@ const SettingsSection = ({ title, children, defaultOpen = false }) => {
 };
 
 const DEFAULT_EDITABLE_PARAMS = {
-  k: 2.0,
-  Tau_in: 0.3,
-  Tau_out: 6.0,
-  Tau_open: 120.0,
-  Tau_close: 80.0,
-  gate: 0.13,
-  L: 100,
-  dx: 1,
-  dt: 0.05,
+  cellType: 'epi',
+  L: 30,
+  dx: 0.1,
+  dt: 0.02,
+  D: 0.154,
   totalTime: 500,
-  downsamplingFactor: 10,
+  downsamplingFactor: 50,
   inicio: 5.0,
   duracao: 1.0,
-  amplitude: 1.0,
-  posição_do_estímulo: 10,
-  tamanho_do_estímulo: 5,
-  num_estimulos: 8,
-  BCL_S1: 250
+  amplitude: 2.0, 
+  posição_do_estímulo: 5, 
+  tamanho_do_estímulo: 5, 
+  num_estimulos: 1,
+  BCL: 1000
 };
 
-const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
+const TenTusscher1DPage = ({ onBack, isEmbedded }) => {
   const { t } = useTranslation();
   
-  // Estados de dados e worker
   const [simulationData, setSimulationData] = useState([]);
   const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [usingGPU, setUsingGPU] = useState(null);
   
-  // Estados de controle
   const [currentFrame, setCurrentFrame] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [simulationSpeed, setSimulationSpeed] = useState(50);
   
-  // Estados de visualização
   const [viewMode, setViewMode] = useState('line');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -76,10 +73,8 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
   const chartRef = useRef(null);
   const [activeTab, setActiveTab] = useState('basic');
 
-  // Parâmetros exclusivos da propagação padrão 1D
   const [editableParams, setEditableParams] = useState(DEFAULT_EDITABLE_PARAMS);
 
-  // Configura o Worker
   useEffect(() => {
     const stdWorker = new SimulationWorker();
     setWorker(stdWorker);
@@ -94,7 +89,6 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
     return () => stdWorker.terminate();
   }, []);
 
-  // Simulação em um loop com velocidade ajustável
   useEffect(() => {
     let interval;
     if (isPlaying && simulationData.length > 0) {
@@ -114,19 +108,29 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
   }, [isPlaying, simulationData, simulationSpeed]);
 
   const handleChange = useCallback((e, name) => {
-    const value = parseFloat(e.target.value);
+    const value = name === 'cellType' ? e.target.value : parseFloat(e.target.value);
     setEditableParams((prev) => ({ ...prev, [name]: value }));
   }, []);
 
-  // Inicia a simulação Padrão
-  const handleSimularClick = useCallback(() => {
-    if (worker) {
-      setLoading(true);
-      setSimulationData([]);
-      setIsPlaying(false);
-      worker.postMessage({ ...editableParams, BCL: editableParams.BCL_S1 });
+  const handleSimularClick = useCallback(async () => {
+    setLoading(true);
+    setSimulationData([]);
+    setIsPlaying(false);
+    
+    try {
+      if (!navigator.gpu) throw new Error("WebGPU not supported");
+      const data = await runGPU1DTenTusscher(editableParams);
+      setSimulationData(data);
+      setUsingGPU(true);
+      setCurrentFrame(0);
+      setIsPlaying(true);
+      setLoading(false);
+    } catch (err) {
+      console.warn("GPU failed, falling back to CPU", err);
+      setUsingGPU(false);
+      if (worker) worker.postMessage(editableParams);
     }
-  }, [worker, editableParams]);
+  }, [editableParams, worker]);
 
   const handleReset = useCallback(() => {
     setEditableParams(DEFAULT_EDITABLE_PARAMS);
@@ -140,33 +144,51 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
     setCurrentFrame(parseInt(e.target.value, 10));
   };
   
-  // Clique no gráfico de cores para mostrar o modal
   const handlePointClick = useCallback((xIndex) => {
     setSelectedX(xIndex);
     setIsModalOpen(true);
   }, []);
 
-  // Filtra com base no 'selectedX'
   const timeseriesData = useMemo(() => {
     if (selectedX === null || simulationData.length === 0) return [];
-    return simulationData.map(frame => ({
-      tempo: parseFloat(frame.time),
-      v: frame.data[selectedX].v,
-      h: frame.data[selectedX].h,
-    }));
-  }, [selectedX, simulationData]);
+    
+    const { inicio, duracao, amplitude, BCL, num_estimulos, dx, posição_do_estímulo, tamanho_do_estímulo, L } = editableParams;
+    
+    const stim_center_idx = Math.floor(posição_do_estímulo / dx);
+    const stim_half_idx = Math.floor(tamanho_do_estímulo / (2 * dx));
+    const stim_start_idx = Math.max(1, stim_center_idx - stim_half_idx);
+    const stim_end_idx = Math.min(Math.floor(L / dx) - 2, stim_center_idx + stim_half_idx);
+    const isInStimArea = selectedX >= stim_start_idx && selectedX <= stim_end_idx;
+
+    return simulationData.map(frame => {
+      const time = parseFloat(frame.time);
+      return {
+        tempo: time,
+        v: frame.data[selectedX].v
+      };
+    });
+  }, [selectedX, simulationData, editableParams]);
 
   const currentChartData = simulationData[currentFrame]?.data || [];
+
+  const chartModalContent = useMemo(() => (
+    <>
+      <h2 className="text-lg font-bold text-slate-700 mb-4">
+        {t('bistableChart.potentialModal', 'Potencial na Posição')} = {selectedX !== null ? (selectedX * editableParams.dx).toFixed(2) + ' mm' : ''}
+      </h2>
+      <div className="w-full h-[60vh] min-h-[400px]">
+        <Chart data={timeseriesData} />
+      </div>
+    </>
+  ), [selectedX, editableParams.dx, timeseriesData, t]);
 
   const renderInfoModalContent = () => {
     return (
       <div className="flex flex-col h-full max-h-[80vh]">
-        {/* Cabeçalho do Modal */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-emerald-800">{t('modals.ms1d.title')}</h2>
+          <h2 className="text-2xl font-bold text-emerald-800">{t('modals.tentusscher1d.title', 'Ten Tusscher 1D Model')}</h2>
         </div>
 
-        {/* Navegação por Abas */}
         <div className="flex border-b border-slate-200 mb-6 overflow-x-auto custom-scrollbar">
           {['basic', 'advanced', 'math'].map((tab) => (
             <button
@@ -176,7 +198,7 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
                 activeTab === tab ? 'text-emerald-600' : 'text-slate-500 hover:text-emerald-500'
               }`}
             >
-              {t(`modals.ms1d.tabs.${tab}`)}
+              {t(`modals.ms1d.tabs.${tab}`, tab === 'basic' ? 'Básico' : tab === 'advanced' ? 'Avançado' : 'Matemática')}
               {activeTab === tab && (
                 <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 animate-slideInRight" />
               )}
@@ -184,82 +206,51 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
           ))}
         </div>
 
-        {/* Conteúdo das Abas */}
         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-          
           {activeTab === 'basic' && (
             <div className="space-y-4 animate-fadeIn">
-              <h3 className="text-xl font-bold text-slate-700">{t('modals.ms1d.basic.title')}</h3>
-              <p className="text-slate-600 leading-relaxed text-justify mb-4">{t('modals.ms1d.basic.desc')}</p>
-
-              <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.ms1d.basic.what_is_1d')}</h3>
-              <p className="text-slate-600 leading-relaxed mb-4">{t('modals.ms1d.basic.what_is_1d_desc')}</p>
-
-              <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4 mt-4">
-                 <h4 className="font-semibold text-emerald-800 mb-2">
-                    <i className="bi bi-activity mr-2"></i>
-                    {t('modals.ms1d.basic.goal')}
-                 </h4>
-                 <p className="text-sm text-emerald-700 leading-relaxed text-justify">
-                    {t('modals.ms1d.basic.goal_desc')}
-                 </p>
+              <h3 className="text-xl font-bold text-slate-700">{t('modals.tentusscher1d.basic.title', 'Conceitos Básicos')}</h3>
+              <p className="text-slate-600">
+                {t('modals.tentusscher1d.basic.desc', 'Esta simulação computa a propagação do potencial de ação ao longo de um cabo unidimensional (1D) usando o modelo iônico humano de Ten Tusscher et al. (2004).')}
+              </p>
+              <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
+                <h4 className="font-semibold text-emerald-800 mb-2">{t('modals.model_1d.basic.cable_concept', 'O Conceito de Cabo')}</h4>
+                <p className="text-sm text-emerald-700">
+                  {t('modals.tentusscher1d.gpu.desc', 'Utilizamos aceleração WebGPU para resolver mais de 17 equações diferenciais (Ca2+, Na+, K+) por célula, calculadas paralelamente. Caso a GPU falhe, um Fallback para CPU assume automaticamente o cálculo.')}
+                </p>
               </div>
             </div>
           )}
 
           {activeTab === 'advanced' && (
-            <div className="space-y-6 animate-fadeIn">
-              <h3 className="text-xl font-bold text-slate-700">{t('modals.ms1d.advanced.title')}</h3>
-              <p className="text-slate-600 leading-relaxed text-justify">{t('modals.ms1d.advanced.desc')}</p>
-
-              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                 <h4 className="font-semibold text-slate-700 mb-2">{t('modals.ms1d.advanced.kinetics')}</h4>
-                 <p className="text-sm text-slate-600 text-justify">{t('modals.ms1d.advanced.kinetics_desc')}</p>
-              </div>
-
-              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-4">
-                 <h4 className="font-semibold text-slate-700 mb-2">{t('modals.ms1d.advanced.visualizations')}</h4>
-                 <p className="text-sm text-slate-600 text-justify">{t('modals.ms1d.advanced.visualizations_desc')}</p>
-              </div>
-
-              <div className="mt-6 border-t border-slate-200 pt-4">
-                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{t('modals.references')}</h4>
-                 <p className="text-xs text-slate-500 italic">{t('modals.ms1d.advanced.ref')}</p>
-              </div>
+            <div className="space-y-4 animate-fadeIn">
+              <h3 className="text-lg font-bold text-slate-700">{t('modals.model_1d.advanced.parameters', 'Parâmetros Avançados')}</h3>
+              <ul className="list-disc pl-5 text-sm text-slate-600 space-y-2">
+                <li><strong>{t('params.D', 'Difusão')} (D):</strong> {t('modals.model_1d.advanced.d_desc', 'Controla a velocidade de condução.')}</li>
+                <li><strong>{t('params.L', 'Comprimento')} (L):</strong> {t('modals.model_1d.advanced.l_desc', 'Tamanho do cabo em mm.')}</li>
+                <li><strong>{t('modals.tentusscher1d.advanced.heterogeneity', 'Heterogeneidade Celular')}:</strong> {t('modals.tentusscher1d.advanced.heterogeneity_desc', 'Permite selecionar correntes específicas de Epicárdio, Endocárdio ou Miocárdio médio, alterando Gto e Gks.')}</li>
+              </ul>
             </div>
           )}
 
           {activeTab === 'math' && (
             <div className="space-y-4 animate-fadeIn">
-              <h3 className="text-xl font-bold text-slate-700">{t('modals.ms1d.math.title')}</h3>
-              <p className="text-slate-600 text-sm mb-4">{t('modals.ms1d.math.desc')}</p>
-              
-              <div className="bg-slate-50 border border-slate-200 border-l-4 border-l-emerald-500 text-slate-700 p-4 rounded-r-lg font-mono text-sm space-y-2 overflow-x-auto custom-scrollbar mb-2">
-                 <p>{t('modals.ms1d.math.eq_v')}</p>
-                 <p>{t('modals.ms1d.math.eq_h')}</p>
+              <h3 className="text-lg font-bold text-slate-700">{t('modals.model_1d.math.equations', 'Equações Matemáticas')}</h3>
+              <p className="text-slate-600 text-sm">
+                {t('modals.tentusscher1d.math.desc', 'A propagação 1D do potencial V no espaço x é dada pela equação da reação-difusão:')}
+              </p>
+              <div className="bg-slate-50 p-3 rounded text-center overflow-x-auto text-sm border border-slate-200">
+                 {t('modals.tentusscher1d.math.equation', 'dV/dt = D * d²V/dx² - (I_ion + I_stim)/Cm')}
               </div>
-              <p className="text-sm text-slate-600 italic mt-2 mb-6">{t('modals.ms1d.math.stim_term')}</p>
-
-              <h3 className="text-lg font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">{t('modals.ms1d.math.methods')}</h3>
-              <p className="text-sm text-slate-600 text-justify">{t('modals.ms1d.math.methods_desc')}</p>
+              <p className="text-slate-600 text-sm mt-2">
+                {t('modals.tentusscher1d.math.methods_desc', 'A integração é feita no tempo usando o método de Euler para a voltagem, e Rush-Larsen analítico para a estabilidade das comportas de canal iônico. A discretização do Laplaciano ocorre por diferenças finitas centrais.')}
+              </p>
             </div>
           )}
         </div>
       </div>
     );
   };
-
-
-  const chartModalContent = useMemo(() => (
-    <>
-      <h2 className="text-lg font-bold text-slate-700 mb-4">
-        {t('bistableChart.potentialModal')} = {selectedX !== null ? (selectedX * editableParams.dx).toFixed(2) + ' cm' : ''}
-      </h2>
-      <div className="w-full h-[60vh] min-h-[400px]">
-        <Chart data={timeseriesData} />
-      </div>
-    </>
-  ), [selectedX, editableParams.dx, timeseriesData, t]);
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-auto lg:overflow-hidden">
@@ -269,7 +260,7 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
             <button onClick={onBack} className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors">
               <i className="bi bi-arrow-left text-xl"></i>
             </button>
-            <h1 className="text-xl font-bold text-slate-800 hidden sm:block">{t('home.models.ms_1d.title')}</h1>
+            <h1 className="text-xl font-bold text-slate-800 hidden sm:block">{t('common.tentusscher_model', 'Ten Tusscher')}</h1>
           </div>
         </header>
       )}
@@ -281,7 +272,7 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
 
             <SettingsSection title={t('common.view_options') || "Visualização"} defaultOpen={true}>
                  <div className="flex items-center justify-between">
-                     <span className="text-sm font-medium text-slate-700">{viewMode === 'line' ? t('common.line_chart') : t('common.color_chart')}</span>
+                     <span className="text-sm font-medium text-slate-700">{viewMode === 'line' ? t('common.line_chart', 'Gráfico de Linha') : t('common.color_chart', 'Gráfico de Cores')}</span>
                      <div className="relative inline-block w-12 h-6 align-middle select-none transition duration-200 ease-in">
                          <input 
                              type="checkbox" 
@@ -294,20 +285,51 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
                  </div>
             </SettingsSection>
 
-            <SettingsSection title={t('common.simulation_params')} defaultOpen={true}>
-                <div className="grid grid-cols-2 gap-3">
-                    {Object.keys(editableParams).map((key) => (
-                    <Input
-                        key={key}
-                        label={t(`params.${key}`) || key}
-                        value={editableParams[key]}
-                        onChange={(e) => handleChange(e, key)}
-                        type="number"
-                        className="mb-0"
-                    />
-                    ))}
-                </div>
+            <SettingsSection title={t('common.tissue', 'Tecido e Célula')} defaultOpen={true}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t('params.cellType', 'Tipo Celular')}</label>
+                <select 
+                  value={editableParams.cellType} 
+                  onChange={(e) => handleChange(e, 'cellType')}
+                  className="w-full text-sm p-2 border border-slate-300 rounded focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                >
+                  <option value="epi">{t('params.cellEpi', 'Epicárdio')}</option>
+                  <option value="endo">{t('params.cellEndo', 'Endocárdio')}</option>
+                  <option value="myo">{t('params.cellMyo', 'Miocárdio Médio')}</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Input label={t('params.L', 'L (mm)')} value={editableParams.L} onChange={(e) => handleChange(e, 'L')} type="number" className="mb-0" />
+                <Input label={t('params.dx', 'dx (mm)')} value={editableParams.dx} onChange={(e) => handleChange(e, 'dx')} type="number" className="mb-0" />
+                <Input label={t('params.D', 'Difusão')} value={editableParams.D} onChange={(e) => handleChange(e, 'D')} type="number" className="mb-0" />
+              </div>
             </SettingsSection>
+
+            <SettingsSection title={t('common.simulation', 'Simulação')} defaultOpen={true}>
+              <div className="grid grid-cols-2 gap-3">
+                <Input label={t('params.totalTime', 'Tempo Total (ms)')} value={editableParams.totalTime} onChange={(e) => handleChange(e, 'totalTime')} type="number" className="mb-0" />
+                <Input label={t('params.dt', 'dt (ms)')} value={editableParams.dt} onChange={(e) => handleChange(e, 'dt')} type="number" className="mb-0" />
+              </div>
+            </SettingsSection>
+
+            <SettingsSection title={t('common.stimulus', 'Estímulo')} defaultOpen={true}>
+              <div className="grid grid-cols-2 gap-3">
+                <Input label={t('params.inicio', 'Início (ms)')} value={editableParams.inicio} onChange={(e) => handleChange(e, 'inicio')} type="number" className="mb-0" />
+                <Input label={t('params.duracao', 'Duração (ms)')} value={editableParams.duracao} onChange={(e) => handleChange(e, 'duracao')} type="number" className="mb-0" />
+                <Input label={t('params.amplitude', 'Amplitude')} value={editableParams.amplitude} onChange={(e) => handleChange(e, 'amplitude')} type="number" className="mb-0" />
+              </div>
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <Input label={t('params.posição_do_estímulo', 'Posição Estímulo (mm)')} value={editableParams.posição_do_estímulo} onChange={(e) => handleChange(e, 'posição_do_estímulo')} type="number" className="mb-0" />
+                <Input label={t('params.tamanho_do_estímulo', 'Tamanho Estímulo (mm)')} value={editableParams.tamanho_do_estímulo} onChange={(e) => handleChange(e, 'tamanho_do_estímulo')} type="number" className="mb-0" />
+              </div>
+            </SettingsSection>
+
+            {usingGPU !== null && (
+              <div className={`mt-4 p-3 rounded-lg flex items-center justify-center gap-2 font-medium text-sm border ${usingGPU ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+                <i className={`bi ${usingGPU ? 'bi-gpu-card' : 'bi-cpu'}`}></i>
+                {usingGPU ? 'WebGPU Ativo' : 'CPU Fallback'}
+              </div>
+            )}
           </div>
         </aside>
 
@@ -317,19 +339,22 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
                     {simulationData.length > 0 ? (
                         <>
                             {viewMode === 'line' ? (
-                                <MS1DChart 
+                                <TenTusscher1DChart 
                                   data={currentChartData} 
-                                  windowSize={editableParams.L} 
-                                  scrollPosition={0} 
                                 />
                             ) : (
-                                <SpatiotemporalChart simulationData={simulationData} currentFrame={currentFrame} onPointClick={handlePointClick} />
+                                <SpatiotemporalChart 
+                                  simulationData={simulationData} 
+                                  currentFrame={currentFrame} 
+                                  onPointClick={handlePointClick} 
+                                  valueDomain={[-95.0, 50.0]} 
+                                />
                             )}
                         </>
                     ) : (
                         <div className="h-87.5 w-full flex flex-col items-center justify-center text-slate-400">
                              <i className="bi bi-activity text-6xl mb-4 opacity-50"></i>
-                             <p>{t('common.ready')}</p>
+                             <p>{t('common.ready', 'Aguardando Simulação')}</p>
                         </div>
                     )}
                  </div>
@@ -345,7 +370,7 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
                             className={`rounded-full px-6 py-2 font-bold text-white shadow-md transition-transform active:scale-95 flex items-center gap-2 ${loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                         >
                              {loading ? <span className="animate-spin"><i className="bi bi-arrow-repeat"></i></span> : <i className="bi bi-play-fill text-xl"></i>}
-                             {loading ? t('common.simulating') : t('common.simulate')}
+                             {loading ? t('common.simulating', 'Simulando...') : t('common.simulate', 'Simular')}
                         </button>
 
                         <button
@@ -364,7 +389,7 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
                                     mode="1d"
                                     isOpen={isExportModalOpen} 
                                     onClose={() => setIsExportModalOpen(false)}
-                                    onExportPng={() => exportToPng(chartRef, 'ms_1d_plot')}
+                                    onExportPng={() => exportToPng(chartRef, 'tentusscher_1d_plot')}
                                     onExportGif={async () => {
                                         setExporting(true);
                                         const labels = {
@@ -372,10 +397,10 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
                                             position: t('chart.position_unit'),
                                             time_ms: t('chart.time_ms')
                                         };
-                                        await export1DToGif(simulationData, editableParams, 'ms1d_simulation', labels, viewMode);
+                                        await export1DToGif(simulationData, editableParams, 'tentusscher1d_simulation', labels, viewMode);
                                         setExporting(false);
                                     }}
-                                    onExportData={() => export1DToXDMF(simulationData, editableParams, 'ms_1d_data')}
+                                    onExportData={() => export1DToXDMF(simulationData, editableParams, 'tentusscher_1d_data')}
                                 />
                                 
                                 <div className="h-8 w-px bg-slate-300 mx-1 hidden md:block"></div>
@@ -428,12 +453,10 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
         </main>
       </div>
 
-      {/* Modal para exibir o gráfico de um ponto clicado. */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         {chartModalContent}
       </Modal>
 
-      {/* Modal para Informações */}
       <Modal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)}>
         {renderInfoModalContent()}
       </Modal>
@@ -441,4 +464,4 @@ const MitchellSchaeffer1DPage = ({ onBack, isEmbedded }) => {
   );
 };
 
-export default MitchellSchaeffer1DPage;
+export default TenTusscher1DPage;

@@ -9,18 +9,54 @@
       "2d": "2D Models"
     },
     "models": {
-      "single_stimulus": { "title": "Single Stimulus", "desc": "Simulates the response of a cardiac cell to a single electrical stimulus." },
-      "multiple_stimuli": { "title": "Multiple Stimuli", "desc": "Observes the cellular response to a series of stimuli with a fixed interval." },
-      "s1s2": { "title": "S1-S2 Protocol", "desc": "Standard protocol to investigate cardiac tissue refractoriness and vulnerability." },
-      "s1_s2": { "title": "S1-S2 Protocol", "desc": "Standard protocol to investigate cardiac tissue refractoriness and vulnerability." },
-      "restitution_curve": { "title": "Restitution Curve", "desc": "Analyzes the relationship between the diastolic interval (DI) and the action potential duration (APD)." },
-      "bistable": { "title": "Bistable", "desc": "One-dimensional model exhibiting bistable behavior." },
-      "fhn": { "title": "FitzHugh-Nagumo", "desc": "Simplified model of cardiac excitability in one dimension." },
-      "ms_1d": { "title": "Mitchell-Schaeffer 1D", "desc": "Mitchell-Schaeffer model extended to one spatial dimension." },
-      "model_2d": { "title": "2D Tissue Model", "desc": "Simulates 2D wave propagation using Mitchell-Schaeffer or Minimal Model." },
-      "source_sink": { "title": "Source-Sink Mismatch", "desc": "Simulates propagation through a variable gap in an obstacle." },
-      "model_1d": { "title": "1D Cable Equation", "desc": "Choose between different models for one-dimensional simulations." },
-      "cv_restitution_1d": { "title": "1D Conduction Velocity Restitution", "desc": "Analyzes how conduction velocity changes with different intervals in a 1D fiber." }
+      "single_stimulus": {
+        "title": "Single Stimulus",
+        "desc": "Simulates the response of a cardiac cell to a single electrical stimulus."
+      },
+      "multiple_stimuli": {
+        "title": "Multiple Stimuli",
+        "desc": "Observes the cellular response to a series of stimuli with a fixed interval."
+      },
+      "s1s2": {
+        "title": "S1-S2 Protocol",
+        "desc": "Standard protocol to investigate cardiac tissue refractoriness and vulnerability."
+      },
+      "s1_s2": {
+        "title": "S1-S2 Protocol",
+        "desc": "Standard protocol to investigate cardiac tissue refractoriness and vulnerability."
+      },
+      "restitution_curve": {
+        "title": "Restitution Curve",
+        "desc": "Analyzes the relationship between the diastolic interval (DI) and the action potential duration (APD)."
+      },
+      "bistable": {
+        "title": "Bistable",
+        "desc": "One-dimensional model exhibiting bistable behavior."
+      },
+      "fhn": {
+        "title": "FitzHugh-Nagumo",
+        "desc": "Simplified model of cardiac excitability in one dimension."
+      },
+      "ms_1d": {
+        "title": "Mitchell-Schaeffer 1D",
+        "desc": "Mitchell-Schaeffer model extended to one spatial dimension."
+      },
+      "model_2d": {
+        "title": "2D Tissue Model",
+        "desc": "Simulates 2D wave propagation using Mitchell-Schaeffer or Minimal Model."
+      },
+      "source_sink": {
+        "title": "Source-Sink Mismatch",
+        "desc": "Simulates propagation through a variable gap in an obstacle."
+      },
+      "model_1d": {
+        "title": "1D Cable Equation",
+        "desc": "Choose between different models for one-dimensional simulations."
+      },
+      "cv_restitution_1d": {
+        "title": "1D Conduction Velocity Restitution",
+        "desc": "Analyzes how conduction velocity changes with different intervals in a 1D fiber."
+      }
     }
   },
   "common": {
@@ -30,7 +66,7 @@
     "reset": "Reset",
     "simulating": "Simulating...",
     "calculating": "Calculating...",
-    "ready": "Ready to simulate",
+    "ready": "Waiting for Simulation...",
     "pause": "Pause",
     "resume": "Resume",
     "stop": "Stop",
@@ -95,7 +131,9 @@
     "diastolic_interval": "Diastolic Interval",
     "select_activation": "Select Activation",
     "activation": "Activation",
-    "tentusscher_model": "Ten Tusscher"
+    "tentusscher_model": "Ten Tusscher",
+    "tissue": "Tissue and Cell",
+    "simulation": "Simulation"
   },
   "chart": {
     "potential_unit": "Potential (V)",
@@ -160,7 +198,10 @@
     "radius": "Radius",
     "cx": "Center X",
     "cy": "Center Y",
-    "x1": "X1", "y1": "Y1", "x2": "X2", "y2": "Y2",
+    "x1": "X1",
+    "y1": "Y1",
+    "x2": "X2",
+    "y2": "Y2",
     "conductivity": "Conductivity (k)",
     "condutividade": "Conductivity",
     "density": "Density",
@@ -200,15 +241,34 @@
     "epi": "Epicardium",
     "endo": "Endocardium",
     "myo": "Mid-Myocardium (M-Cell)",
-    "u_o": "u_o", "u_u": "u_u", "theta_v": "theta_v", "theta_w": "theta_w", 
-    "theta_vminus": "theta_vminus", "theta_o": "theta_o", 
-    "tau_v1minus": "tau_v1minus", "tau_v2minus": "tau_v2minus", "tau_vplus": "tau_vplus", 
-    "tau_w1minus": "tau_w1minus", "tau_w2minus": "tau_w2minus", "k_wminus": "k_wminus", 
-    "u_wminus": "u_wminus", "tau_wplus": "tau_wplus", 
-    "tau_fi": "tau_fi", "tau_o1": "tau_o1", "tau_o2": "tau_o2", 
-    "tau_so1": "tau_so1", "tau_so2": "tau_so2", "k_so": "k_so", "u_so": "u_so", 
-    "tau_s1": "tau_s1", "tau_s2": "tau_s2", "k_s": "k_s", "u_s": "u_s", 
-    "tau_si": "tau_si", "tau_winf": "tau_winf", "w_infstar": "w_infstar",
+    "u_o": "u_o",
+    "u_u": "u_u",
+    "theta_v": "theta_v",
+    "theta_w": "theta_w",
+    "theta_vminus": "theta_vminus",
+    "theta_o": "theta_o",
+    "tau_v1minus": "tau_v1minus",
+    "tau_v2minus": "tau_v2minus",
+    "tau_vplus": "tau_vplus",
+    "tau_w1minus": "tau_w1minus",
+    "tau_w2minus": "tau_w2minus",
+    "k_wminus": "k_wminus",
+    "u_wminus": "u_wminus",
+    "tau_wplus": "tau_wplus",
+    "tau_fi": "tau_fi",
+    "tau_o1": "tau_o1",
+    "tau_o2": "tau_o2",
+    "tau_so1": "tau_so1",
+    "tau_so2": "tau_so2",
+    "k_so": "k_so",
+    "u_so": "u_so",
+    "tau_s1": "tau_s1",
+    "tau_s2": "tau_s2",
+    "k_s": "k_s",
+    "u_s": "u_s",
+    "tau_si": "tau_si",
+    "tau_winf": "tau_winf",
+    "w_infstar": "w_infstar",
     "num_estimulos_s1": "Num S1 Stimuli",
     "tau_in": "Tau In",
     "tau_out": "Tau Out",
@@ -216,8 +276,8 @@
     "tau_close": "Tau Close",
     "v_gate": "V Gate",
     "BCL_S1": "BCL S1",
-    "posição_do_estímulo": "Stimulus Position",
-    "tamanho_do_estímulo": "Stimulus Size",
+    "posição_do_estímulo": "Stimulus Position (mm)",
+    "tamanho_do_estímulo": "Stimulus Size (mm)",
     "epsilon": "Recovery Rate (ε)",
     "gamma": "Equilibrium Constant (γ)",
     "alpha": "Excitation Threshold",
@@ -261,7 +321,10 @@
     "v_gate_desc": "Potential threshold that switches the h-gate behavior (open vs close).",
     "Cai": "Intracellular Calcium (Cai)",
     "Nai": "Intracellular Sodium (Nai)",
-    "Ki": "Intracellular Potassium (Ki)"
+    "Ki": "Intracellular Potassium (Ki)",
+    "cellEpi": "Epicardium",
+    "cellEndo": "Endocardium",
+    "cellMyo": "Mid-myocardium"
   },
   "modals": {
     "math_model": "Mathematical Model",
@@ -467,7 +530,7 @@
         }
       }
     },
-    "s1s2": { 
+    "s1s2": {
       "ms": {
         "basic": {
           "title": "S1-S2 Protocol",
@@ -660,7 +723,6 @@
         }
       }
     },
-    
     "fhn": {
       "title": "FitzHugh-Nagumo Model (FHN)",
       "tabs": {
@@ -811,7 +873,39 @@
         "methods": "Integration and Performance",
         "methods_desc": "For spatial discretization, the worker uses the Central Finite Difference Method. In time, integration uses Euler for voltage and the Rush-Larsen method for gating variables. The dynamic 'dt' calculation (CFL) relies on the maximum diffusion tensor to prevent instabilities.",
         "stim_term": "Dxx, Dyy, and Dxy are the coefficients derived from the sigma_L, sigma_T velocities and the fiber angle."
-  }
+      }
+    },
+    "tentusscher1d": {
+      "title": "Ten Tusscher Model - 1D",
+      "basic": {
+        "title": "What is the Ten Tusscher Model?",
+        "desc": "The Ten Tusscher model is a detailed representation of a human ventricular cell. It describes how vital ions, such as Sodium (Na+), Calcium (Ca2+), and Potassium (K+), flow through cell membranes to generate the electrical impulse that drives the heartbeat."
+      },
+      "gpu": {
+        "desc": "Instead of an isolated cell, this simulator lines up dozens of cells holding hands to form a muscle fiber (1D cable). When the first cell is stimulated, it passes the electricity to its neighbor, creating a continuous electrical 'wave'. This is exactly how the command to contract spreads across your real heart!"
+      },
+      "advanced": {
+        "heterogeneity": "Why choose Epi, Endo, or Myo?",
+        "heterogeneity_desc": "The heart wall consists of different layers (outer, middle, and inner). Cells in each layer react at different speeds due to the natural variation in their ion channels. This difference is essential to ensure the heart pumps and relaxes in a synchronized manner."
+      },
+      "math": {
+        "methods_desc": "The 'Reaction' part (I_ion) calculates local biology: the ion gates opening and closing inside each cell. The 'Diffusion' part (D) dictates the global physics: how easily electrical charge leaks from one cell to the next, pushing the wave forward.",
+        "desc": "The propagation of electricity is governed by a Reaction-Diffusion Equation:",
+        "equation": "dV/dt = D * d²V/dx² - (I_ion + I_stim)/Cm"
+      }
+    },
+    "model_1d": {
+      "basic": {
+        "cable_concept": "Domino Effect (1D Cable)"
+      },
+      "advanced": {
+        "parameters": "Advanced Parameters",
+        "d_desc": "Controls conduction velocity.",
+        "l_desc": "Cable size in mm."
+      },
+      "math": {
+        "equations": "Mathematical Equations"
+      }
     }
   },
   "export_modal": {
