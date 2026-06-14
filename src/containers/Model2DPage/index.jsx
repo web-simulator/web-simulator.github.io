@@ -463,6 +463,7 @@ const Model2DPage = ({ onBack }) => {
     const isGPUArray = Array.isArray(frames);
     
     for(let f = 0; f < totalFrames; f++) {
+        if (isGPUArray && !frames[f]) continue;
         const val = isGPUArray ? frames[f][idx] : frames[f * N * N + idx];
         timeseries.push({ tempo: times[f].toFixed(1), v: val });
     }
@@ -472,7 +473,9 @@ const Model2DPage = ({ onBack }) => {
   const chartModalContent = useMemo(() => (
      <>
        <h2 className="text-lg font-bold mb-2">{t('common.action_potential')}</h2>
-       <Chart data={timeseriesData} />
+       <div className="h-80 w-full">
+         <Chart data={timeseriesData} />
+       </div>
      </>
   ), [timeseriesData, t]);
 
