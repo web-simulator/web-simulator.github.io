@@ -48,7 +48,7 @@ const DEFAULT_EDITABLE_PARAMS = {
   amplitude: 2.0, 
   posição_do_estímulo: 5, 
   tamanho_do_estímulo: 5, 
-  num_estimulos: 1,
+  num_estimulos: 2,
   BCL: 1000
 };
 
@@ -317,10 +317,12 @@ const TenTusscher1DPage = ({ onBack, isEmbedded }) => {
                 <Input label={t('params.inicio', 'Início (ms)')} value={editableParams.inicio} onChange={(e) => handleChange(e, 'inicio')} type="number" className="mb-0" />
                 <Input label={t('params.duracao', 'Duração (ms)')} value={editableParams.duracao} onChange={(e) => handleChange(e, 'duracao')} type="number" className="mb-0" />
                 <Input label={t('params.amplitude', 'Amplitude')} value={editableParams.amplitude} onChange={(e) => handleChange(e, 'amplitude')} type="number" className="mb-0" />
+                <Input label={t('params.num_estimulos', 'Nº de Estímulos')} value={editableParams.num_estimulos} onChange={(e) => handleChange(e, 'num_estimulos')} type="number" className="mb-0" />
               </div>
               <div className="grid grid-cols-2 gap-3 mt-3">
                 <Input label={t('params.posição_do_estímulo', 'Posição Estímulo (mm)')} value={editableParams.posição_do_estímulo} onChange={(e) => handleChange(e, 'posição_do_estímulo')} type="number" className="mb-0" />
                 <Input label={t('params.tamanho_do_estímulo', 'Tamanho Estímulo (mm)')} value={editableParams.tamanho_do_estímulo} onChange={(e) => handleChange(e, 'tamanho_do_estímulo')} type="number" className="mb-0" />
+                <Input label={t('params.BCL', 'BCL (ms)')} value={editableParams.BCL} onChange={(e) => handleChange(e, 'BCL')} type="number" className="mb-0" />
               </div>
             </SettingsSection>
 
