@@ -133,7 +133,8 @@
     "activation": "Activation",
     "tentusscher_model": "Ten Tusscher",
     "tissue": "Tissue and Cell",
-    "simulation": "Simulation"
+    "simulation": "Simulation",
+    "ischemia": "Ischemia"
   },
   "chart": {
     "potential_unit": "Potential (V)",
@@ -243,6 +244,17 @@
     "myo": "Mid-Myocardium (M-Cell)",
     "u_o": "u_o",
     "u_u": "u_u",
+    "isIschemia": "Enable Ischemia",
+    "ischemia": "Ischemia",
+    "enable_ischemia": "Enable Ischemia",
+    "atpi": "ATPi (mM)",
+    "ATPi": "ATPi (mM)",
+    "ko_ischemia": "Ischemic Ko (mM)",
+    "Ko_ischemia": "Ischemic Ko (mM)",
+    "gna_scale": "GNa Scale",
+    "GNa_scale": "GNa Scale",
+    "gcal_scale": "GCaL Scale",
+    "GCaL_scale": "GCaL Scale",
     "theta_v": "theta_v",
     "theta_w": "theta_w",
     "theta_vminus": "theta_vminus",

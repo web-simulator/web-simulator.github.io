@@ -110,7 +110,8 @@ const DEFAULT_EDITABLE_PARAMS = {
   tentusscher: {
     cellType: 'epi', S1: 400, BCL_S2_inicial: 350, BCL_S2_final: 200,
     delta_CL: 10, inicio: 10.0, duracao: 1.0, amplitude: 1.0, dt: 0.02,
-    num_estimulos_s1: 5, downsamplingFactor: 100
+    num_estimulos_s1: 5, downsamplingFactor: 100,
+    isIschemia: false, Ko_ischemia: 8.0, ATPi: 3.0, GNa_scale: 0.75, GCaL_scale: 0.75
   }
 };
 
@@ -255,7 +256,11 @@ const RestitutionCurvePage = ({ onBack }) => {
   }, [data, visibleVars, showTimeSeries]);
 
   const handleChange = useCallback((e, name) => {
-    const value = name === 'cellType' ? e.target.value : parseFloat(e.target.value);
+    let value;
+    if (name === 'cellType') value = e.target.value;
+    else if (name === 'isIschemia') value = e.target.checked;
+    else value = parseFloat(e.target.value);
+    
     setEditableParams((prev) => ({
       ...prev,
       [selectedModel]: {
@@ -491,7 +496,7 @@ const RestitutionCurvePage = ({ onBack }) => {
 
             <SettingsSection title={t('common.simulation_params')} defaultOpen={true}>
               <div className="grid grid-cols-2 gap-3">
-                {Object.keys(currentParams).filter(key => key !== 'cellType').map((key) => (
+                {Object.keys(currentParams).filter(key => !['cellType', 'isIschemia', 'Ko_ischemia', 'ATPi', 'GNa_scale', 'GCaL_scale'].includes(key)).map((key) => (
                     <Input
                         key={key}
                         label={t(`params.${key}`) || key}
@@ -535,6 +540,34 @@ const RestitutionCurvePage = ({ onBack }) => {
                             </div>
                          </div>
                      )}
+                </SettingsSection>
+            )}
+
+            {selectedModel === 'tentusscher' && (
+                <SettingsSection title={t('common.ischemia') || 'Isquemia'} defaultOpen={true}>
+                    <div className="mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <div className="relative">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={currentParams.isIschemia || false}
+                                    onChange={(e) => handleChange(e, 'isIschemia')}
+                                />
+                                <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                            </div>
+                            <span className="text-sm font-semibold text-slate-700">{t('params.isIschemia') || 'Ativar Isquemia'}</span>
+                        </label>
+                    </div>
+
+                    {currentParams.isIschemia && (
+                        <div className="grid grid-cols-2 gap-2 animate-fadeIn">
+                            <Input label={t('params.ATPi')} value={currentParams.ATPi} onChange={(e) => handleChange(e, 'ATPi')} type="number" step="0.1" />
+                            <Input label={t('params.Ko_ischemia')} value={currentParams.Ko_ischemia} onChange={(e) => handleChange(e, 'Ko_ischemia')} type="number" step="0.1" />
+                            <Input label={t('params.GNa_scale')} value={currentParams.GNa_scale} onChange={(e) => handleChange(e, 'GNa_scale')} type="number" step="0.05" />
+                            <Input label={t('params.GCaL_scale')} value={currentParams.GCaL_scale} onChange={(e) => handleChange(e, 'GCaL_scale')} type="number" step="0.05" />
+                        </div>
+                    )}
                 </SettingsSection>
             )}
           </div>
