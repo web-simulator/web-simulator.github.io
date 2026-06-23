@@ -97,6 +97,11 @@ const DEFAULT_EDITABLE_PARAMS = {
       num_estimulos: 5,
       dt: 0.02,
       downsamplingFactor: 50,
+      isIschemia: false,
+      Ko_ischemia: 8.0,
+      ATPi: 3.0,
+      GNa_scale: 0.75,
+      GCaL_scale: 0.75
   }
 };
 
@@ -179,7 +184,9 @@ const MultipleStimuliPage = ({ onBack }) => {
   }, [data, visibleVars]);
 
   const handleChange = useCallback((e, name) => {
-    const value = name === 'cellType' ? e.target.value : parseFloat(e.target.value);
+    let value = e.target.value;
+    if (name === 'isIschemia') value = e.target.checked;
+    else if (name !== 'cellType') value = parseFloat(value);
     setEditableParams((prevParams) => ({ 
       ...prevParams, 
       [selectedModel]: {
@@ -443,6 +450,31 @@ const MultipleStimuliPage = ({ onBack }) => {
                          </div>
                      )}
                 </SettingsSection>
+            )}
+            
+            {selectedModel === 'tentusscher' && (
+              <SettingsSection title={t('params.ischemia') || 'Isquemia'} defaultOpen={currentParams.isIschemia}>
+                  <div className="flex items-center justify-between mb-4">
+                     <span className="text-sm font-medium text-slate-700">{t('params.enable_ischemia') || 'Ativar Isquemia'}</span>
+                     <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer" 
+                          checked={currentParams.isIschemia || false} 
+                          onChange={(e) => handleChange({ target: { checked: e.target.checked } }, 'isIschemia')} 
+                        />
+                        <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-emerald-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                     </label>
+                  </div>
+                  {currentParams.isIschemia && (
+                     <>
+                        <Input label={t('params.atpi') || 'ATPi (mM)'} value={currentParams.ATPi} onChange={(e) => handleChange(e, 'ATPi')} type="number" step="0.1" />
+                        <Input label={t('params.ko_ischemia') || 'Ko isquêmico (mM)'} value={currentParams.Ko_ischemia} onChange={(e) => handleChange(e, 'Ko_ischemia')} type="number" step="0.1" />
+                        <Input label={t('params.gna_scale') || 'Escala GNa'} value={currentParams.GNa_scale} onChange={(e) => handleChange(e, 'GNa_scale')} type="number" step="0.01" />
+                        <Input label={t('params.gcal_scale') || 'Escala GCaL'} value={currentParams.GCaL_scale} onChange={(e) => handleChange(e, 'GCaL_scale')} type="number" step="0.01" />
+                     </>
+                  )}
+              </SettingsSection>
             )}
           </div>
         </aside>

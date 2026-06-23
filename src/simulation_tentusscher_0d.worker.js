@@ -11,7 +11,12 @@ self.onmessage = (e) => {
       protocol = 'single',
       BCL = 1000,
       num_estimulos = 1,
-      s2_start = 0
+      s2_start = 0,
+      isIschemia = false,
+      Ko_ischemia = 8.0,
+      ATPi = 3.0,
+      GNa_scale = 0.75,
+      GCaL_scale = 0.75
     } = params;
   
     let computed_tempo_total = tempo_total;
@@ -85,7 +90,8 @@ self.onmessage = (e) => {
       let safe_Ki   = Math.max(Ki, 1e-7);
   
       // Parâmetros Constantes
-      let Ko = 5.4, Cao = 2.0, Nao = 140.0;
+      let Ko = isIschemia ? Ko_ischemia : 5.4;
+      let Cao = 2.0, Nao = 140.0;
       let Vc = 0.016404, Vsr = 0.001094;
       let Bufc = 0.15, Kbufc = 0.001, Bufsr = 10.0, Kbufsr = 0.3;
       let taufca = 2.0, taug = 2.0, Vmaxup = 0.000425, Kup = 0.00025;
@@ -93,9 +99,11 @@ self.onmessage = (e) => {
       let RTONF = (R * T) / F;
       let CAPACITANCE = 0.185;
   
-      let Gkr = 0.096, pKNa = 0.03, GK1 = 5.405, GNa = 14.838;
+      let Gkr = 0.096, pKNa = 0.03, GK1 = 5.405;
+      let GNa = isIschemia ? 14.838 * GNa_scale : 14.838;
       let GbNa = 0.00029, KmK = 1.0, KmNa = 40.0, knak = 1.362;
-      let GCaL = 0.000175, GbCa = 0.000592, knaca = 1000.0, KmNai = 87.5;
+      let GCaL = isIschemia ? 0.000175 * GCaL_scale : 0.000175;
+      let GbCa = 0.000592, knaca = 1000.0, KmNai = 87.5;
       let KmCa = 1.38, ksat = 0.1, n = 0.35, GpCa = 0.825;
       let KpCa = 0.0005, GpK = 0.0146;
   
@@ -142,7 +150,15 @@ self.onmessage = (e) => {
       let IbNa = GbNa * (svolt - Ena);
       let IbCa = GbCa * (svolt - Eca);
   
-      let I_ion = IKr + IKs + IK1 + Ito + INa + IbNa + ICaL + IbCa + INaK + INaCa + IpCa + IpK;
+      let IKATP = 0.0;
+      if (isIschemia) {
+          let gkbar_katp = 3.9;
+          let k_half = 0.25;
+          let f_ATP = 1.0 / (1.0 + Math.pow(ATPi / k_half, 2.0));
+          IKATP = gkbar_katp * Math.pow(Ko / 5.4, 0.24) * f_ATP * (svolt - Ek);
+      }
+  
+      let I_ion = IKr + IKs + IK1 + Ito + INa + IbNa + ICaL + IbCa + INaK + INaCa + IpCa + IpK + IKATP;
   
       // Integração das Concentrações
       let Caisquare = safe_Cai * safe_Cai;

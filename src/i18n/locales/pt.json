@@ -321,7 +321,13 @@
     "Ki": "Potássio Intracelular (Ki)",
     "cellEpi": "Epicárdio",
     "cellEndo": "Endocárdio",
-    "cellMyo": "Miocárdio Médio"
+    "cellMyo": "Miocárdio Médio",
+    "ischemia": "Isquemia",
+    "enable_ischemia": "Ativar Isquemia",
+    "atpi": "ATPi (mM)",
+    "ko_ischemia": "Ko isquêmico (mM)",
+    "gna_scale": "Escala GNa (0-1)",
+    "gcal_scale": "Escala GCaL (0-1)"
   },
   "modals": {
     "math_model": "Modelo Matemático",

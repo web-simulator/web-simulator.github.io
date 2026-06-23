@@ -324,7 +324,13 @@
     "Ki": "Intracellular Potassium (Ki)",
     "cellEpi": "Epicardium",
     "cellEndo": "Endocardium",
-    "cellMyo": "Mid-myocardium"
+    "cellMyo": "Mid-myocardium",
+    "ischemia": "Ischemia",
+    "enable_ischemia": "Enable Ischemia",
+    "atpi": "ATPi (mM)",
+    "ko_ischemia": "Ischemic Ko (mM)",
+    "gna_scale": "GNa Scale (0-1)",
+    "gcal_scale": "GCaL Scale (0-1)"
   },
   "modals": {
     "math_model": "Mathematical Model",
