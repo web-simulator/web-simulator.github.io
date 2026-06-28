@@ -238,6 +238,11 @@ self.onmessage = (e) => {
     const inv_4dx2 = 1.0 / (4.0 * dx * dx);
     const progressInterval = Math.max(1, Math.floor(steps / 100));
     const startTimeReal = performance.now();
+    
+    const temporalStride = downsamplingFactor;
+    const spatialStride = 1;
+    const N_out = N;
+    const outSize = size;
 
     // Loop da simulação
     for (let t = 0; t < steps; t++) {
@@ -257,6 +262,7 @@ self.onmessage = (e) => {
         const v_prev = new Float32Array(v);
         const h_prev = new Float32Array(h);
         const currentTime = t * dt;
+        const currentTimeBase = currentTime;
         
         let stimulus_amplitude = 0;
         let current_stimulus_map = null;
@@ -308,32 +314,26 @@ self.onmessage = (e) => {
                   const h_inf = alpha_h / sum_ab;
                   const h_exp = Math.exp(-sum_ab * dt);
                   h[idx] = h_inf + (hp - h_inf) * h_exp;
-                    const depth = i / N;
-                    if (depth >= epi_start) tau_in_val = epi_tau;
-                    else if (depth >= mid_start) tau_in_val = mid_tau;
-                    else tau_in_val = endo_tau;
+                } else {
+                  h[idx] = hp;
                 }
+
+                // Laplaciano
+                const d2v_dx2 = (v_prev[idx - 1] - 2 * vp + v_prev[idx + 1]) * inv_dx2;
+                const d2v_dy2 = (v_prev[idx - N] - 2 * vp + v_prev[idx + N]) * inv_dx2;
+                const d2v_dxdy = (v_prev[idx+N+1] - v_prev[idx+N-1] - v_prev[idx-N+1] + v_prev[idx-N-1]) * inv_4dx2;
+
+                const lap_v = (Dxx * d2v_dx2) + (Dyy * d2v_dy2) + (2 * Dxy * d2v_dxdy);
+                const J_in = (hp * vp * vp * (1 - vp)) / Tau_in;
+                const J_out = -vp / Tau_out;
                 
-                let h_inf = (vp < v_gate) ? 1.0 : 0.0;
-                let tau_h = (vp < v_gate) ? tau_open : tau_close;
-                h_new[idx] = h_inf + (hp - h_inf) * Math.exp(-dt / tau_h);
-
-                let j_in = (h_new[idx] * vp * vp * (1.0 - vp)) / tau_in_val;
-                let j_out = -vp / tau_out;
-
-                let v_next = vp + dt * (lap_v + j_in + j_out + stimulus);
-
-                if (v_next < 0.0) v_next = 0.0;
-                if (v_next > 1.5) v_next = 1.5;
-
-                v_new[idx] = v_next;
+                // Atualiza V
+                v[idx] = vp + dt * (lap_v + J_in + J_out + stimulus);
+                
+                // Limita os valores
+                if (v[idx] < 0.0) v[idx] = 0.0;
+                if (v[idx] > 1.5) v[idx] = 1.5;
             }
-        }
-        
-        // Atualiza arrays originais e aplica downsampling
-        for (let i = 0; i < size; i++) {
-            v[i] = v_new[i];
-            h[i] = h_new[i];
         }
 
         // Processo de subamostragem e registro de APD

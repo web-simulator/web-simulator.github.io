@@ -358,7 +358,8 @@ const Model2DPage = ({ onBack }) => {
     }
 
     // FLUXO PADRÃO (CPU WORKER)
-    worker.postMessage(payload);
+    const { abortSignal, ...workerPayload } = payload;
+    worker.postMessage(workerPayload);
   };
 
   const handleStop = () => {

@@ -338,7 +338,9 @@ self.onmessage = (e) => {
         let H_u_tho = (val_u >= u_o) ? 1.0 : 0.0;
 
         let J_fi = -val_v * H_u_thv * (val_u - theta_v) * (p.u_u - val_u) / p.tau_fi;
-        let J_so = (val_u - u_o) * (1.0 - H_u_thw) / p.tau_o + H_u_thw / p.tau_so;
+        let tau_o = (1.0 - H_u_tho) * p.tau_o1 + H_u_tho * p.tau_o2;
+        let tau_so = p.tau_so1 + 0.5 * (p.tau_so2 - p.tau_so1) * (1.0 + Math.tanh(p.k_so * (val_u - p.u_so)));
+        let J_so = (val_u - u_o) * (1.0 - H_u_thw) / tau_o + H_u_thw / tau_so;
         let J_si = -H_u_thw * val_w * val_s / p.tau_si;
 
         u[idx] = val_u + dt * (lap_u - (J_fi + J_so + J_si) + I_stim);
