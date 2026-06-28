@@ -212,7 +212,7 @@ export async function runGPU2DSimulation(payload, onProgress) {
       let numRegions, i_min = 0, i_max = N - 1, j_min = 0, j_max = N - 1;
       const pixelArea = dx * dy;
 
-      if (type === 'diffuse' && regionParams) {
+      if (type === 'diffuse' && distribution === 'region') {
         const { x1, y1, x2, y2 } = regionParams;
         i_min = Math.max(0, Math.floor(Math.min(y1, y2) / dy)); i_max = Math.min(N - 1, Math.floor(Math.max(y1, y2) / dy));
         j_min = Math.max(0, Math.floor(Math.min(x1, x2) / dx)); j_max = Math.min(N - 1, Math.floor(Math.max(x1, x2) / dx));

@@ -146,7 +146,7 @@ self.onmessage = (e) => {
           let checkInsideRegion = () => true;
           const pixelArea = dx * dy;
 
-          if (type === 'diffuse' && regionParams) {
+          if (type === 'diffuse' && distribution === 'region') {
             const { x1, y1, x2, y2 } = regionParams;
             i_min = Math.floor(Math.min(y1, y2) / dy);
             i_max = Math.floor(Math.max(y1, y2) / dy);
