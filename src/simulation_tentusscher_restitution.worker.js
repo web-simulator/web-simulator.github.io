@@ -271,7 +271,7 @@ self.onmessage = (e) => {
     if (next_sg > state.sg && state.svolt > -37.0) { next_sg = state.sg; }
     state.sg = next_sg;
 
-    state.svolt = state.svolt + dt * (-I_ion + stim);
+    state.svolt = state.svolt + dt * (-I_ion - stim);
   };
 
   // 1. PRE-PACING (S1)
@@ -293,7 +293,7 @@ self.onmessage = (e) => {
     for (let j = 0; j < num_estimulos_s1 - 1; j++) {
       const startS1 = inicio + j * S1;
       if (t >= startS1 && t < startS1 + duracao) {
-        stim = amplitude * 50.0;
+        stim = amplitude;
         break;
       }
     }
@@ -304,7 +304,7 @@ self.onmessage = (e) => {
   let ult_passos = parseInt((1.5 * S1) / dt, 10);
   for(let i=0; i < ult_passos; i++) {
      let t = i * dt; 
-     let stim = (t >= 0 && t < duracao) ? amplitude * 50.0 : 0;
+     let stim = (t >= 0 && t < duracao) ? amplitude : 0;
      stepModel(temp_state, stim);
      full_u_s1.push(temp_state.svolt);
   }
@@ -327,7 +327,7 @@ self.onmessage = (e) => {
     
     for(let i=0; i < passos_s2; i++) {
       let t = i * dt;
-      let stim = (t >= 0 && t < duracao) ? amplitude * 50.0 : 0;
+      let stim = (t >= 0 && t < duracao) ? amplitude : 0;
       stepModel(state, stim);
       
       if (i % downsamplingFactor === 0) {
@@ -339,7 +339,7 @@ self.onmessage = (e) => {
     let passos_apos_s2 = parseInt((1.5 * S1) / dt, 10);
     for(let i=0; i < passos_apos_s2; i++) {
       let t = i * dt;
-      let stim = (t >= 0 && t < duracao) ? amplitude * 50.0 : 0;
+      let stim = (t >= 0 && t < duracao) ? amplitude : 0;
       stepModel(state, stim);
       u_s2.push(state.svolt);
       

@@ -56,7 +56,7 @@ self.onmessage = (e) => {
       
       if (protocol === 'single') {
           if (t >= inicio && t < inicio + duração) {
-              stim = amplitude * 50.0; 
+              stim = amplitude; 
           }
       } else if (protocol === 'multiple' || protocol === 'restitution') {
           const num_s1 = params.num_estimulos_s1 || num_estimulos || 1;
@@ -64,7 +64,7 @@ self.onmessage = (e) => {
           for (let s = 0; s < num_s1; s++) {
               let t_stim = inicio + s * bcl_s1;
               if (t >= t_stim && t < t_stim + duração) {
-                  stim = amplitude * 50.0;
+                  stim = amplitude;
                   break;
               }
           }
@@ -74,13 +74,13 @@ self.onmessage = (e) => {
           for (let s = 0; s < num_s1; s++) {
               let t_stim = inicio + s * bcl_s1;
               if (t >= t_stim && t < t_stim + duração) {
-                  stim = amplitude * 50.0;
+                  stim = amplitude;
                   break;
               }
           }
           const s2_start_time = params.s2_start || (inicio + ((num_s1 - 1) * bcl_s1) + (params.intervalo_S2 || 200));
           if (t >= s2_start_time && t < s2_start_time + duração) {
-              stim = amplitude * 50.0;
+              stim = amplitude;
           }
       }
   
@@ -289,7 +289,7 @@ self.onmessage = (e) => {
       if (next_sg > sg && svolt > -37.0) { next_sg = sg; }
       sg = next_sg;
   
-      svolt = svolt + dt * (-I_ion + stim);
+      svolt = svolt + dt * (-I_ion - stim);
   
       // Downsampling e Envio pro Gráfico
       if (i % downsamplingFactor === 0) {

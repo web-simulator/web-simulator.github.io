@@ -109,7 +109,7 @@ const DEFAULT_EDITABLE_PARAMS = {
   },
   tentusscher: {
     cellType: 'epi', S1: 400, BCL_S2_inicial: 350, BCL_S2_final: 200,
-    delta_CL: 10, inicio: 10.0, duracao: 1.0, amplitude: 1.0, dt: 0.02,
+    delta_CL: 10, inicio: 10.0, duracao: 1.0, amplitude: -52.0, dt: 0.02,
     num_estimulos_s1: 5, downsamplingFactor: 100,
     isIschemia: false, Ko_ischemia: 8.0, ATPi: 3.0, GNa_scale: 0.75, GCaL_scale: 0.75
   }

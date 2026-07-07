@@ -109,7 +109,7 @@ const DEFAULT_EDITABLE_PARAMS = {
       S2: 300,
       intervalo: 50,
       duração: 1.0,
-      amplitude: 1.0,
+      amplitude: -52.0,
       dt: 0.02,
       num_estimulos_s1: 5,
       downsamplingFactor: 50,

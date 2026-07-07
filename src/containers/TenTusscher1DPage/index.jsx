@@ -45,7 +45,7 @@ const DEFAULT_EDITABLE_PARAMS = {
   downsamplingFactor: 50,
   inicio: 5.0,
   duracao: 1.0,
-  amplitude: 2.0, 
+  amplitude: -52.0, 
   posição_do_estímulo: 5, 
   tamanho_do_estímulo: 5, 
   num_estimulos: 2,

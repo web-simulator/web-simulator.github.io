@@ -390,7 +390,7 @@ export async function runGPU1DTenTusscher(payload, onProgress) {
     for (let s = 0; s < num_estimulos; s++) {
       let t_stim = inicio + s * BCL;
       if (time >= t_stim && time < t_stim + duracao) {
-        current_stim = amplitude * 50.0;
+        current_stim = amplitude;
         break;
       }
     }

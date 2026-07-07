@@ -91,7 +91,7 @@ const DEFAULT_EDITABLE_PARAMS = {
     cellType: 'epi',
     inicio: 10.0,
     duração: 1.0,
-    amplitude: 1.0,
+    amplitude: -52.0,
     dt: 0.02,
     tempo_total: 500.0,
     downsamplingFactor: 50,

@@ -60,7 +60,7 @@ self.onmessage = (e) => {
     for (let s = 0; s < num_estimulos; s++) {
       let t_stim = inicio + s * BCL;
       if (time >= t_stim && time < t_stim + duracao) {
-        current_stim = amplitude * 50.0;
+        current_stim = amplitude;
         break;
       }
     }
@@ -255,7 +255,7 @@ self.onmessage = (e) => {
       }
 
       // Atualização da voltagem
-      let v_next = svolt + dt * (D * lap_v - I_ion + stim);
+      let v_next = svolt + dt * (D * lap_v - I_ion - stim);
       if (v_next < -120.0) v_next = -120.0;
       if (v_next > 80.0) v_next = 80.0;
       
