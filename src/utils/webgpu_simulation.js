@@ -1,12 +1,13 @@
 // Classe auxiliar para replicação exata da semente de fibrose randômica/difusa
 export class SeededRandom {
   constructor(seed = Date.now()) {
-    this.seed = seed % 2147483647;
-    if (this.seed <= 0) this.seed += 2147483646;
+    this.seed = seed >>> 0;
   }
   next() {
-    this.seed = (this.seed * 16807) % 2147483647;
-    return this.seed / 2147483647;
+    this.seed = (this.seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(this.seed ^ (this.seed >>> 15), 1 | this.seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   }
   nextInt(min, max) {
     if (min > max) [min, max] = [max, min];
@@ -212,7 +213,7 @@ export async function runGPU2DSimulation(payload, onProgress) {
       let numRegions, i_min = 0, i_max = N - 1, j_min = 0, j_max = N - 1;
       const pixelArea = dx * dy;
 
-      if (type === 'diffuse' && distribution === 'region') {
+      if (type === 'diffuse' && regionParams) {
         const { x1, y1, x2, y2 } = regionParams;
         i_min = Math.max(0, Math.floor(Math.min(y1, y2) / dy)); i_max = Math.min(N - 1, Math.floor(Math.max(y1, y2) / dy));
         j_min = Math.max(0, Math.floor(Math.min(x1, x2) / dx)); j_max = Math.min(N - 1, Math.floor(Math.max(x1, x2) / dx));

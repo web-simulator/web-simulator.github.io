@@ -1,11 +1,12 @@
 class SeededRandom {
   constructor(seed = Date.now()) {
-    this.seed = seed % 2147483647;
-    if (this.seed <= 0) this.seed += 2147483646;
+    this.seed = seed >>> 0;
   }
   next() {
-    this.seed = (this.seed * 16807) % 2147483647;
-    return this.seed / 2147483647;
+    this.seed = (this.seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(this.seed ^ (this.seed >>> 15), 1 | this.seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   }
   nextInt(min, max) {
     if (min > max) [min, max] = [max, min];
@@ -149,7 +150,7 @@ self.onmessage = (e) => {
       let numRegions, i_min, i_max, j_min, j_max;
       const pixelArea = dx * dy;
 
-      if (type === 'diffuse' && distribution === 'region') {
+      if (type === 'diffuse' && regionParams) {
         const { x1, y1, x2, y2 } = regionParams;
         i_min = Math.floor(Math.min(y1, y2) / dy);
         i_max = Math.floor(Math.max(y1, y2) / dy);
