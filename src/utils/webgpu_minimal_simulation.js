@@ -22,17 +22,10 @@ const MINIMAL_SIMULATION_SHADER = `
   @group(0) @binding(0) var<uniform> params: UniformParams;
   @group(0) @binding(1) var<storage, read> u_in: array<f32>;
   @group(0) @binding(2) var<storage, read_write> u_out: array<f32>;
-  @group(0) @binding(3) var<storage, read> v_in: array<f32>;
-  @group(0) @binding(4) var<storage, read_write> v_out: array<f32>;
-  @group(0) @binding(5) var<storage, read> w_in: array<f32>;
-  @group(0) @binding(6) var<storage, read_write> w_out: array<f32>;
-  @group(0) @binding(7) var<storage, read> s_in: array<f32>;
-  @group(0) @binding(8) var<storage, read_write> s_out: array<f32>;
-  
-  @group(0) @binding(9) var<storage, read> dxx_map: array<f32>;
-  @group(0) @binding(10) var<storage, read> dyy_map: array<f32>;
-  @group(0) @binding(11) var<storage, read> dxy_map: array<f32>;
-  @group(0) @binding(12) var<storage, read> stimulus_map: array<f32>;
+  @group(0) @binding(3) var<storage, read> vws_in: array<vec4<f32>>;
+  @group(0) @binding(4) var<storage, read_write> vws_out: array<vec4<f32>>;
+  @group(0) @binding(5) var<storage, read> d_map: array<vec4<f32>>;
+  @group(0) @binding(6) var<storage, read> stimulus_map: array<f32>;
 
 
 
@@ -52,9 +45,7 @@ const MINIMAL_SIMULATION_SHADER = `
       
       let midx = mirror_i * n + mirror_j;
       u_out[idx] = u_in[midx];
-      v_out[idx] = v_in[midx];
-      w_out[idx] = w_in[midx];
-      s_out[idx] = s_in[midx];
+      vws_out[idx] = vws_in[midx];
       return;
     }
 
@@ -73,11 +64,13 @@ const MINIMAL_SIMULATION_SHADER = `
     }
 
     let val_u = u_in[idx];
-    let val_v = v_in[idx];
-    let val_w = w_in[idx];
-    let val_s = s_in[idx];
+    let vws_val = vws_in[idx];
+    let val_v = vws_val.x;
+    let val_w = vws_val.y;
+    let val_s = vws_val.z;
 
-    let Dxx = dxx_map[idx]; let Dyy = dyy_map[idx]; let Dxy = dxy_map[idx];
+    let d_val = d_map[idx];
+    let Dxx = d_val.x; let Dyy = d_val.y; let Dxy = d_val.z;
     let stimulus = stimulus_map[idx];
 
     let inv_dx2 = 1.0 / (params.dx * params.dx);
@@ -115,15 +108,20 @@ const MINIMAL_SIMULATION_SHADER = `
     var v_inf: f32 = 0.0; if (val_u < p.theta_vminus) { v_inf = 1.0; }
     let tau_v_rl = (p.tau_vplus * tau_vminus) / (p.tau_vplus - p.tau_vplus * H_u_thv + tau_vminus * H_u_thv);
     let v_inf_rl = (p.tau_vplus * v_inf * (1.0 - H_u_thv)) / (p.tau_vplus - p.tau_vplus * H_u_thv + tau_vminus * H_u_thv);
-    if (tau_v_rl > 1e-10) { v_out[idx] = v_inf_rl + (val_v - v_inf_rl) * exp(-params.dt / tau_v_rl); } else { v_out[idx] = val_v; }
+    var v_next: f32;
+    if (tau_v_rl > 1e-10) { v_next = v_inf_rl + (val_v - v_inf_rl) * exp(-params.dt / tau_v_rl); } else { v_next = val_v; }
 
     let w_inf = (1.0 - H_u_tho) * (1.0 - val_u / p.tau_winf) + H_u_tho * p.w_infstar;
     let tau_w_rl = (p.tau_wplus * tau_wminus) / (p.tau_wplus - p.tau_wplus * H_u_thw + tau_wminus * H_u_thw);
     let w_inf_rl = (p.tau_wplus * w_inf * (1.0 - H_u_thw)) / (p.tau_wplus - p.tau_wplus * H_u_thw + tau_wminus * H_u_thw);
-    if (tau_w_rl > 1e-10) { w_out[idx] = w_inf_rl + (val_w - w_inf_rl) * exp(-params.dt / tau_w_rl); } else { w_out[idx] = val_w; }
+    var w_next: f32;
+    if (tau_w_rl > 1e-10) { w_next = w_inf_rl + (val_w - w_inf_rl) * exp(-params.dt / tau_w_rl); } else { w_next = val_w; }
 
     let s_inf_rl = (1.0 + tanh(p.k_s * (val_u - p.u_s))) * 0.5;
-    if (tau_s > 1e-10) { s_out[idx] = s_inf_rl + (val_s - s_inf_rl) * exp(-params.dt / tau_s); } else { s_out[idx] = val_s; }
+    var s_next: f32;
+    if (tau_s > 1e-10) { s_next = s_inf_rl + (val_s - s_inf_rl) * exp(-params.dt / tau_s); } else { s_next = val_s; }
+
+    vws_out[idx] = vec4<f32>(v_next, w_next, s_next, 0.0);
   }
 `;
 
@@ -178,9 +176,12 @@ export async function runMinimalGPU2DSimulation(payload, onProgress) {
   const expectedFrames = Math.floor(steps / temporalStride) + 1;
 
   const initialU = new Float32Array(size).fill(0.0);
-  const initialV = new Float32Array(size).fill(1.0);
-  const initialW = new Float32Array(size).fill(1.0);
-  const initialS = new Float32Array(size).fill(0.0);
+  const initialVWS = new Float32Array(size * 4);
+  for (let i = 0; i < size; i++) {
+    initialVWS[i * 4 + 0] = 1.0;
+    initialVWS[i * 4 + 1] = 1.0;
+    initialVWS[i * 4 + 2] = 0.0;
+  }
 
   let Dxx_map = new Float32Array(size).fill(base_Dxx);
   let Dyy_map = new Float32Array(size).fill(base_Dyy);
@@ -341,39 +342,39 @@ export async function runMinimalGPU2DSimulation(payload, onProgress) {
   }
 
   const bufParams = createBuffer(uniformData, GPUBufferUsage.UNIFORM);
-  const bufDxx = createBuffer(Dxx_map, GPUBufferUsage.STORAGE);
-  const bufDyy = createBuffer(Dyy_map, GPUBufferUsage.STORAGE);
-  const bufDxy = createBuffer(Dxy_map, GPUBufferUsage.STORAGE);
+  
+  let d_map_data = new Float32Array(size * 4);
+  for (let k = 0; k < size; k++) {
+    d_map_data[k * 4 + 0] = Dxx_map[k];
+    d_map_data[k * 4 + 1] = Dyy_map[k];
+    d_map_data[k * 4 + 2] = Dxy_map[k];
+  }
+  const bufD_map = createBuffer(d_map_data, GPUBufferUsage.STORAGE);
+  
   const currentStimulusArray = new Float32Array(size).fill(0);
   const bufStimulus = createBuffer(currentStimulusArray, GPUBufferUsage.STORAGE);
 
   let bufU_A = createBuffer(initialU, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC);
   let bufU_B = device.createBuffer({ size: initialU.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
-  let bufV_A = createBuffer(initialV, GPUBufferUsage.STORAGE);
-  let bufV_B = device.createBuffer({ size: initialV.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
-  let bufW_A = createBuffer(initialW, GPUBufferUsage.STORAGE);
-  let bufW_B = device.createBuffer({ size: initialW.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
-  let bufS_A = createBuffer(initialS, GPUBufferUsage.STORAGE);
-  let bufS_B = device.createBuffer({ size: initialS.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+  let bufVWS_A = createBuffer(initialVWS, GPUBufferUsage.STORAGE);
+  let bufVWS_B = device.createBuffer({ size: initialVWS.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
 
   const module = device.createShaderModule({ code: MINIMAL_SIMULATION_SHADER });
   const pipeline = device.createComputePipeline({ layout: 'auto', compute: { module, entryPoint: 'main' } });
 
-  const makeBindGroup = (readU, writeU, readV, writeV, readW, writeW, readS, writeS) => device.createBindGroup({
+  const makeBindGroup = (readU, writeU, readVWS, writeVWS) => device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [
       { binding: 0, resource: { buffer: bufParams } }, 
       { binding: 1, resource: { buffer: readU } }, { binding: 2, resource: { buffer: writeU } },
-      { binding: 3, resource: { buffer: readV } }, { binding: 4, resource: { buffer: writeV } },
-      { binding: 5, resource: { buffer: readW } }, { binding: 6, resource: { buffer: writeW } },
-      { binding: 7, resource: { buffer: readS } }, { binding: 8, resource: { buffer: writeS } },
-      { binding: 9, resource: { buffer: bufDxx } }, { binding: 10, resource: { buffer: bufDyy } },
-      { binding: 11, resource: { buffer: bufDxy } }, { binding: 12, resource: { buffer: bufStimulus } },
+      { binding: 3, resource: { buffer: readVWS } }, { binding: 4, resource: { buffer: writeVWS } },
+      { binding: 5, resource: { buffer: bufD_map } },
+      { binding: 6, resource: { buffer: bufStimulus } },
     ],
   });
 
-  const bindGroupA = makeBindGroup(bufU_A, bufU_B, bufV_A, bufV_B, bufW_A, bufW_B, bufS_A, bufS_B);
-  const bindGroupB = makeBindGroup(bufU_B, bufU_A, bufV_B, bufV_A, bufW_B, bufW_A, bufS_B, bufS_A);
+  const bindGroupA = makeBindGroup(bufU_A, bufU_B, bufVWS_A, bufVWS_B);
+  const bindGroupB = makeBindGroup(bufU_B, bufU_A, bufVWS_B, bufVWS_A);
 
   const stagingBuffers = [
     device.createBuffer({ size: initialU.byteLength, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ }),
@@ -414,10 +415,9 @@ export async function runMinimalGPU2DSimulation(payload, onProgress) {
 
   for (let t = 0; t < steps; t += temporalStride) {
     if (payload.abortSignal && payload.abortSignal.aborted) {
-        bufParams.destroy(); bufDxx.destroy(); bufDyy.destroy(); bufDxy.destroy();
+        bufParams.destroy(); bufD_map.destroy(); 
         bufStimulus.destroy(); bufU_A.destroy(); bufU_B.destroy(); 
-        bufV_A.destroy(); bufV_B.destroy(); bufW_A.destroy(); bufW_B.destroy();
-        bufS_A.destroy(); bufS_B.destroy();
+        bufVWS_A.destroy(); bufVWS_B.destroy(); 
         stagingBuffers[0].destroy(); stagingBuffers[1].destroy();
         throw new Error("Simulation aborted by user");
     }
@@ -578,10 +578,9 @@ export async function runMinimalGPU2DSimulation(payload, onProgress) {
     readBuf.unmap();
   }
 
-  bufParams.destroy(); bufDxx.destroy(); bufDyy.destroy(); bufDxy.destroy();
+  bufParams.destroy(); bufD_map.destroy(); 
   bufStimulus.destroy(); bufU_A.destroy(); bufU_B.destroy(); 
-  bufV_A.destroy(); bufV_B.destroy(); bufW_A.destroy(); bufW_B.destroy();
-  bufS_A.destroy(); bufS_B.destroy();
+  bufVWS_A.destroy(); bufVWS_B.destroy(); 
   stagingBuffers[0].destroy(); stagingBuffers[1].destroy();
 
   return {
