@@ -124,7 +124,7 @@ const DEFAULT_EDITABLE_PARAMS = {
 const MODEL_VARIABLES = {
   ms: ['v', 'h'],
   minimal: ['v', 'gate_v', 'gate_w', 'gate_s'],
-  tentusscher: ['v', 'Cai', 'Nai', 'Ki']
+  tentusscher: ['v', 'Cai', 'Nai', 'Ki', 'estimulo']
 };
 
 const VARIABLE_LABELS = {
@@ -135,7 +135,8 @@ const VARIABLE_LABELS = {
   gate_s: 'Gate s',
   Cai: 'Cai (mM)',
   Nai: 'Nai (mM)',
-  Ki: 'Ki (mM)'
+  Ki: 'Ki (mM)',
+  estimulo: 'Estímulo'
 };
 
 const S1S2Page = ({ onBack }) => {
@@ -162,7 +163,7 @@ const S1S2Page = ({ onBack }) => {
       setVisibleVars({ v: true, gate_v: true, gate_w: true, gate_s: true });
     } else if (selectedModel === 'tentusscher') {
       simulationWorker = new TenTusscherWorker();
-      setVisibleVars({ v: true, Cai: false, Nai: false, Ki: false });
+      setVisibleVars({ v: true, Cai: false, Nai: false, Ki: false, estimulo: true });
     } else {
       simulationWorker = new SimulationWorker();
       setVisibleVars({ v: true, h: true });

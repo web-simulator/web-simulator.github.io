@@ -290,6 +290,8 @@ self.onmessage = (e) => {
       sg = next_sg;
   
       svolt = svolt + dt * (-I_ion - stim);
+      if (svolt < -120.0) svolt = -120.0;
+      if (svolt > 80.0) svolt = 80.0;
   
       // Downsampling e Envio pro Gráfico
       if (i % downsamplingFactor === 0) {
@@ -298,7 +300,8 @@ self.onmessage = (e) => {
             v: svolt,
             Cai: Cai,
             Nai: Nai,
-            Ki: Ki
+            Ki: Ki,
+            estimulo: stim
         });
       }
     }

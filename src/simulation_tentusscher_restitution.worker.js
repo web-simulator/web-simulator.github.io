@@ -272,6 +272,8 @@ self.onmessage = (e) => {
     state.sg = next_sg;
 
     state.svolt = state.svolt + dt * (-I_ion - stim);
+    if (state.svolt < -120.0) state.svolt = -120.0;
+    if (state.svolt > 80.0) state.svolt = 80.0;
   };
 
   // 1. PRE-PACING (S1)
