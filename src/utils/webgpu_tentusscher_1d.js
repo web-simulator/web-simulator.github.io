@@ -291,7 +291,7 @@ export async function runGPU1DTenTusscher(payload, onProgress) {
         stim = params.current_stim;
       }
 
-      var v_next = svolt + dt * (params.D * lap_v - I_ion + stim);
+      var v_next = svolt + dt * (params.D * lap_v - I_ion - stim);
       
       // Anti-NaN clamps
       if (v_next < -120.0) { v_next = -120.0; }
