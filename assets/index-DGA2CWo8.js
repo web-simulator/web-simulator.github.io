@@ -24660,7 +24660,7 @@ ${tA}`),0}},co=p=>xs(p,{loadAsync:!1});co.sig="pp";var cc=(p,q,y)=>{q=ZA(q);var 
         stim = params.current_stim;
       }
 
-      var v_next = svolt + dt * (params.D * lap_v - I_ion + stim);
+      var v_next = svolt + dt * (params.D * lap_v - I_ion - stim);
       
       // Anti-NaN clamps
       if (v_next < -120.0) { v_next = -120.0; }
